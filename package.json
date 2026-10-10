@@ -1,0 +1,15 @@
+{
+  "name": "@prelis/core",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:desktop": "npm run tauri dev -w apps/desktop",
+    "start:mobile": "npm run start -w apps/mobile",
+    "android": "npm run android -w apps/mobile",
+    "ios": "npm run ios -w apps/mobile"
+  }
+}
