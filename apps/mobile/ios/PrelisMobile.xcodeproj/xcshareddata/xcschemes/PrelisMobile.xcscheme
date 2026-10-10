@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "ChecklistMobile.app"
-               BlueprintName = "ChecklistMobile"
-               ReferencedContainer = "container:ChecklistMobile.xcodeproj">
+               BuildableName = "PrelisMobile.app"
+               BlueprintName = "PrelisMobile"
+               ReferencedContainer = "container:PrelisMobile.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "ChecklistMobileTests.xctest"
-               BlueprintName = "ChecklistMobileTests"
-               ReferencedContainer = "container:ChecklistMobile.xcodeproj">
+               BuildableName = "PrelisMobileTests.xctest"
+               BlueprintName = "PrelisMobileTests"
+               ReferencedContainer = "container:PrelisMobile.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -55,9 +55,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "ChecklistMobile.app"
-            BlueprintName = "ChecklistMobile"
-            ReferencedContainer = "container:ChecklistMobile.xcodeproj">
+            BuildableName = "PrelisMobile.app"
+            BlueprintName = "PrelisMobile"
+            ReferencedContainer = "container:PrelisMobile.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -72,9 +72,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "ChecklistMobile.app"
-            BlueprintName = "ChecklistMobile"
-            ReferencedContainer = "container:ChecklistMobile.xcodeproj">
+            BuildableName = "PrelisMobile.app"
+            BlueprintName = "PrelisMobile"
+            ReferencedContainer = "container:PrelisMobile.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

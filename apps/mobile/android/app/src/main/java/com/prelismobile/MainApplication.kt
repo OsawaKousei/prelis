@@ -1,4 +1,4 @@
-package com.checklistmobile
+package com.prelismobile
 
 import android.app.Application
 import com.facebook.react.PackageList
