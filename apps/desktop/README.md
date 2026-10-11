@@ -1,7 +1,7 @@
-# Tauri + React + Typescript
+# Prelis Desktop
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+Tauri 2 + React + Vite のデスクトップアプリです。
 
-## Recommended IDE Setup
-
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+セットアップとコマンドは[ルートの README](../../README.md)を参照してください。
+リポジトリのルートで `npm run dev:desktop` を実行すると起動します。
+共有ロジックは `@prelis/core` から import し、開発中はソースの変更が反映されます。
