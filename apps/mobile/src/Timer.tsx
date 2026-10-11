@@ -2,6 +2,7 @@ import React, {useCallback, useEffect, useState} from 'react';
 import {ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
 import {native, parseSounds, type SoundLibrary} from './native';
 import {Button, colors, Section, styles} from './ui';
+import {Icon} from './icon';
 
 export function Timer() {
   const [minutes, setMinutes] = useState('25');
@@ -50,7 +51,7 @@ export function Timer() {
   const progress = total > 0 ? Math.max(0, Math.min(100, remaining / total * 100)) : 0;
   const progressWidth = {width: `${progress}%` as `${number}%`};
   return <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-    <Text style={styles.heading}>Timer</Text>
+    <View style={styles.pageIntro}><Text style={styles.heading}>Timer</Text><View style={styles.emblem}><Icon name="timer" size={29} color={colors.accent} /></View></View>
     <Section title="残り時間">
       <Text testID="timer-clock" accessibilityRole="timer" style={[timerStyles.clock, completed && timerStyles.completed]}>{String(Math.floor(seconds / 60)).padStart(2, '0')}:{String(seconds % 60).padStart(2, '0')}</Text>
       <Text style={[styles.muted, timerStyles.center]}>{completed ? '完了 — リセットしてください' : deadline !== null ? '実行中' : '停止中'}</Text>
@@ -63,7 +64,7 @@ export function Timer() {
       }} />
       {!valid && <Text style={styles.error}>1〜180の整数を入力してください。</Text>}
       <View style={styles.row}>
-        <Button label={deadline !== null ? '一時停止' : '開始'} variant="primary" disabled={completed || deadline === null && (!valid || !library || busy)} onPress={() => {
+        <Button label={deadline !== null ? '一時停止' : '開始'} variant="primary" icon={deadline === null ? 'arrow' : undefined} disabled={completed || deadline === null && (!valid || !library || busy)} onPress={() => {
           if (deadline !== null) {
             const next = Math.max(0, deadline - Date.now());
             setRemaining(next); setDeadline(null);
@@ -85,8 +86,8 @@ export function Timer() {
       {!!error && <Text style={styles.error}>{error}</Text>}
       {soundOpen && (!library ? <Button label="再読み込み" onPress={() => setRetry(value => value + 1)} /> : <>
         <Text style={styles.muted}>音声を選択</Text>
-        <Button label={`${!library.selectedId ? '✓ ' : ''}音声なし`} variant="choice" selected={!library.selectedId} disabled={busy || deadline !== null || completed} onPress={() => changeSounds(() => native.selectSound(null))} />
-        {library.sounds.map(sound => <Button key={sound.id} label={`${library.selectedId === sound.id ? '✓ ' : ''}${sound.name}`} variant="choice" selected={library.selectedId === sound.id} disabled={busy || deadline !== null || completed} onPress={() => changeSounds(() => native.selectSound(sound.id))} />)}
+        <Button label="音声なし" icon={!library.selectedId ? 'check' : undefined} variant="choice" selected={!library.selectedId} disabled={busy || deadline !== null || completed} onPress={() => changeSounds(() => native.selectSound(null))} />
+        {library.sounds.map(sound => <Button key={sound.id} label={sound.name} icon={library.selectedId === sound.id ? 'check' : undefined} variant="choice" selected={library.selectedId === sound.id} disabled={busy || deadline !== null || completed} onPress={() => changeSounds(() => native.selectSound(sound.id))} />)}
         <Button label="音声を追加（MP3 / WAV、10 MB 以下）" disabled={busy || deadline !== null || completed} onPress={() => changeSounds(native.pickSound)} />
         <View style={[styles.row, timerStyles.wrap]}>
           <Button label="試聴" disabled={!selected || busy || deadline !== null || completed} onPress={() => {if (selected) native.playSound(selected.id, false).catch(() => setError('音声を再生できませんでした。'));}} />

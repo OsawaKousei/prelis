@@ -24,28 +24,10 @@
   color: #69b9df;
 }
 .brand-mark {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   width: 34px;
   height: 38px;
-  border-radius: 12px 12px 12px 3px;
-  color: #fff;
-  font-size: 31px;
-  font-weight: 400;
-  background: linear-gradient(140deg, #8cc9e4, #4e9dc9);
-  box-shadow: 0 4px 12px #5dacc524;
-}
-.brand-mark > span {
-  position: absolute;
-  right: -3px;
-  bottom: 0;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: #c6e7f7;
-  border: 2px solid #f3f9fc;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 .sidebar nav {
   margin-top: 54px;
@@ -190,7 +172,6 @@
   .brand-mark {
     width: 27px;
     height: 30px;
-    font-size: 25px;
   }
   .sidebar-bottom,
   .sidebar nav > .nav-label {

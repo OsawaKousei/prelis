@@ -11,6 +11,7 @@
 | [apps/desktop](apps/desktop/README.md) | デスクトップアプリ |
 | [apps/mobile](apps/mobile/README.md) | モバイルアプリ |
 | [packages/core](packages/core/package.json) | UI・OS に依存しない共有ロジック |
+| [packages/icons](packages/icons/README.md) | 両アプリで使う PNG アイコン |
 | [scripts](scripts/) | ワークスペース共通の補助スクリプト |
 | [docs](docs/README.md) | 構成説明、仕様、開発手順、環境メモ |
 

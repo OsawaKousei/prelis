@@ -59,8 +59,19 @@ textarea:focus-visible {
   outline: 2px solid #2785af;
   outline-offset: 4px;
 }
-button svg {
+button .prelis-icon {
   flex-shrink: 0;
+}
+.prelis-icon {
+  display: inline-block;
+  flex-shrink: 0;
+  background-color: currentColor;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
 }
 h1,
 h2,

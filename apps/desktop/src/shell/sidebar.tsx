@@ -1,4 +1,5 @@
 import { Icon } from '../shared/icon';
+import brand from '@prelis/icons/assets/brand.png';
 import type { AppDefinition } from './apps';
 type Props = {
   readonly apps: readonly AppDefinition[];
@@ -8,9 +9,7 @@ type Props = {
 export const Sidebar = ({ apps, activeId, onSelect }: Props) => (
   <aside className="sidebar">
     <div className="brand">
-      <span className="brand-mark" aria-hidden="true">
-        p<span />
-      </span>
+      <img className="brand-mark" src={brand} alt="" />
       <span>
         prelis<span className="brand-dot">.</span>
       </span>

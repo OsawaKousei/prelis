@@ -1,21 +1,15 @@
 import React from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
 
-export const colors = {
-  background: '#F8FCFE',
-  surface: '#FFFFFF',
-  ink: '#183446',
-  muted: '#587182',
-  line: '#D5E6EC',
-  accent: '#0B789A',
-  accentSoft: '#E4F7FC',
-  accentLine: '#8BD8EA',
-  danger: '#AC302C',
-};
+import {colors} from './theme';
+import {Icon, type IconName} from './icon';
+export {colors} from './theme';
 
 export const styles = StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
   content: {paddingHorizontal: 24, paddingTop: 30, paddingBottom: 48, gap: 28},
+  pageIntro: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
+  emblem: {width: 52, height: 52, alignItems: 'center', justifyContent: 'center', borderRadius: 26, backgroundColor: colors.accentSoft},
   heading: {fontSize: 32, lineHeight: 40, fontWeight: '600', letterSpacing: 0.2, color: colors.ink},
   subheading: {fontSize: 20, lineHeight: 28, fontWeight: '600', color: colors.ink},
   text: {fontSize: 16, lineHeight: 24, color: colors.ink},
@@ -34,9 +28,11 @@ type ButtonProps = {
   selected?: boolean;
   testID?: string;
   variant?: ButtonVariant;
+  icon?: IconName;
 };
 
-export function Button({label, onPress, disabled, selected, testID, variant = 'secondary'}: ButtonProps) {
+export function Button({label, onPress, disabled, selected, testID, variant = 'secondary', icon}: ButtonProps) {
+  const iconColor = variant === 'danger' ? colors.danger : selected || variant === 'primary' || variant === 'launch' ? colors.accent : variant === 'tab' ? colors.muted : colors.ink;
   return <Pressable
     testID={testID}
     accessibilityRole="button"
@@ -56,19 +52,25 @@ export function Button({label, onPress, disabled, selected, testID, variant = 's
       disabled && buttonStyles.disabled,
       pressed && buttonStyles.pressed,
     ]}>
-    <Text style={[
-      buttonStyles.label,
-      variant === 'primary' && buttonStyles.primaryLabel,
-      variant === 'tab' && buttonStyles.tabLabel,
-      variant === 'launch' && buttonStyles.launchLabel,
-      variant === 'danger' && buttonStyles.dangerLabel,
-      selected && (variant === 'choice' || variant === 'tab') && buttonStyles.selectedLabel,
-    ]}>{label}</Text>
-    {variant === 'launch' && <Text aria-hidden style={buttonStyles.arrow}>›</Text>}
+    <View style={[buttonStyles.content, variant === 'tab' && buttonStyles.tabContent]}>
+      {variant === 'choice' ? <View style={buttonStyles.choiceIcon}>{icon && <Icon name={icon} size={18} color={iconColor} />}</View> : icon && <Icon name={icon} size={variant === 'launch' ? 24 : variant === 'tab' ? 19 : 18} color={iconColor} />}
+      <Text style={[
+        buttonStyles.label,
+        variant === 'primary' && buttonStyles.primaryLabel,
+        variant === 'tab' && buttonStyles.tabLabel,
+        variant === 'launch' && buttonStyles.launchLabel,
+        variant === 'danger' && buttonStyles.dangerLabel,
+        selected && (variant === 'choice' || variant === 'tab') && buttonStyles.selectedLabel,
+      ]}>{label}</Text>
+    </View>
+    {variant === 'launch' && <Icon name="arrow" size={19} color={colors.accent} />}
   </Pressable>;
 }
 
 const buttonStyles = StyleSheet.create({
+  content: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8},
+  choiceIcon: {width: 18, height: 18},
+  tabContent: {flexDirection: 'column', gap: 2},
   base: {minHeight: 48, minWidth: 44, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 9, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line},
   primary: {backgroundColor: colors.accentSoft, borderColor: colors.accentLine, minHeight: 52},
   choice: {backgroundColor: colors.surface, borderColor: colors.line},
@@ -85,7 +87,6 @@ const buttonStyles = StyleSheet.create({
   launchLabel: {fontSize: 20, fontWeight: '600'},
   dangerLabel: {color: colors.danger},
   selectedLabel: {color: colors.accent},
-  arrow: {fontSize: 30, lineHeight: 32, color: colors.accent, fontWeight: '300'},
 });
 
 export function Section({title, children}: {title: string; children: React.ReactNode}) {

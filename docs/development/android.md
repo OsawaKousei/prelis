@@ -80,6 +80,13 @@ npm run build:android
 
 出力は `apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk` です。
 通常の debug APK の起動には Metro が必要です。
+Metro を使わず端末で確認する場合は、JavaScript とアイコン画像を同梱した APK をビルドします。現行の release 設定は開発用 debug key で署名するため、これは動作確認用です。
+
+```sh
+npm run build:android:standalone
+```
+
+出力は `apps/mobile/android/app/build/outputs/apk/release/app-release.apk` です。
 追加の Gradle オプションは、例えば `npm run build:android -- --no-daemon` のように渡せます。
 
 ネイティブビルドとは別に JavaScript の依存解決・バンドルを確認する場合は、Linux では次を実行できます。

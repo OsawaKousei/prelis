@@ -63,6 +63,7 @@ git diff --check
 | `npm run build -w apps/desktop` | デスクトップの型チェックと Vite ビルド |
 | `npm run build:desktop:debug` | デスクトップの debug ネイティブビルド |
 | `npm run build:android` | Android debug APK のビルド |
+| `npm run build:android:standalone` | JavaScript と画像を同梱した Android 動作確認用 APK のビルド |
 
 `npm run check` にネイティブビルドは含まれません。
 現在、デスクトップ・core 専用の単体テストスクリプトはありません。

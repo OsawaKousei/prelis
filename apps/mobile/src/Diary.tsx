@@ -3,6 +3,7 @@ import {Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDime
 import {isDiaryDate, localDate, shiftDate} from '@prelis/core';
 import {native} from './native';
 import {Button, colors, Section, styles} from './ui';
+import {Icon} from './icon';
 
 type Props = {onState: (dirty: boolean, saving: boolean) => void};
 const heading = (date: string) => `${Number(date.slice(0, 4))}年${Number(date.slice(5, 7))}月${Number(date.slice(8, 10))}日`;
@@ -45,19 +46,19 @@ export function Diary({onState}: Props) {
     if (next.getFullYear() >= 1 && next.getFullYear() <= 9999) setMonth(localDate(next).slice(0, 7));
   };
   return <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-    <Text style={styles.heading}>Diary</Text>
+    <View style={styles.pageIntro}><Text style={styles.heading}>Diary</Text><View style={styles.emblem}><Icon name="diary" size={29} color={colors.accent} /></View></View>
     <Section title={heading(date)}>
       <Text style={styles.muted}>{date === localDate() ? '今日' : date}</Text>
       <View style={[styles.row, diaryStyles.wrap]}>
-        <Button label="前日" disabled={saving || !isDiaryDate(shiftDate(date, -1))} onPress={() => move(shiftDate(date, -1))} />
-        <Button label="翌日" disabled={saving || !isDiaryDate(shiftDate(date, 1))} onPress={() => move(shiftDate(date, 1))} />
+        <Button label="前日" icon="left" disabled={saving || !isDiaryDate(shiftDate(date, -1))} onPress={() => move(shiftDate(date, -1))} />
+        <Button label="翌日" icon="right" disabled={saving || !isDiaryDate(shiftDate(date, 1))} onPress={() => move(shiftDate(date, 1))} />
         <Button label="今日へ" disabled={saving || date === localDate()} onPress={() => move(localDate())} />
       </View>
     </Section>
     {loading ? <Text style={styles.muted}>日記を読み込んでいます…</Text> : error && !dirty ? <Section title="日記を開けませんでした"><Text style={styles.error}>{error}</Text><Button label="もう一度読み込む" onPress={() => setRetry(value => value + 1)} /></Section> : <Section title="日記の本文">
       <TextInput testID="diary-content" accessibilityLabel="日記の本文" style={[styles.input, diaryStyles.editor]} multiline value={content} editable={!saving} onChangeText={setContent} />
       <Text style={styles.muted}>{[...content].length.toLocaleString()} 文字　{saving ? '保存中…' : dirty ? '未保存' : everSaved ? '保存済み' : '変更なし'}</Text>
-      <Button label={saving ? '保存中…' : '保存'} disabled={saving || !dirty} variant="primary" onPress={async () => {
+      <Button label={saving ? '保存中…' : '保存'} disabled={saving || !dirty} variant="primary" icon="save" onPress={async () => {
         const text = content;
         setSaving(true); setError('');
         try {await native.saveDiary(date, text); setSaved(text); setEverSaved(true);}
@@ -68,7 +69,7 @@ export function Diary({onState}: Props) {
       <Text style={styles.muted}>保存先: このデバイス</Text>
     </Section>}
     <Section title={`${Number(month.slice(0, 4))}年${Number(month.slice(5, 7))}月`}>
-      <View style={styles.row}><Button label="前の月" onPress={() => shiftMonth(-1)} /><Button label="次の月" onPress={() => shiftMonth(1)} /></View>
+      <View style={styles.row}><Button label="前の月" icon="left" onPress={() => shiftMonth(-1)} /><Button label="次の月" icon="right" onPress={() => shiftMonth(1)} /></View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View style={[diaryStyles.calendar, calendarWidth]}>
           {['月','火','水','木','金','土','日'].map(day => <Text key={day} style={diaryStyles.weekday}>{day}</Text>)}

@@ -24,7 +24,7 @@
   transform: rotate(-8deg);
   margin-right: 10px;
 }
-.app-emblem svg {
+.app-emblem .prelis-icon {
   transform: rotate(8deg);
 }
 .primary-button {
