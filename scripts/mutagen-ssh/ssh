@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# The Japanese Windows cmd.exe emits CP932 errors for missing commands.
+# Mutagen requires UTF-8 errors to identify and install its Windows agent.
+command_text="${*: -1}"
+case "$command_text" in
+  .mutagen/agents/*)
+    printf "'.mutagen' is not recognized as an internal or external command.\r\n" >&2
+    exit 1
+    ;;
+  .mutagen\\agents\\*)
+    agent_path="${command_text%% *}"
+    ssh_args=("${@:1:$#-1}")
+    if ! /usr/bin/ssh "${ssh_args[@]}" "if exist ${agent_path}.exe (exit /b 0) else (exit /b 1)"; then
+      printf 'The system cannot find the path specified.\r\n' >&2
+      exit 1
+    fi
+    ;;
+esac
+
+exec /usr/bin/ssh "$@"

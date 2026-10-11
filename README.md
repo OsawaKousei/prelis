@@ -19,6 +19,7 @@
 
 - [共通セットアップと作業手順](docs/development/workflow.md)
 - [デスクトップの開発手順](docs/development/desktop.md)
+- [Windows 11 向けビルド手順](docs/development/windows.md)
 - [Android の開発手順](docs/development/android.md)
 - [ワークスペースの構成](docs/architecture.md)
 - [デザインガイドライン](docs/design/guidelines.md)

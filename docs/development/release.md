@@ -91,4 +91,4 @@ chmod +x PrelisDesktop_<version>_amd64.AppImage
 - 現状はコード署名をしていません。署名を導入する場合は Tauri の署名設定を追加し、本書を更新してください。
 - arm64 向けは別途 arm64 環境（または対応するクロスビルド環境）でのビルド・検証が必要で、未検証です。
 - 成果物は `target/` 配下で Git の管理対象外です。コミットしないでください。
-- Windows・macOS のパッケージ作成手順は未整備です。
+- Windows 11 向けのパッケージ作成手順は [Windows ビルド手順](windows.md) を参照してください。macOS 向けは未整備です。
