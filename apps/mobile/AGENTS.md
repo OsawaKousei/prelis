@@ -2,6 +2,8 @@
 
 対象は `apps/mobile/` の React Native UI、Metro 設定、ネイティブプロジェクトです。
 現在は Android の開発・検証を行い、iOS 対応は保留しています。
+[基本原則](../../AGENTS.md)に沿って、デスクトップで確認済みの機能を反映します。
+UI はモバイル向けに個別に開発し、画面構成や操作方法を端末の特徴に合わせます。
 
 - [共通の開発規則](../../docs/development/rules.md)
 - [構成と責務の境界](../../docs/architecture.md)

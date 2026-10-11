@@ -1,6 +1,7 @@
 # デスクトップのエージェント向け案内
 
 対象は `apps/desktop/` の React UI、Vite 設定、`src-tauri/` の Rust・Tauri 設定です。
+機能開発の先行対象です。[基本原則](../../AGENTS.md)に沿って、モバイルにも提供する共通機能をデスクトップで実装・確認します。
 
 - [共通の開発規則](../../docs/development/rules.md)
 - [構成と責務の境界](../../docs/architecture.md)
