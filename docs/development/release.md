@@ -1,0 +1,90 @@
+# リリース手順（Ubuntu 版デスクトップ）
+
+Ubuntu（amd64）向けに AppImage と deb パッケージを作成する手順です。
+コマンドはリポジトリのルートで実行します。環境条件は[デスクトップ開発](desktop.md)を参照してください。
+
+## 事前準備
+
+- [共通セットアップ](workflow.md)を完了し、`npm run check` が成功すること。
+- Tauri の Linux 前提パッケージ（WebKitGTK 4.1・GTK 3 の開発ライブラリなど）が入っていること。
+- AppImage の作成時に linuxdeploy が GitHub から自動ダウンロードされるため、ネットワーク接続が必要です。
+- ビルドは配布先と同じ CPU アーキテクチャ（amd64）の Linux で行います。
+
+## 1. バージョンを更新する
+
+次の 3 か所を同じ値に揃えます。
+
+| ファイル | 項目 |
+| --- | --- |
+| [tauri.conf.json](../../apps/desktop/src-tauri/tauri.conf.json) | `version` |
+| [Cargo.toml](../../apps/desktop/src-tauri/Cargo.toml) | `version` |
+| [apps/desktop/package.json](../../apps/desktop/package.json) | `version` |
+
+`Cargo.toml` を更新したら `Cargo.lock` の更新も差分に含めます。
+
+## 2. 検証する
+
+```sh
+npm run check
+npm run build -w apps/desktop
+```
+
+## 3. パッケージを作成する
+
+```sh
+npm run build:desktop -- --bundles deb,appimage
+```
+
+`--bundles` を省略すると、実行 OS で作成可能な全形式が対象になります（[tauri.conf.json](../../apps/desktop/src-tauri/tauri.conf.json) の `bundle.targets` は `all`）。
+初回は Rust の依存コンパイルに数分かかります。
+
+| 成果物 | 出力先 |
+| --- | --- |
+| deb | `apps/desktop/src-tauri/target/release/bundle/deb/PrelisDesktop_<version>_amd64.deb` |
+| AppImage | `apps/desktop/src-tauri/target/release/bundle/appimage/PrelisDesktop_<version>_amd64.AppImage` |
+
+パッケージのメタデータは次の設定から生成されます。
+
+| 内容 | 設定元 |
+| --- | --- |
+| 発行元・カテゴリ・説明・deb セクション | `tauri.conf.json` の `bundle` |
+| Maintainer・パッケージ名 | `Cargo.toml` の `authors`、`productName` |
+| 依存パッケージ | Tauri が自動設定（`libwebkit2gtk-4.1-0`、`libgtk-3-0`） |
+
+## 4. 成果物を確認する
+
+```sh
+dpkg-deb -I apps/desktop/src-tauri/target/release/bundle/deb/PrelisDesktop_*_amd64.deb
+dpkg-deb -c apps/desktop/src-tauri/target/release/bundle/deb/PrelisDesktop_*_amd64.deb
+sha256sum apps/desktop/src-tauri/target/release/bundle/*/PrelisDesktop_*
+```
+
+Ubuntu 実機（可能ならクリーンな環境）で次を確認します。
+
+```sh
+# deb
+sudo apt install ./PrelisDesktop_<version>_amd64.deb
+desktop   # またはアプリランチャーの「PrelisDesktop」から起動（実行ファイルは /usr/bin/desktop）
+
+# AppImage
+chmod +x PrelisDesktop_<version>_amd64.AppImage
+./PrelisDesktop_<version>_amd64.AppImage
+```
+
+- アプリが起動し、Diary・Timer・Password の主要操作ができること。
+- deb は `sudo apt remove prelis-desktop` で削除できること。
+- Ubuntu 22.04 以降では AppImage の実行に FUSE 2（`libfuse2`）が必要な場合があります。
+  無い環境では `sudo apt install libfuse2`、または `--appimage-extract-and-run` を付けて実行します。
+
+## 5. 頒布する
+
+1. 変更をコミットし、`v<version>` のタグを付けて push します。
+2. GitHub Releases などに deb と AppImage、`sha256sum` の結果を添付します。
+3. リリースノートに対応 OS（Ubuntu amd64）、インストール手順、既知の問題を記載します。
+
+## 注意
+
+- 現状はコード署名をしていません。署名を導入する場合は Tauri の署名設定を追加し、本書を更新してください。
+- arm64 向けは別途 arm64 環境（または対応するクロスビルド環境）でのビルド・検証が必要で、未検証です。
+- 成果物は `target/` 配下で Git の管理対象外です。コミットしないでください。
+- Windows・macOS のパッケージ作成手順は未整備です。

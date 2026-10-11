@@ -1,5 +1,5 @@
 {
-  "name": "@prelis/core",
+  "name": "prelis",
   "version": "0.1.0",
   "private": true,
   "workspaces": [
@@ -7,9 +7,26 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:desktop": "npm run tauri dev -w apps/desktop",
-    "start:mobile": "npm run start -w apps/mobile",
-    "android": "npm run android -w apps/mobile",
-    "ios": "npm run ios -w apps/mobile"
+    "dev:desktop": "npm run tauri -w apps/desktop -- dev",
+    "build:desktop": "npm run tauri -w apps/desktop -- build",
+    "build:desktop:debug": "npm run tauri -w apps/desktop -- build --debug --no-bundle",
+    "start:mobile": "npm run start -w apps/mobile --",
+    "android": "npm run android -w apps/mobile --",
+    "build:android": "node scripts/android-gradle.mjs :app:assembleDebug",
+    "build:android:standalone": "node scripts/android-gradle.mjs :app:assembleRelease",
+    "ios": "npm run ios -w apps/mobile",
+    "build:core": "npm run build -w packages/core",
+    "typecheck": "npm run typecheck --workspaces",
+    "lint": "npm run lint -w apps/mobile",
+    "test": "npm run test -w apps/mobile -- --runInBand",
+    "check": "npm run typecheck && npm run lint && npm test"
+  },
+  "engines": {
+    "node": "^22.13.0 || ^24.3.0 || >=26.0.0",
+    "npm": ">=10"
+  },
+  "overrides": {
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
   }
 }

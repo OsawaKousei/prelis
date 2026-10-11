@@ -7,15 +7,13 @@ apply plugin: "com.facebook.react"
  * By default you don't need to apply any configuration, just uncomment the lines you need.
  */
 react {
-    /* Folders */
-    //   The root of your project, i.e. where "package.json" lives. Default is '../..'
-    // root = file("../../")
-    //   The folder where the react-native NPM package is. Default is ../../node_modules/react-native
-    // reactNativeDir = file("../../node_modules/react-native")
-    //   The folder where the react-native Codegen package is. Default is ../../node_modules/@react-native/codegen
-    // codegenDir = file("../../node_modules/@react-native/codegen")
-    //   The cli.js file which is the React Native CLI entrypoint. Default is ../../node_modules/react-native/cli.js
-    // cliFile = file("../../node_modules/react-native/cli.js")
+    // npm workspaces hoists native dependencies to the repository root.
+    reactNativeDir = file("../../../../node_modules/react-native")
+    codegenDir = file("../../../../node_modules/@react-native/codegen")
+    cliFile = file("../../../../node_modules/react-native/cli.js")
+    // The Gradle plugin searches from apps/mobile; npm hoists Hermes to the workspace root.
+    def hermesBinary = System.getProperty("os.name").toLowerCase().contains("windows") ? "hermesc.exe" : "hermesc"
+    hermesCommand = file("../../../../node_modules/hermes-compiler/hermesc/%OS-BIN%/${hermesBinary}").absolutePath
 
     /* Variants */
     //   The list of variants to that are debuggable. For those we're going to
@@ -77,9 +75,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.checklistmobile"
+    namespace "com.prelismobile"
     defaultConfig {
-        applicationId "com.checklistmobile"
+        applicationId "com.prelismobile"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
