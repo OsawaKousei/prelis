@@ -64,7 +64,7 @@ Ubuntu 実機（可能ならクリーンな環境）で次を確認します。
 ```sh
 # deb
 sudo apt install ./PrelisDesktop_<version>_amd64.deb
-desktop   # またはアプリランチャーの「PrelisDesktop」から起動（実行ファイルは /usr/bin/desktop）
+PrelisDesktop   # またはアプリランチャーの「PrelisDesktop」から起動
 
 # AppImage
 chmod +x PrelisDesktop_<version>_amd64.AppImage
@@ -72,6 +72,7 @@ chmod +x PrelisDesktop_<version>_amd64.AppImage
 ```
 
 - アプリが起動し、Diary・Timer・Password の主要操作ができること。
+- アプリランチャーと起動中のウィンドウに Android 版と共通のアイコンが表示されること。Linux の実行ファイル名、アイコン名、`StartupWMClass` は `PrelisDesktop` に揃えています。ファイルマネージャー上の deb ファイルは通常、パッケージ形式の汎用アイコンになります。AppImage ファイルのアイコン表示とランチャーへの登録には、ファイルマネージャーの対応や AppImage のデスクトップ統合が必要です。
 - deb は `sudo apt remove prelis-desktop` で削除できること。
 - Ubuntu 22.04 以降では AppImage の実行に FUSE 2（`libfuse2`）が必要な場合があります。
   無い環境では `sudo apt install libfuse2`、または `--appimage-extract-and-run` を付けて実行します。

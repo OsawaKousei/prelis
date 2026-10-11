@@ -39,6 +39,12 @@
         "bundleMediaFramework": true
       }
     },
+    "windows": {
+      "nsis": {
+        "installerIcon": "icons/icon.ico",
+        "uninstallerIcon": "icons/icon.ico"
+      }
+    },
     "icon": [
       "icons/32x32.png",
       "icons/64x64.png",

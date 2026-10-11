@@ -33,4 +33,4 @@ MUTAGEN_DATA_DIRECTORY="$PWD/.mutagen" mutagen sync list prelis-windows --long
 
 `one-way-safe` の競合や同期エラーが出た場合は `mutagen sync list` の内容を確認してから Windows 側の該当ファイルを整理します。スクリプトは同期失敗時にビルドへ進みません。
 
-Windows 実機でインストーラーを実行し、起動と主要機能を確認してください。現時点ではコード署名を設定していません。
+Windows 実機でインストーラーを実行し、起動と主要機能、インストーラーとアプリのアイコンを確認してください。NSIS インストーラーとアンインストーラーのアイコンは `tauri.conf.json` の `bundle.windows.nsis` で指定しています。現時点ではコード署名を設定していません。
