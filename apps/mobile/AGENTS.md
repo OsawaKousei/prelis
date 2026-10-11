@@ -7,6 +7,7 @@ UI はモバイル向けに個別に開発し、画面構成や操作方法を�
 
 - [共通の開発規則](../../docs/development/rules.md)
 - [構成と責務の境界](../../docs/architecture.md)
+- [デザインガイドライン](../../docs/design/guidelines.md)
 - [Android の環境・起動・ビルド手順](../../docs/development/android.md)
 - [変更内容に応じた検証](../../docs/development/workflow.md)
 - [機能仕様の索引](../../docs/specs/README.md)

@@ -19,11 +19,11 @@ export function Password() {
   const clear = () => {setPassword(''); setMessage('選んだ文字種をそれぞれ1文字以上含めます。');};
   return <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
     <Text style={styles.heading}>パスワード生成</Text>
-    <Section title="使用する文字"><View style={passwordStyles.options}>{types.map(type => <Button key={type.key} label={`${selected.includes(type.key) ? '☑' : '☐'} ${type.label}`} selected={selected.includes(type.key)} disabled={busy} onPress={() => {setSelected(current => current.includes(type.key) ? current.filter(item => item !== type.key) : [...current, type.key]); clear();}} />)}</View></Section>
-    <Section title="文字数"><View style={[styles.row, passwordStyles.wrap]}>{lengths.map(value => <Button key={value} label={`${value}文字`} selected={length === value} disabled={busy} onPress={() => {setLength(value); clear();}} />)}</View></Section>
+    <Section title="使用する文字"><View style={passwordStyles.options}>{types.map(type => <View key={type.key} style={passwordStyles.optionItem}><Button label={`${selected.includes(type.key) ? '✓ ' : ''}${type.label}`} variant="choice" selected={selected.includes(type.key)} disabled={busy} onPress={() => {setSelected(current => current.includes(type.key) ? current.filter(item => item !== type.key) : [...current, type.key]); clear();}} /></View>)}</View></Section>
+    <Section title="文字数"><View style={passwordStyles.lengths}>{lengths.map(value => <View key={value} style={passwordStyles.lengthItem}><Button label={`${length === value ? '✓ ' : ''}${value}文字`} variant="choice" selected={length === value} disabled={busy} onPress={() => {setLength(value); clear();}} /></View>)}</View></Section>
     {length <= 8 && <Text style={styles.error}>{length}文字のパスワードは推測されやすいため、利用先が許すなら16文字を選んでください。</Text>}
     {selected.length === 0 && <Text style={styles.error}>文字種を1つ以上選択してください。</Text>}
-    <Button label={busy ? '生成中…' : 'パスワードを生成'} disabled={selected.length === 0 || busy} selected onPress={async () => {
+    <Button label={busy ? '生成中…' : 'パスワードを生成'} disabled={selected.length === 0 || busy} variant="primary" onPress={async () => {
       setBusy(true);
       try {setPassword(await generatePassword(length, selected, native.randomBytes)); setMessage('');}
       catch {setPassword(''); setMessage('パスワードを生成できませんでした。');}
@@ -40,4 +40,9 @@ export function Password() {
   </ScrollView>;
 }
 
-const passwordStyles = StyleSheet.create({options: {gap: 8}, wrap: {flexWrap: 'wrap'}});
+const passwordStyles = StyleSheet.create({
+  options: {flexDirection: 'row', flexWrap: 'wrap', gap: 10},
+  optionItem: {width: '48%'},
+  lengths: {flexDirection: 'row', flexWrap: 'wrap', gap: 8},
+  lengthItem: {width: '22%'},
+});

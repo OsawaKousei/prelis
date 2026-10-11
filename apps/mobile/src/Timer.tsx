@@ -1,7 +1,7 @@
 import React, {useCallback, useEffect, useState} from 'react';
 import {ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
 import {native, parseSounds, type SoundLibrary} from './native';
-import {Button, Section, styles} from './ui';
+import {Button, colors, Section, styles} from './ui';
 
 export function Timer() {
   const [minutes, setMinutes] = useState('25');
@@ -13,6 +13,7 @@ export function Timer() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [retry, setRetry] = useState(0);
+  const [soundOpen, setSoundOpen] = useState(false);
   const completed = remaining === 0;
   const selected = library?.sounds.find(sound => sound.id === library.selectedId);
   useEffect(() => {
@@ -45,11 +46,15 @@ export function Timer() {
     finally {setBusy(false);}
   };
   const seconds = Math.ceil(remaining / 1000);
+  const total = valid ? duration * 60 * 1000 : remaining;
+  const progress = total > 0 ? Math.max(0, Math.min(100, remaining / total * 100)) : 0;
+  const progressWidth = {width: `${progress}%` as `${number}%`};
   return <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
     <Text style={styles.heading}>Timer</Text>
     <Section title="残り時間">
       <Text testID="timer-clock" accessibilityRole="timer" style={[timerStyles.clock, completed && timerStyles.completed]}>{String(Math.floor(seconds / 60)).padStart(2, '0')}:{String(seconds % 60).padStart(2, '0')}</Text>
       <Text style={[styles.muted, timerStyles.center]}>{completed ? '完了 — リセットしてください' : deadline !== null ? '実行中' : '停止中'}</Text>
+      <View accessibilityRole="progressbar" accessibilityLabel="残り時間の割合" accessibilityValue={{min: 0, max: 100, now: Math.round(progress)}} style={timerStyles.progressTrack}><View style={[timerStyles.progressFill, progressWidth]} /></View>
       <Text style={styles.text}>時間（分）</Text>
       <TextInput accessibilityLabel="時間（分）" keyboardType="number-pad" style={styles.input} value={minutes} editable={deadline === null && !completed} onChangeText={value => {
         setMinutes(value);
@@ -58,7 +63,7 @@ export function Timer() {
       }} />
       {!valid && <Text style={styles.error}>1〜180の整数を入力してください。</Text>}
       <View style={styles.row}>
-        <Button label={deadline !== null ? '一時停止' : '開始'} selected disabled={completed || deadline === null && (!valid || !library || busy)} onPress={() => {
+        <Button label={deadline !== null ? '一時停止' : '開始'} variant="primary" disabled={completed || deadline === null && (!valid || !library || busy)} onPress={() => {
           if (deadline !== null) {
             const next = Math.max(0, deadline - Date.now());
             setRemaining(next); setDeadline(null);
@@ -74,25 +79,29 @@ export function Timer() {
       </View>
       <Text style={styles.muted}>アプリを切り替えてもタイマーは動作します。Prelis の終了時にリセットされます。</Text>
     </Section>
-    <Section title={`終了音: ${selected?.name ?? 'なし'}`}>
-      {!library ? <Button label="再読み込み" onPress={() => setRetry(value => value + 1)} /> : <>
+    <Section title="終了音">
+      <Text style={styles.muted}>選択中: {selected?.name ?? 'なし'}</Text>
+      <Button label={soundOpen ? '音声設定を閉じる' : '音声設定を開く'} onPress={() => setSoundOpen(value => !value)} />
+      {!!error && <Text style={styles.error}>{error}</Text>}
+      {soundOpen && (!library ? <Button label="再読み込み" onPress={() => setRetry(value => value + 1)} /> : <>
         <Text style={styles.muted}>音声を選択</Text>
-        <Button label="音声なし" selected={!library.selectedId} disabled={busy || deadline !== null || completed} onPress={() => changeSounds(() => native.selectSound(null))} />
-        {library.sounds.map(sound => <Button key={sound.id} label={sound.name} selected={library.selectedId === sound.id} disabled={busy || deadline !== null || completed} onPress={() => changeSounds(() => native.selectSound(sound.id))} />)}
+        <Button label={`${!library.selectedId ? '✓ ' : ''}音声なし`} variant="choice" selected={!library.selectedId} disabled={busy || deadline !== null || completed} onPress={() => changeSounds(() => native.selectSound(null))} />
+        {library.sounds.map(sound => <Button key={sound.id} label={`${library.selectedId === sound.id ? '✓ ' : ''}${sound.name}`} variant="choice" selected={library.selectedId === sound.id} disabled={busy || deadline !== null || completed} onPress={() => changeSounds(() => native.selectSound(sound.id))} />)}
         <Button label="音声を追加（MP3 / WAV、10 MB 以下）" disabled={busy || deadline !== null || completed} onPress={() => changeSounds(native.pickSound)} />
         <View style={[styles.row, timerStyles.wrap]}>
           <Button label="試聴" disabled={!selected || busy || deadline !== null || completed} onPress={() => {if (selected) native.playSound(selected.id, false).catch(() => setError('音声を再生できませんでした。'));}} />
-          <Button label="選択中の音声を削除" disabled={!selected || busy || deadline !== null || completed} onPress={() => {if (selected) changeSounds(() => native.deleteSound(selected.id));}} />
+          <Button label="選択中の音声を削除" variant="danger" disabled={!selected || busy || deadline !== null || completed} onPress={() => {if (selected) changeSounds(() => native.deleteSound(selected.id));}} />
         </View>
-      </>}
-      {!!error && <Text style={styles.error}>{error}</Text>}
+      </>)}
     </Section>
   </ScrollView>;
 }
 
 const timerStyles = StyleSheet.create({
-  clock: {fontSize: 58, fontWeight: '700', color: '#3557c4', textAlign: 'center'},
-  completed: {color: '#b42318'},
+  clock: {fontSize: 58, fontWeight: '600', letterSpacing: 1, color: colors.ink, textAlign: 'center'},
+  completed: {color: colors.danger},
+  progressTrack: {height: 3, borderRadius: 2, backgroundColor: colors.line, overflow: 'hidden'},
+  progressFill: {height: 3, borderRadius: 2, backgroundColor: colors.accent},
   center: {textAlign: 'center'},
   wrap: {flexWrap: 'wrap'},
 });

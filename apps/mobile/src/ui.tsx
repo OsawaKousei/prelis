@@ -1,32 +1,93 @@
 import React from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
 
-export const colors = {background: '#f7f8fa', ink: '#1d2939', muted: '#667085', line: '#d0d5dd', accent: '#3557c4', pale: '#e8edff', danger: '#b42318'};
+export const colors = {
+  background: '#F8FCFE',
+  surface: '#FFFFFF',
+  ink: '#183446',
+  muted: '#587182',
+  line: '#D5E6EC',
+  accent: '#0B789A',
+  accentSoft: '#E4F7FC',
+  accentLine: '#8BD8EA',
+  danger: '#AC302C',
+};
+
 export const styles = StyleSheet.create({
   screen: {flex: 1, backgroundColor: colors.background},
-  content: {padding: 20, gap: 18, paddingBottom: 40},
-  heading: {fontSize: 30, fontWeight: '700', color: colors.ink},
-  subheading: {fontSize: 18, fontWeight: '700', color: colors.ink},
-  text: {fontSize: 16, color: colors.ink},
-  muted: {fontSize: 14, color: colors.muted},
-  error: {fontSize: 14, color: colors.danger},
+  content: {paddingHorizontal: 24, paddingTop: 30, paddingBottom: 48, gap: 28},
+  heading: {fontSize: 32, lineHeight: 40, fontWeight: '600', letterSpacing: 0.2, color: colors.ink},
+  subheading: {fontSize: 20, lineHeight: 28, fontWeight: '600', color: colors.ink},
+  text: {fontSize: 16, lineHeight: 24, color: colors.ink},
+  muted: {fontSize: 14, lineHeight: 21, color: colors.muted},
+  error: {fontSize: 14, lineHeight: 21, color: colors.danger},
   row: {flexDirection: 'row', alignItems: 'center', gap: 10},
-  card: {backgroundColor: '#fff', borderRadius: 16, padding: 16, gap: 12, borderWidth: 1, borderColor: '#eaecf0'},
-  input: {borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 12, color: colors.ink, fontSize: 16, backgroundColor: '#fff'},
+  section: {paddingTop: 22, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line, gap: 14},
+  input: {minHeight: 52, borderWidth: 1, borderColor: colors.line, borderRadius: 9, paddingHorizontal: 14, paddingVertical: 10, color: colors.ink, fontSize: 16, backgroundColor: colors.surface},
 });
 
-export function Button({label, onPress, disabled, selected, testID}: {label: string; onPress: () => void; disabled?: boolean; selected?: boolean; testID?: string}) {
-  return <Pressable testID={testID} accessibilityRole="button" accessibilityLabel={label} accessibilityState={{disabled: !!disabled, selected: !!selected}} disabled={disabled} onPress={onPress} style={[buttonStyles.button, selected && buttonStyles.selected, disabled && buttonStyles.disabled]}>
-    <Text style={[buttonStyles.label, selected && buttonStyles.selectedLabel]}>{label}</Text>
+type ButtonVariant = 'secondary' | 'primary' | 'choice' | 'tab' | 'launch' | 'danger';
+type ButtonProps = {
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  selected?: boolean;
+  testID?: string;
+  variant?: ButtonVariant;
+};
+
+export function Button({label, onPress, disabled, selected, testID, variant = 'secondary'}: ButtonProps) {
+  return <Pressable
+    testID={testID}
+    accessibilityRole="button"
+    accessibilityLabel={label}
+    accessibilityState={{disabled: !!disabled, selected: !!selected}}
+    disabled={disabled}
+    onPress={onPress}
+    style={({pressed}) => [
+      buttonStyles.base,
+      variant === 'primary' && buttonStyles.primary,
+      variant === 'choice' && buttonStyles.choice,
+      variant === 'tab' && buttonStyles.tab,
+      variant === 'launch' && buttonStyles.launch,
+      variant === 'danger' && buttonStyles.danger,
+      selected && variant === 'choice' && buttonStyles.choiceSelected,
+      selected && variant === 'tab' && buttonStyles.tabSelected,
+      disabled && buttonStyles.disabled,
+      pressed && buttonStyles.pressed,
+    ]}>
+    <Text style={[
+      buttonStyles.label,
+      variant === 'primary' && buttonStyles.primaryLabel,
+      variant === 'tab' && buttonStyles.tabLabel,
+      variant === 'launch' && buttonStyles.launchLabel,
+      variant === 'danger' && buttonStyles.dangerLabel,
+      selected && (variant === 'choice' || variant === 'tab') && buttonStyles.selectedLabel,
+    ]}>{label}</Text>
+    {variant === 'launch' && <Text aria-hidden style={buttonStyles.arrow}>›</Text>}
   </Pressable>;
 }
+
 const buttonStyles = StyleSheet.create({
-  button: {minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 14, borderRadius: 10, backgroundColor: '#fff', borderWidth: 1, borderColor: colors.line},
-  selected: {backgroundColor: colors.accent, borderColor: colors.accent},
-  disabled: {opacity: 0.45},
-  label: {fontSize: 15, fontWeight: '600', color: colors.ink},
-  selectedLabel: {color: '#fff'},
+  base: {minHeight: 48, minWidth: 44, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 9, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line},
+  primary: {backgroundColor: colors.accentSoft, borderColor: colors.accentLine, minHeight: 52},
+  choice: {backgroundColor: colors.surface, borderColor: colors.line},
+  choiceSelected: {backgroundColor: colors.accentSoft, borderColor: colors.accentLine},
+  tab: {minHeight: 52, minWidth: 0, paddingHorizontal: 8, paddingVertical: 8, borderWidth: 0, borderBottomWidth: 2, borderBottomColor: 'transparent', borderRadius: 0, backgroundColor: 'transparent'},
+  tabSelected: {borderBottomColor: colors.accent},
+  launch: {minHeight: 76, flexDirection: 'row', justifyContent: 'space-between', borderWidth: 0, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line, borderRadius: 0, backgroundColor: 'transparent', paddingHorizontal: 2},
+  danger: {borderColor: '#E9C7C5', backgroundColor: '#FFF8F7'},
+  disabled: {opacity: 0.46},
+  pressed: {opacity: 0.68},
+  label: {fontSize: 15, lineHeight: 21, fontWeight: '600', color: colors.ink, textAlign: 'center'},
+  primaryLabel: {fontSize: 16, color: '#075A76'},
+  tabLabel: {fontSize: 13, color: colors.muted},
+  launchLabel: {fontSize: 20, fontWeight: '600'},
+  dangerLabel: {color: colors.danger},
+  selectedLabel: {color: colors.accent},
+  arrow: {fontSize: 30, lineHeight: 32, color: colors.accent, fontWeight: '300'},
 });
+
 export function Section({title, children}: {title: string; children: React.ReactNode}) {
-  return <View style={styles.card}><Text style={styles.subheading}>{title}</Text>{children}</View>;
+  return <View style={styles.section}><Text style={styles.subheading}>{title}</Text>{children}</View>;
 }

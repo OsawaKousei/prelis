@@ -20,6 +20,7 @@
 - [デスクトップの開発手順](docs/development/desktop.md)
 - [Android の開発手順](docs/development/android.md)
 - [ワークスペースの構成](docs/architecture.md)
+- [デザインガイドライン](docs/design/guidelines.md)
 - [ドキュメント索引](docs/README.md)
 
 AI エージェント向けの入口は [AGENTS.md](AGENTS.md) です。

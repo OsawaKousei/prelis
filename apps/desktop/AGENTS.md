@@ -5,6 +5,7 @@
 
 - [共通の開発規則](../../docs/development/rules.md)
 - [構成と責務の境界](../../docs/architecture.md)
+- [デザインガイドライン](../../docs/design/guidelines.md)
 - [デスクトップの環境・起動・ビルド手順](../../docs/development/desktop.md)
 - [変更内容に応じた検証](../../docs/development/workflow.md)
 - [機能仕様の索引](../../docs/specs/README.md)

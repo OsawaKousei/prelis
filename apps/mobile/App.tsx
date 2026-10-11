@@ -1,5 +1,5 @@
 import React, {useCallback, useState} from 'react';
-import {Alert, BackHandler, StatusBar, StyleSheet, Text, View} from 'react-native';
+import {Alert, BackHandler, Pressable, StatusBar, StyleSheet, Text, View} from 'react-native';
 import {SafeAreaProvider, SafeAreaView} from 'react-native-safe-area-context';
 import {Diary} from './src/Diary';
 import {Password} from './src/Password';
@@ -37,20 +37,23 @@ function App() {
   }, [page, navigate]);
   return <SafeAreaProvider><StatusBar barStyle="dark-content" />
     <SafeAreaView style={styles.screen}>
-      <View style={appStyles.header}><Text style={appStyles.brand} onPress={() => navigate('home')}>prelis.</Text><Text style={styles.muted}>{page === 'home' ? 'アプリを選択' : pages.find(item => item.id === page)?.label}</Text></View>
-      {page === 'home' && <View style={styles.content}><Text style={styles.heading}>アプリを選択</Text>{pages.map(item => <Button key={item.id} label={item.label} onPress={() => navigate(item.id)} />)}</View>}
+      <View style={appStyles.header}><Pressable accessibilityRole="button" accessibilityLabel="ホームへ" onPress={() => navigate('home')}><Text style={appStyles.brand}>prelis<Text style={appStyles.brandDot}>.</Text></Text></Pressable><Text style={appStyles.location}>{page === 'home' ? 'ワークスペース' : pages.find(item => item.id === page)?.label}</Text></View>
+      {page === 'home' && <View style={styles.content}><View style={appStyles.homeIntro}><Text style={styles.heading}>アプリを選択</Text><Text style={styles.muted}>使いたい機能を選んでください。</Text></View><View>{pages.map(item => <Button key={item.id} label={item.label} variant="launch" onPress={() => navigate(item.id)} />)}</View></View>}
       {page === 'diary' && <Diary onState={onDiaryState} />}
       <View style={page === 'timer' ? appStyles.timerVisible : appStyles.timerHidden}><Timer /></View>
       {page === 'password' && <Password />}
-      <View style={appStyles.tabs}><Button label="ホーム" selected={page === 'home'} onPress={() => navigate('home')} />{pages.map(item => <Button key={item.id} label={item.label} selected={page === item.id} onPress={() => navigate(item.id)} />)}</View>
+      <View style={appStyles.tabs}><Button label="ホーム" variant="tab" selected={page === 'home'} onPress={() => navigate('home')} />{pages.map(item => <Button key={item.id} label={item.label} variant="tab" selected={page === item.id} onPress={() => navigate(item.id)} />)}</View>
     </SafeAreaView>
   </SafeAreaProvider>;
 }
 const appStyles = StyleSheet.create({
-  header: {paddingHorizontal: 20, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#eaecf0', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
-  brand: {fontSize: 26, color: colors.accent, fontWeight: '800'},
+  header: {paddingHorizontal: 24, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
+  brand: {fontSize: 25, letterSpacing: -0.5, color: colors.ink, fontWeight: '700'},
+  brandDot: {color: colors.accent},
+  location: {fontSize: 12, letterSpacing: 1.2, color: colors.muted},
+  homeIntro: {gap: 9, paddingTop: 16, paddingBottom: 14},
   timerVisible: {flex: 1},
   timerHidden: {display: 'none'},
-  tabs: {flexDirection: 'row', justifyContent: 'space-around', padding: 6, borderTopWidth: 1, borderTopColor: '#eaecf0'},
+  tabs: {flexDirection: 'row', justifyContent: 'space-around', paddingHorizontal: 10, paddingTop: 5, backgroundColor: colors.surface, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line},
 });
 export default App;

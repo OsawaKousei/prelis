@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useState} from 'react';
-import {Alert, ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
+import {Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View} from 'react-native';
 import {isDiaryDate, localDate, shiftDate} from '@prelis/core';
 import {native} from './native';
 import {Button, colors, Section, styles} from './ui';
@@ -8,6 +8,8 @@ type Props = {onState: (dirty: boolean, saving: boolean) => void};
 const heading = (date: string) => `${Number(date.slice(0, 4))}年${Number(date.slice(5, 7))}月${Number(date.slice(8, 10))}日`;
 
 export function Diary({onState}: Props) {
+  const {width: screenWidth} = useWindowDimensions();
+  const calendarWidth = {width: Math.max(308, screenWidth - 48)};
   const [date, setDate] = useState(localDate);
   const [month, setMonth] = useState(date.slice(0, 7));
   const [content, setContent] = useState('');
@@ -55,7 +57,7 @@ export function Diary({onState}: Props) {
     {loading ? <Text style={styles.muted}>日記を読み込んでいます…</Text> : error && !dirty ? <Section title="日記を開けませんでした"><Text style={styles.error}>{error}</Text><Button label="もう一度読み込む" onPress={() => setRetry(value => value + 1)} /></Section> : <Section title="日記の本文">
       <TextInput testID="diary-content" accessibilityLabel="日記の本文" style={[styles.input, diaryStyles.editor]} multiline value={content} editable={!saving} onChangeText={setContent} />
       <Text style={styles.muted}>{[...content].length.toLocaleString()} 文字　{saving ? '保存中…' : dirty ? '未保存' : everSaved ? '保存済み' : '変更なし'}</Text>
-      <Button label={saving ? '保存中…' : '保存'} disabled={saving || !dirty} selected onPress={async () => {
+      <Button label={saving ? '保存中…' : '保存'} disabled={saving || !dirty} variant="primary" onPress={async () => {
         const text = content;
         setSaving(true); setError('');
         try {await native.saveDiary(date, text); setSaved(text); setEverSaved(true);}
@@ -67,10 +69,15 @@ export function Diary({onState}: Props) {
     </Section>}
     <Section title={`${Number(month.slice(0, 4))}年${Number(month.slice(5, 7))}月`}>
       <View style={styles.row}><Button label="前の月" onPress={() => shiftMonth(-1)} /><Button label="次の月" onPress={() => shiftMonth(1)} /></View>
-      <View style={diaryStyles.calendar}>
-        {['月','火','水','木','金','土','日'].map(day => <Text key={day} style={diaryStyles.weekday}>{day}</Text>)}
-        {days.map(day => <View key={day} style={diaryStyles.day}>{day.slice(0, 7) === month ? <Button label={String(Number(day.slice(-2)))} selected={date === day} disabled={saving || loading || !!error && !dirty} onPress={() => move(day)} /> : null}</View>)}
-      </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <View style={[diaryStyles.calendar, calendarWidth]}>
+          {['月','火','水','木','金','土','日'].map(day => <Text key={day} style={diaryStyles.weekday}>{day}</Text>)}
+          {days.map(day => <View key={day} style={diaryStyles.day}>{day.slice(0, 7) === month ?
+            <Pressable accessibilityRole="button" accessibilityLabel={`${day}${day === localDate() ? ' 今日' : ''}の日記`} accessibilityState={{selected: date === day, disabled: saving || loading || !!error && !dirty}} disabled={saving || loading || !!error && !dirty} onPress={() => move(day)} style={({pressed}) => [diaryStyles.dayButton, date === day && diaryStyles.daySelected, day === localDate() && diaryStyles.dayToday, pressed && diaryStyles.dayPressed]}>
+              <Text style={[diaryStyles.dayLabel, date === day && diaryStyles.daySelectedLabel]}>{Number(day.slice(-2))}</Text>
+            </Pressable> : null}</View>)}
+        </View>
+      </ScrollView>
     </Section>
   </ScrollView>;
 }
@@ -79,6 +86,12 @@ const diaryStyles = StyleSheet.create({
   wrap: {flexWrap: 'wrap'},
   editor: {minHeight: 220, textAlignVertical: 'top'},
   calendar: {flexDirection: 'row', flexWrap: 'wrap'},
-  weekday: {width: '14.28%', textAlign: 'center', color: colors.muted},
-  day: {width: '14.28%', padding: 2},
+  weekday: {width: '14.2857%', textAlign: 'center', color: colors.muted, fontSize: 12, paddingBottom: 10},
+  day: {width: '14.2857%', alignItems: 'center', paddingVertical: 2},
+  dayButton: {width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 22},
+  daySelected: {backgroundColor: colors.accentSoft},
+  dayToday: {borderWidth: 1, borderColor: colors.accentLine},
+  dayPressed: {opacity: 0.65},
+  dayLabel: {fontSize: 15, color: colors.ink},
+  daySelectedLabel: {color: colors.accent, fontWeight: '700'},
 });
