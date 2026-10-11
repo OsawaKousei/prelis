@@ -84,6 +84,10 @@ chmod +x PrelisDesktop_<version>_amd64.AppImage
 
 ## 注意
 
+- AppImage には `bundleMediaFramework: true`（[tauri.conf.json](../../apps/desktop/src-tauri/tauri.conf.json)）で GStreamer を同梱しています。
+  無効だと `GStreamer element appsink not found` が出て、WebView がフリーズします。
+  同梱にはビルド機に GStreamer（`libgstreamer1.0-dev`、`gstreamer1.0-plugins-base/good/bad` など）が必要です。
+
 - 現状はコード署名をしていません。署名を導入する場合は Tauri の署名設定を追加し、本書を更新してください。
 - arm64 向けは別途 arm64 環境（または対応するクロスビルド環境）でのビルド・検証が必要で、未検証です。
 - 成果物は `target/` 配下で Git の管理対象外です。コミットしないでください。
