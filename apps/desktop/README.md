@@ -1,7 +1,10 @@
 # Prelis Desktop
 
-Tauri 2 + React + Vite のデスクトップアプリです。
+Tauri + React + Vite のデスクトップアプリです。
+UI は `src/`、ネイティブ処理とアプリ設定は `src-tauri/` に配置しています。
+共通処理は `@prelis/core` を利用します。
 
-セットアップとコマンドは[ルートの README](../../README.md)を参照してください。
-リポジトリのルートで `npm run dev:desktop` を実行すると起動します。
-共有ロジックは `@prelis/core` から import し、開発中はソースの変更が反映されます。
+- [構成と依存関係](../../docs/architecture.md)
+- [セットアップ・起動・ビルド](../../docs/development/desktop.md)
+- [共通の作業・検証手順](../../docs/development/workflow.md)
+- [AI エージェント向け案内](AGENTS.md)

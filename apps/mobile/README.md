@@ -1,10 +1,10 @@
 # Prelis Mobile
 
-React Native 0.87.1 のモバイルアプリです。現在は Android の開発環境を対象としています。
+React Native のモバイルアプリです。
+UI は `App.tsx`、Android のネイティブプロジェクトは `android/` に配置しています。
+共通処理は `@prelis/core` を利用します。iOS 対応は保留中です。
 
-必要な SDK・JDK と起動手順は[ルートの README](../../README.md)を参照してください。
-リポジトリのルートで `npm run start:mobile` を起動し、別のターミナルで
-`npm run android -- --no-packager` を実行します。
-共有ロジックは `@prelis/core` から import し、Metro がソースを直接取り込みます。
-
-iOS のネイティブ設定・ビルド検証は保留中です。
+- [構成と依存関係](../../docs/architecture.md)
+- [Android のセットアップ・起動・ビルド](../../docs/development/android.md)
+- [共通の作業・検証手順](../../docs/development/workflow.md)
+- [AI エージェント向け案内](AGENTS.md)
