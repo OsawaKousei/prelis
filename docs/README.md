@@ -11,6 +11,7 @@ Prelis の構成説明、仕様、開発手順、環境メモを管理します�
 | 共通セットアップや変更後の検証を行う | [作業・検証手順](development/workflow.md) |
 | デスクトップを開発する | [デスクトップ開発](development/desktop.md) |
 | Ubuntu 向けパッケージをリリースする | [リリース手順](development/release.md) |
+| Windows 11 向けパッケージをビルドする | [Windows ビルド手順](development/windows.md) |
 | Android を開発する | [Android 開発](development/android.md) |
 | この Linux マシンの設定・確認履歴を調べる | [ローカル環境メモ](environment/local-linux.md) |
 | 機能の仕様を調べる・追加する | [仕様書索引](specs/README.md) |

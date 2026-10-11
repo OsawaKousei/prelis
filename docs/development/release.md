@@ -64,7 +64,7 @@ Ubuntu 実機（可能ならクリーンな環境）で次を確認します。
 ```sh
 # deb
 sudo apt install ./PrelisDesktop_<version>_amd64.deb
-desktop   # またはアプリランチャーの「PrelisDesktop」から起動（実行ファイルは /usr/bin/desktop）
+PrelisDesktop   # またはアプリランチャーの「PrelisDesktop」から起動
 
 # AppImage
 chmod +x PrelisDesktop_<version>_amd64.AppImage
@@ -72,6 +72,7 @@ chmod +x PrelisDesktop_<version>_amd64.AppImage
 ```
 
 - アプリが起動し、Diary・Timer・Password の主要操作ができること。
+- アプリランチャーと起動中のウィンドウに Android 版と共通のアイコンが表示されること。Linux の実行ファイル名、アイコン名、`StartupWMClass` は `PrelisDesktop` に揃えています。ファイルマネージャー上の deb ファイルは通常、パッケージ形式の汎用アイコンになります。AppImage ファイルのアイコン表示とランチャーへの登録には、ファイルマネージャーの対応や AppImage のデスクトップ統合が必要です。
 - deb は `sudo apt remove prelis-desktop` で削除できること。
 - Ubuntu 22.04 以降では AppImage の実行に FUSE 2（`libfuse2`）が必要な場合があります。
   無い環境では `sudo apt install libfuse2`、または `--appimage-extract-and-run` を付けて実行します。
@@ -84,7 +85,11 @@ chmod +x PrelisDesktop_<version>_amd64.AppImage
 
 ## 注意
 
+- AppImage には `bundleMediaFramework: true`（[tauri.conf.json](../../apps/desktop/src-tauri/tauri.conf.json)）で GStreamer を同梱しています。
+  無効だと `GStreamer element appsink not found` が出て、WebView がフリーズします。
+  同梱にはビルド機に GStreamer（`libgstreamer1.0-dev`、`gstreamer1.0-plugins-base/good/bad` など）が必要です。
+
 - 現状はコード署名をしていません。署名を導入する場合は Tauri の署名設定を追加し、本書を更新してください。
 - arm64 向けは別途 arm64 環境（または対応するクロスビルド環境）でのビルド・検証が必要で、未検証です。
 - 成果物は `target/` 配下で Git の管理対象外です。コミットしないでください。
-- Windows・macOS のパッケージ作成手順は未整備です。
+- Windows 11 向けのパッケージ作成手順は [Windows ビルド手順](windows.md) を参照してください。macOS 向けは未整備です。

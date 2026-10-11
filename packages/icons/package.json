@@ -15,6 +15,7 @@
   "scripts": {
     "convert": "node scripts/convert-svg.mjs",
     "launcher:android": "node scripts/generate-android-launcher.mjs",
+    "launcher:desktop": "node scripts/generate-desktop-icons.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
