@@ -63,6 +63,7 @@ npm run build:desktop
 | アプリ名・識別子・ウィンドウ・ビルドフック・frontendDist | [tauri.conf.json](../../apps/desktop/src-tauri/tauri.conf.json) |
 | ネイティブ権限 | [capabilities/default.json](../../apps/desktop/src-tauri/capabilities/default.json) |
 | Rust の依存と release 設定 | [Cargo.toml](../../apps/desktop/src-tauri/Cargo.toml) |
+| Windows・Ubuntu のアプリアイコン | [共有アイコンの生成手順](../../packages/icons/README.md) |
 | 開発サーバー・ポート・HMR | [vite.config.ts](../../apps/desktop/vite.config.ts) |
 | UI の型チェック | [tsconfig.json](../../apps/desktop/tsconfig.json) |
 | Vite 設定の型チェック | [tsconfig.node.json](../../apps/desktop/tsconfig.node.json) |

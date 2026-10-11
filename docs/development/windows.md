@@ -23,6 +23,8 @@ Windows の PowerShell では `npm.ps1` が実行ポリシーで止まる場合�
 
 Windows 側の出力は `Dev/prelis-remote/windows-artifacts/`、Ubuntu 側の出力はルートの `windows-artifacts/` です。NSIS インストーラーは `PrelisDesktop_<version>_x64-setup.exe`、実行ファイルは `desktop.exe` です。インストーラーの形式は [Tauri の Windows Installer](https://v2.tauri.app/distribute/windows-installer/) を参照してください。
 
+Windows 向けの頒布には NSIS インストーラーの `*-setup.exe` だけを渡せます。`desktop.exe` はビルド確認用の成果物で、頒布する必要はありません。`SHA256SUMS` は利用者へハッシュ値を伝える場合に添付します。Ubuntu 向けには Windows のインストーラーではなく、[Ubuntu 版リリース手順](release.md)で作成する deb または AppImage を頒布します。
+
 同期状態の確認には次を使います。
 
 ```sh
