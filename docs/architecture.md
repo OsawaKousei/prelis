@@ -3,7 +3,7 @@
 ## 開発対象と現在の状態
 
 Prelis は npm workspaces で管理するモノレポです。現在はデスクトップと Android の開発基盤があり、
-両アプリで共有関数を呼ぶ挨拶画面を実装しています。製品機能の仕様はまだ文書化されていません。
+Diary・Timer・Password を実装しています。機能仕様は [仕様書](specs/desktop-apps.md) に記載しています。
 iOS のプロジェクトと起動コマンドは存在しますが、対応・ビルド検証は保留中です。
 
 ## 機能と UI の共有方針
@@ -23,7 +23,7 @@ iOS のプロジェクトと起動コマンドは存在しますが、対応・�
 | `apps/desktop/src/` | React によるデスクトップ UI |
 | `apps/desktop/src-tauri/` | Tauri の起動、Rust 処理、ウィンドウ・権限・配布設定 |
 | `apps/desktop/vite.config.ts` | Web フロントエンドの開発サーバーとバンドル設定 |
-| `apps/mobile/App.tsx` | React Native の UI。`index.js` から登録 |
+| `apps/mobile/App.tsx`・`src/` | React Native の UI。`index.js` から登録 |
 | `apps/mobile/metro.config.js` | モノレポ内のソース監視・JavaScript の解決設定 |
 | `apps/mobile/android/` | Android の Gradle 設定、Kotlin の起動処理、リソース |
 | `apps/mobile/ios/` | iOS のネイティブプロジェクト（対応保留） |

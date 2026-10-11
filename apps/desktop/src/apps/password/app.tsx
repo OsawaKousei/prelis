@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { generatePassword } from './password';
 import type { CharacterType, PasswordLength } from './password';
 import { PasswordView } from './password-view';
@@ -14,8 +14,10 @@ export const PasswordApp = () => {
   const [length, setLength] = useState<PasswordLength>(16);
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
+  const generation = useRef(0);
 
   const clearResult = () => {
+    generation.current += 1;
     setPassword('');
     setMessage('');
   };
@@ -38,11 +40,15 @@ export const PasswordApp = () => {
         setLength(next);
         clearResult();
       }}
-      onGenerate={() => {
+      onGenerate={async () => {
+        const current = ++generation.current;
         try {
-          setPassword(generatePassword(length, selectedTypes));
+          const result = await generatePassword(length, selectedTypes);
+          if (current !== generation.current) return;
+          setPassword(result);
           setMessage('');
         } catch {
+          if (current !== generation.current) return;
           setPassword('');
           setMessage('パスワードを生成できませんでした。');
         }

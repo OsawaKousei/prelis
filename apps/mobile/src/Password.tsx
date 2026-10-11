@@ -1,0 +1,43 @@
+import React, {useState} from 'react';
+import {ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
+import {generatePassword, type CharacterType, type PasswordLength} from '@prelis/core';
+import {native} from './native';
+import {Button, Section, styles} from './ui';
+
+const types: {key: CharacterType; label: string}[] = [
+  {key: 'uppercase', label: '大文字 A–Z'}, {key: 'lowercase', label: '小文字 a–z'},
+  {key: 'numbers', label: '数字 0–9'}, {key: 'symbols', label: '記号 ! @ # …'},
+];
+const lengths: PasswordLength[] = [4, 8, 12, 16];
+
+export function Password() {
+  const [selected, setSelected] = useState<CharacterType[]>(types.map(type => type.key));
+  const [length, setLength] = useState<PasswordLength>(16);
+  const [password, setPassword] = useState('');
+  const [message, setMessage] = useState('選んだ文字種をそれぞれ1文字以上含めます。');
+  const [busy, setBusy] = useState(false);
+  const clear = () => {setPassword(''); setMessage('選んだ文字種をそれぞれ1文字以上含めます。');};
+  return <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <Text style={styles.heading}>パスワード生成</Text>
+    <Section title="使用する文字"><View style={passwordStyles.options}>{types.map(type => <Button key={type.key} label={`${selected.includes(type.key) ? '☑' : '☐'} ${type.label}`} selected={selected.includes(type.key)} disabled={busy} onPress={() => {setSelected(current => current.includes(type.key) ? current.filter(item => item !== type.key) : [...current, type.key]); clear();}} />)}</View></Section>
+    <Section title="文字数"><View style={[styles.row, passwordStyles.wrap]}>{lengths.map(value => <Button key={value} label={`${value}文字`} selected={length === value} disabled={busy} onPress={() => {setLength(value); clear();}} />)}</View></Section>
+    {length <= 8 && <Text style={styles.error}>{length}文字のパスワードは推測されやすいため、利用先が許すなら16文字を選んでください。</Text>}
+    {selected.length === 0 && <Text style={styles.error}>文字種を1つ以上選択してください。</Text>}
+    <Button label={busy ? '生成中…' : 'パスワードを生成'} disabled={selected.length === 0 || busy} selected onPress={async () => {
+      setBusy(true);
+      try {setPassword(await generatePassword(length, selected, native.randomBytes)); setMessage('');}
+      catch {setPassword(''); setMessage('パスワードを生成できませんでした。');}
+      finally {setBusy(false);}
+    }} />
+    <Section title="生成したパスワード">
+      <TextInput accessibilityLabel="生成したパスワード" style={styles.input} value={password} placeholder="未生成" editable={false} selectTextOnFocus />
+      <Button label="コピー" disabled={!password} onPress={async () => {
+        try {await native.copyText(password); setMessage('コピーしました。');}
+        catch {setMessage('コピーできませんでした。パスワードを選択してコピーしてください。');}
+      }} />
+      <Text style={styles.muted}>{message}</Text>
+    </Section>
+  </ScrollView>;
+}
+
+const passwordStyles = StyleSheet.create({options: {gap: 8}, wrap: {flexWrap: 'wrap'}});

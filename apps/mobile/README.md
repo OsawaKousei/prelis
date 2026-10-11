@@ -1,7 +1,7 @@
 # Prelis Mobile
 
 React Native のモバイルアプリです。
-UI は `App.tsx`、Android のネイティブプロジェクトは `android/` に配置しています。
+画面の切り替えは `App.tsx`、各機能の UI は `src/`、Android のネイティブ処理は `android/` に配置しています。
 共通処理は `@prelis/core` を利用します。iOS 対応は保留中です。
 
 - [構成と依存関係](../../docs/architecture.md)
