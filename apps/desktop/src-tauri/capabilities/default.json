@@ -5,6 +5,25 @@
   "windows": ["main"],
   "permissions": [
     "core:default",
-    "opener:default"
+    "opener:default",
+    {
+      "identifier": "fs:allow-exists",
+      "allow": [{ "path": "$APPDATA/diary/*.txt" }, { "path": "$APPDATA/timer/sounds.json" }]
+    },
+    {
+      "identifier": "fs:allow-mkdir",
+      "allow": [{ "path": "$APPDATA/diary" }, { "path": "$APPDATA/timer" }, { "path": "$APPDATA/timer/sounds" }]
+    },
+    {
+      "identifier": "fs:allow-read-text-file",
+      "allow": [{ "path": "$APPDATA/diary/*.txt" }, { "path": "$APPDATA/timer/sounds.json" }]
+    },
+    {
+      "identifier": "fs:allow-write-text-file",
+      "allow": [{ "path": "$APPDATA/diary/*.txt" }, { "path": "$APPDATA/timer/sounds.json" }]
+    },
+    { "identifier": "fs:allow-read-file", "allow": [{ "path": "$APPDATA/timer/sounds/*" }] },
+    { "identifier": "fs:allow-write-file", "allow": [{ "path": "$APPDATA/timer/sounds/*" }] },
+    { "identifier": "fs:allow-remove", "allow": [{ "path": "$APPDATA/timer/sounds/*" }] }
   ]
 }

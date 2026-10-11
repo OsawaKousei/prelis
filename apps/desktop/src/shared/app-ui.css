@@ -1,0 +1,67 @@
+.page-intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 45px;
+}
+.page-intro h1 {
+  font-size: 44px;
+  line-height: 1.35;
+  letter-spacing: -1.8px;
+  margin: 0;
+  font-weight: 450;
+}
+.app-emblem {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #80aec7;
+  background: linear-gradient(135deg, #f0f8fc, #f9fcff);
+  border-radius: 19px;
+  border: 1px solid #e7f1f7;
+  transform: rotate(-8deg);
+  margin-right: 10px;
+}
+.app-emblem svg {
+  transform: rotate(8deg);
+}
+.primary-button {
+  background: linear-gradient(180deg, #e7f6fe, #d8eefb);
+  border-color: #bcdff0;
+  color: #256f99;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 9px 20px;
+}
+.primary-button:hover:not(:disabled) {
+  background: #cdeafb;
+  border-color: #90c5e0;
+}
+.error-message {
+  font-size: 12px;
+  color: #a13f42;
+  padding: 14px;
+  background: #fff4f3;
+  border-radius: 6px;
+  margin-top: 12px;
+}
+@media (max-width: 1100px) {
+  .app-emblem {
+    display: none;
+  }
+}
+@media (max-width: 860px) {
+  .page-intro {
+    margin-bottom: 32px;
+  }
+}
+@media (max-width: 600px) {
+  .page-intro h1 {
+    font-size: 38px;
+  }
+  .primary-button {
+    padding: 9px 13px;
+  }
+}

@@ -15,7 +15,9 @@
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-opener": "^2",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "@tanstack/react-query": "^5.104.0",
+    "@tauri-apps/plugin-fs": "^2.5.2"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
