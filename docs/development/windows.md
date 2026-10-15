@@ -1,5 +1,13 @@
 # Windows 11 向けデスクトップビルド
 
+Mutagen の同期セッションだけを作成・確認する場合は、Ubuntu のリポジトリルートから次を実行します。
+
+```sh
+./scripts/create-windows-sync.sh
+```
+
+スクリプトは Windows 側の同期先ディレクトリを準備し、同名のセッションが存在する場合は再利用します。同期元・同期先が想定と異なる場合はエラーになります。同期完了まで待機した後、詳細なセッション状態と Windows 側の `package.json` を表示します。
+
 Ubuntu のリポジトリルートから次のコマンドを実行します。
 
 ```sh
@@ -17,9 +25,26 @@ Ubuntu のリポジトリルートから次のコマンドを実行します。
 
 Windows の PowerShell では `npm.ps1` が実行ポリシーで止まる場合があるため、[ビルドスクリプト](../../scripts/build-windows.ps1)は `npm.cmd` を使います。Windows SSH の既定シェルが日本語の CP932 でエラーを返す環境では、[Mutagen 用 SSH ラッパー](../../scripts/mutagen-ssh/ssh)がエージェント検出時に Mutagen が認識できる英語エラーを返します。このラッパーはこのリポジトリ専用の Mutagen デーモンにだけ適用されます。
 
+## Windows SSH で Tauri CLI を直接実行する場合
+
+この環境の Windows SSH セッションでは、`npm ci` が作る `node_modules/@prelis/core` と `node_modules/@prelis/icons` の junction を辿れず、型チェックで `TS2307` が発生します。`npm ci` の後にこの2つのリンクを実ディレクトリへ置き換えてから、Tauri CLI を実行します。`rmdir` はリンクだけを削除し、`packages/` の元ファイルは削除しません。
+
+```cmd
+cd C:\Users\builduser\Dev\prelis-remote
+npm.cmd ci
+rmdir node_modules\@prelis\core
+rmdir node_modules\@prelis\icons
+xcopy packages\core node_modules\@prelis\core /E /I /H /Y
+xcopy packages\icons node_modules\@prelis\icons /E /I /H /Y
+cd apps\desktop
+npx.cmd --no-install tauri build --bundles nsis
+```
+
+`npm ci` を再実行すると workspace リンクが再作成されるため、コピーも再実行します。Linux 側から `./scripts/build-windows.sh` を使う場合は、Windows 側のビルドスクリプトがリンクの置き換えを行います。
+
 ## 同期と成果物
 
-送信元は Ubuntu のリポジトリ、送信先は `builduser@192.168.1.10:Dev/prelis-remote` です。同期モードは `one-way-safe` です。Git 管理情報、依存やビルドの生成物、`.env`、ローカル設定などは同期しません。Windows 側の `node_modules` と `target` は Windows で生成して再利用します。
+送信元は Ubuntu のリポジトリ、送信先は `builduser@192.168.1.10:Dev/prelis-remote`（`C:\Users\builduser\Dev\prelis-remote`）です。同期モードは `one-way-safe` です。Git 管理情報、依存やビルドの生成物、`.env`、ローカル設定などは同期しません。Windows 側の `node_modules` と `target` は Windows で生成して再利用します。
 
 Windows 側の出力は `Dev/prelis-remote/windows-artifacts/`、Ubuntu 側の出力はルートの `windows-artifacts/` です。NSIS インストーラーは `PrelisDesktop_<version>_x64-setup.exe`、実行ファイルは `desktop.exe` です。インストーラーの形式は [Tauri の Windows Installer](https://v2.tauri.app/distribute/windows-installer/) を参照してください。
 

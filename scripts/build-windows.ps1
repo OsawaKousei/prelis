@@ -17,6 +17,23 @@ if (-not (Get-Command cargo.exe -ErrorAction SilentlyContinue)) {
 & npm.cmd ci --no-audit --no-fund
 if ($LASTEXITCODE -ne 0) { throw "npm ci failed ($LASTEXITCODE)." }
 
+# Windows SSH sessions on this host cannot traverse npm's workspace junctions.
+# Replace only the desktop build's two workspace links with local copies.
+foreach ($name in @('core', 'icons')) {
+    $source = Join-Path $repoRoot "packages/$name"
+    $destination = Join-Path $repoRoot "node_modules/@prelis/$name"
+    $link = Get-Item -LiteralPath $destination -Force
+    if ($link.LinkType -notin @('Junction', 'SymbolicLink')) {
+        throw "Expected an npm workspace link at $destination."
+    }
+    & cmd.exe /d /c "rmdir `"$destination`""
+    if ($LASTEXITCODE -ne 0) { throw "Could not remove workspace link $destination ($LASTEXITCODE)." }
+    Copy-Item -LiteralPath $source -Destination $destination -Recurse -Force
+    if (-not (Test-Path -LiteralPath (Join-Path $destination 'package.json'))) {
+        throw "Workspace copy is incomplete: $destination"
+    }
+}
+
 & npm.cmd run build:desktop -- --bundles nsis
 if ($LASTEXITCODE -ne 0) { throw "Tauri build failed ($LASTEXITCODE)." }
 
