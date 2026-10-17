@@ -93,7 +93,7 @@ Tauri はポート 1420 の画面を読み込みます。
 
 Metro が JavaScript を変換し、Gradle が Android アプリをビルドします。
 通常の debug APK は起動中の Metro（ポート 8081）から JavaScript を読み込みます。
-[android-gradle.mjs](../scripts/android-gradle.mjs) は `apps/mobile/android/` を作業ディレクトリとして
+[android-gradle.mjs](../scripts/android/android-gradle.mjs) は `apps/mobile/android/` を作業ディレクトリとして
 同梱の Gradle wrapper を呼び出します。
 
 モノレポ用の依存パスは2箇所に設定されています。

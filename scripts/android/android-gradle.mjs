@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-const cwd = fileURLToPath(new URL('../apps/mobile/android/', import.meta.url));
+const cwd = fileURLToPath(new URL('../../apps/mobile/android/', import.meta.url));
 const windows = process.platform === 'win32';
 const child = spawn(windows ? 'gradlew.bat' : './gradlew', process.argv.slice(2), {
   cwd,

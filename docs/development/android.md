@@ -80,13 +80,13 @@ npm run build:android
 
 出力は `apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk` です。
 通常の debug APK の起動には Metro が必要です。
-Metro を使わず端末で確認する場合は、JavaScript とアイコン画像を同梱した APK をビルドします。現行の release 設定は開発用 debug key で署名するため、これは動作確認用です。
+Metro を使わず端末で確認する場合は、JavaScript とアイコン画像を同梱した APK をビルドします。`standalone` は開発用 debug key で署名する動作確認用です。
 
 ```sh
 npm run build:android:standalone
 ```
 
-出力は `apps/mobile/android/app/build/outputs/apk/release/app-release.apk` です。
+出力は `apps/mobile/android/app/build/outputs/apk/standalone/app-standalone.apk` です。
 追加の Gradle オプションは、例えば `npm run build:android -- --no-daemon` のように渡せます。
 
 ネイティブビルドとは別に JavaScript の依存解決・バンドルを確認する場合は、Linux では次を実行できます。
@@ -104,8 +104,24 @@ npm exec -w apps/mobile -- react-native bundle \
 
 バンドル生成だけでは、ネイティブリンクや端末上の動作までは確認できません。
 変更ごとの検証範囲は[作業・検証手順](workflow.md)を参照してください。
-release は [app/build.gradle](../../apps/mobile/android/app/build.gradle) で debug key を使用する初期設定です。
-ストア配布用の署名・release 検証は別タスクとして扱います。
+release の署名と頒布用成果物については、次の節を参照してください。
+
+## Android 頒布用パッケージ
+
+[app/build.gradle](../../apps/mobile/android/app/build.gradle) の release は、環境変数で指定した鍵を使います。両方を作る場合は、リポジトリルートで `./scripts/android/build-all.sh` または `npm run build:android:all` を実行します。AAB と APK を一時ディレクトリで作成・検証し、両方成功した後に `dist/android/` へ配置します。
+
+片方だけ作る場合は、次のコマンドを使います。各スクリプトは指定した鍵の証明書と成果物の署名を照合します。
+
+| 配布先 | コマンド | 鍵の既定パスと別名 | 成果物 |
+| --- | --- | --- | --- |
+| Google Play | `npm run build:android:play` | `~/keys/play-upload.jks`、`play-upload` | `dist/android/prelis-play.aab` |
+| GitHub Releases | `npm run build:android:github` | `~/keys/app-signing.jks`、`app-signing` | `dist/android/prelis-github.apk` |
+
+実行前に [`.env.example`](../../scripts/android/.env.example) を `scripts/android/.env` にコピーし、四つのパスワードを記入してください。`PRELIS_PLAY_STORE_PASSWORD` と `PRELIS_PLAY_KEY_PASSWORD` は Play 用、`PRELIS_APP_STORE_PASSWORD` と `PRELIS_APP_KEY_PASSWORD` は GitHub 用です。キーストアと鍵のパスワードが同じ場合も両方を記入します。鍵の場所・別名を変更する場合は `PRELIS_PLAY_KEYSTORE` / `PRELIS_PLAY_KEY_ALIAS` または `PRELIS_APP_KEYSTORE` / `PRELIS_APP_KEY_ALIAS` を記入します。スクリプトは `.env` をシェルとして実行せず、対応する変数だけを読み込みます。既に環境変数が設定されている場合は、その値を優先します。`.env` は Git 管理対象外です。
+
+各ビルドは Gradle の `clean` を実行します。一括スクリプトは最初の成果物を一時ディレクトリへ保管してから次をビルドします。同じファイル名の成果物は成功時に更新されます。配布前に `applicationId`、`versionCode`、`versionName` を [app/build.gradle](../../apps/mobile/android/app/build.gradle) で確認し、次回の更新では `versionCode` を増やしてください。両成果物を同じ版として頒布するときは、その間にこれらの値を変更しないでください。
+
+Google Play と GitHub Releases の APK を相互更新できるようにするには、Play Console のアプリ署名鍵として `app-signing.jks` の鍵を登録し、アップロード鍵として `play-upload.jks` を登録する必要があります。Play Console で Google 生成のアプリ署名鍵を選択した場合、ここで作る APK はその署名と一致しません。登録後、Play Console のアプリ署名証明書の SHA-256 と、GitHub 用スクリプトが表示する SHA-256 が一致することを確認してください。AAB のアップロードや APK の公開は、このスクリプトには含まれません。
 
 ## トラブルシュート
 
