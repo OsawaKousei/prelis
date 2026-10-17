@@ -31,6 +31,31 @@ chmod 600 scripts/windows/.env
 
 署名時に `AADSTS700016` が出た場合、Azure が指定のテナント内でアプリ登録を見つけられていません。Microsoft Entra ID の「アプリの登録」で対象アプリの概要を開き、`scripts/windows/.env` の `AZURE_TENANT_ID` が「ディレクトリ (テナント) ID」、`AZURE_CLIENT_ID` が「アプリケーション (クライアント) ID」と一致するか確認してください。オブジェクト ID は使いません。アプリが別テナントにある場合は、署名対象の Artifact Signing リソースとアプリの関係も確認します。ID を修正した後は、Ubuntu 側の署名スクリプトを最初から実行して新しい一時認証ファイルを作ります。認証が通った後に権限エラーが出る場合は、サービスプリンシパルに **Artifact Signing Certificate Profile Signer** ロールが付与されているか確認してください。
 
+`Microsoft.Identity.Client` のトークン取得中に `HttpClient.Timeout of 100 seconds` が出た場合は、Windows ビルド機から Microsoft Entra ID への通信を確認します。これは認証サーバーの応答を受け取る前のタイムアウトです。Windows PowerShell で次を実行し、TCP 443 の到達性と HTTPS 応答を確認してください。後者は資格情報を送信しません。どちらかが失敗する場合は、Windows 側の DNS、プロキシ、ファイアウォール、ネットワーク接続を確認します。両方成功しても署名だけが繰り返しタイムアウトする場合は、`Artifact Signing diagnostics` の先頭と末尾を確認してください。
+
+IPv4 の HTTPS は成功する一方で IPv6 接続がタイムアウトするビルド機では、署名スクリプトが SignTool 子プロセスに [.NET の `DOTNET_SYSTEM_NET_DISABLEIPV6=1`](https://learn.microsoft.com/en-us/dotnet/core/runtime-config/networking#ipv6) を設定します。署名処理に限った回避策で、Windows 全体の IPv6 設定は変更しません。
+
+```powershell
+Test-NetConnection login.microsoftonline.com -Port 443
+(Invoke-WebRequest -UseBasicParsing -Uri 'https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration' -TimeoutSec 15).StatusCode
+netsh winhttp show proxy
+```
+
+署名が成功した後、NSIS の `Target: x64` に続いて `timeout: global` が出る場合は、Tauri が WebView2 オフラインインストーラーを取得する段階を確認します。[Tauri bundler 2.10.1](https://github.com/tauri-apps/tauri/blob/tauri-bundler-v2.10.1/crates/tauri-bundler/src/bundle/windows/nsis/mod.rs) は、この段階で [Microsoft の x64 ダウンロード URL](https://go.microsoft.com/fwlink/?linkid=2124701) に HEAD リクエストを送ります。Windows 側で次を実行し、IPv4 指定時と通常時の応答を比較してください。`-I` なのでインストーラー本体はダウンロードしません。
+
+```powershell
+curl.exe -4 -L -I --max-time 30 'https://go.microsoft.com/fwlink/?linkid=2124701'
+curl.exe -L -I --max-time 30 'https://go.microsoft.com/fwlink/?linkid=2124701'
+netsh interface ipv6 show prefixpolicies
+```
+
+IPv4 指定時に成功し、Tauri だけが同じ段階でタイムアウトする場合も、IPv6 経路と HTTP クライアントごとのアドレス選択の違いを切り分けるため、一時的な IPv4 優先を試せます。既定のプレフィックスポリシーを使っているビルド機では、管理者の PowerShell から次を実行します。`store=active` のため再起動後には元に戻ります。既定と異なるポリシーがある場合は、変更前の値を確認してください。[Microsoft は IPv6 全体を無効にする代わりに IPv4 優先を推奨しています](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/configure-ipv6-in-windows)。署名スクリプトの `.NET` 設定は Tauri 本体の通信には適用されません。
+
+```powershell
+netsh interface ipv6 set prefixpolicy prefix=::ffff:0:0/96 precedence=46 label=4 store=active
+netsh interface ipv6 show prefixpolicies
+```
+
 ## 同期のみ実行する場合
 
 ```sh
@@ -49,6 +74,14 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\windows\build.
 ```
 
 スクリプトはリポジトリルートで `npm.cmd ci` を実行し、Tauri の NSIS・MSI インストーラーをビルドして署名します。`npm.cmd` を使うのは、PowerShell の実行ポリシーによって `npm.ps1` が止まる環境に対応するためです。署名や検証に失敗した場合は完了ファイルを作らず、Ubuntu 側は古い成果物を回収しません。
+
+MSI の `light.exe` 実行に失敗して Tauri が詳細を表示しない場合は、ビルドした VNC セッションの通常の PowerShell で次を実行します。生成済みの WiX 中間ファイルを再検証し、ICE のエラーを表示します。SSH 経由では Windows Installer Service へのアクセス権が異なるため、結果の切り分けには VNC セッションを使ってください。診断用 MSI は署名済み成果物ではありません。
+
+```powershell
+Push-Location .\apps\desktop\src-tauri\target\release\wix\x64
+& .\wix\light.exe -ext .\wix\WixUIExtension.dll -ext .\wix\WixUtilExtension.dll -o "$env:TEMP\prelis-light-diagnostic.msi" -cultures:en-us -loc .\locale.wxl .\main.wixobj
+Pop-Location
+```
 
 ## 前提条件
 

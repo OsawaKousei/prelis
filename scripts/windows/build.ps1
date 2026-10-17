@@ -146,7 +146,12 @@ try {
 }
 catch {
     if (Test-Path -LiteralPath $signingLogPath -PathType Leaf) {
-        $diagnostics = (Get-Content -LiteralPath $signingLogPath -Encoding UTF8 -Tail 80) -join [Environment]::NewLine
+        $diagnosticLines = @(Get-Content -LiteralPath $signingLogPath -Encoding UTF8)
+        if ($diagnosticLines.Count -gt 120) {
+            $diagnosticLines = @($diagnosticLines[0..39]) + @('... middle of signing output omitted ...') +
+                @($diagnosticLines[($diagnosticLines.Count - 80)..($diagnosticLines.Count - 1)])
+        }
+        $diagnostics = $diagnosticLines -join [Environment]::NewLine
         if ($values -and $values.ContainsKey('AZURE_CLIENT_SECRET') -and $values['AZURE_CLIENT_SECRET']) {
             $diagnostics = $diagnostics.Replace($values['AZURE_CLIENT_SECRET'], '[redacted]')
         }

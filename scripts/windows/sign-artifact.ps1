@@ -5,6 +5,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $signingFailureOutput = ''
+$previousDisableIpv6 = [Environment]::GetEnvironmentVariable('DOTNET_SYSTEM_NET_DISABLEIPV6', 'Process')
 try {
     foreach ($key in @('PRELIS_SIGNTOOL_PATH', 'PRELIS_ARTIFACT_SIGNING_DLIB_PATH', 'PRELIS_ARTIFACT_SIGNING_METADATA')) {
         if (-not [Environment]::GetEnvironmentVariable($key, 'Process')) {
@@ -12,6 +13,9 @@ try {
         }
     }
 
+    # The build host can reach Microsoft Entra ID over IPv4, but its IPv6 route times out.
+    # Limit the workaround to this SignTool process and its .NET Artifact Signing plugin.
+    $env:DOTNET_SYSTEM_NET_DISABLEIPV6 = '1'
     $previousErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
     try {
@@ -40,4 +44,7 @@ catch {
         )
     }
     throw
+}
+finally {
+    [Environment]::SetEnvironmentVariable('DOTNET_SYSTEM_NET_DISABLEIPV6', $previousDisableIpv6, 'Process')
 }
