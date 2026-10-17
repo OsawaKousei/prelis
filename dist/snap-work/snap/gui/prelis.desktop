@@ -3,6 +3,6 @@ Type=Application
 Name=Prelis Desktop
 Comment=Prelis Desktop Application
 Exec=prelis
-Icon=${SNAP}/meta/gui/prelis-desktop.png
+Icon=${SNAP}/meta/gui/prelis.png
 Terminal=false
 Categories=Office;

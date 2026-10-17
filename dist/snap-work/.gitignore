@@ -1,5 +1,6 @@
 # Extracted DEB contents
 /payload/
+/.build.*/
 
 # Snapcraft build artifacts
 /parts/
