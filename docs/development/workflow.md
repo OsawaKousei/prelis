@@ -62,7 +62,7 @@ git diff --check
 | `npm run build:core` | Node.js 向けの core の JavaScript・型宣言生成 |
 | `npm run build -w apps/desktop` | デスクトップの型チェックと Vite ビルド |
 | `npm run build:desktop:debug` | デスクトップの debug ネイティブビルド |
-| `./scripts/windows/create-windows-sync.sh` → Windows 側で `scripts\windows\build.ps1` | Mutagen 同期後、VNC で Windows にログインして NSIS・MSI インストーラーをビルド（[手順](windows.md)） |
+| `./scripts/windows/build-windows.sh` | SSH トンネルと Mutagen 同期、VNC での Windows ビルド案内、NSIS・MSI インストーラーの回収（[手順](windows.md)） |
 | `npm run build:android` | Android debug APK のビルド |
 | `npm run build:android:standalone` | JavaScript と画像を同梱した Android 動作確認用 APK のビルド |
 

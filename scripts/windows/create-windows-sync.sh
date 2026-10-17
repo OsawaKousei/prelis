@@ -70,6 +70,28 @@ if [[ "$session_endpoints" != "${repo_root}|${remote_endpoint}" ]]; then
   exit 1
 fi
 
+wait_for_watching() {
+  local last_state= session_state status alpha_connected beta_connected conflicts attempt
+  for attempt in {1..150}; do
+    session_state="$(mutagen sync list "$session_name" --template '{{range .}}{{.Status}}|{{.Alpha.Connected}}|{{.Beta.Connected}}|{{len .Conflicts}}{{end}}')"
+    if [[ "$session_state" != "$last_state" ]]; then
+      IFS='|' read -r status alpha_connected beta_connected conflicts <<< "$session_state"
+      echo "Mutagen 状態: $status / Linux 接続: $alpha_connected / Windows 接続: $beta_connected / 競合: $conflicts"
+      last_state="$session_state"
+    fi
+    if [[ "$session_state" == "Watching|true|true|"* ]]; then
+      return 0
+    fi
+    sleep 2
+  done
+  echo 'Mutagen が待機状態になりませんでした。現在のセッション状態:' >&2
+  mutagen sync list "$session_name" --long >&2
+  return 1
+}
+
+echo 'Windows 側への接続と初回同期を待ちます。'
+wait_for_watching
+
 echo '同期完了を待ちます。'
 if ! mutagen sync flush "$session_name"; then
   echo '同期に失敗しました。現在のセッション状態:' >&2
@@ -77,27 +99,9 @@ if ! mutagen sync flush "$session_name"; then
   exit 1
 fi
 
-last_state=
-session_state=
-for attempt in {1..60}; do
-  session_state="$(mutagen sync list "$session_name" --template '{{range .}}{{.Status}}|{{.Alpha.Connected}}|{{.Beta.Connected}}|{{len .Conflicts}}{{end}}')"
-  if [[ "$session_state" != "$last_state" ]]; then
-    IFS='|' read -r status alpha_connected beta_connected conflicts <<< "$session_state"
-    echo "Mutagen 状態: $status / Linux 接続: $alpha_connected / Windows 接続: $beta_connected / 競合: $conflicts"
-    last_state="$session_state"
-  fi
-  if [[ "$session_state" == "Watching|true|true|"* ]]; then
-    break
-  fi
-  sleep 2
-done
-
 echo '同期後のセッション状態:'
+wait_for_watching
 mutagen sync list "$session_name" --long
-if [[ "$session_state" != "Watching|true|true|"* ]]; then
-  echo '同期が待機状態に戻りませんでした。上のセッション状態を確認してください。' >&2
-  exit 1
-fi
 
 conflict_count="$(mutagen sync list "$session_name" --template '{{range .}}{{len .Conflicts}}{{end}}')"
 if [[ "$conflict_count" != 0 ]]; then
