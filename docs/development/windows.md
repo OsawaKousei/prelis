@@ -10,6 +10,10 @@ Ubuntu のリポジトリルートで、次を実行します。
 
 Windows 配布ビルドは `tauri.conf.json` の `offlineInstaller` 設定で WebView2 オフラインインストーラーを同梱します。従来より MSI と NSIS のサイズが大きくなり、ビルド時には WebView2 インストーラーのダウンロードが必要です。Microsoft Store に提出する MSI の公開は [MSI 配信手順](../../infra/ms-store/README.md)を参照してください。
 
+MSI は [per-user WiX テンプレート](../../apps/desktop/src-tauri/wix/per-user.wxs)を使い、標準ユーザーが管理者権限なしで `%LOCALAPPDATA%\Programs\PrelisDesktop` にインストールする構成です。WiX テンプレートは [Tauri bundler 2.10.1 の既定テンプレート](https://github.com/tauri-apps/tauri/blob/tauri-bundler-v2.10.1/crates/tauri-bundler/src/bundle/windows/msi/main.wxs)を基にしています。`@tauri-apps/cli` を更新する場合は、対応する bundler のテンプレートとの差分を確認してください。旧 MSI と NSIS が記録したインストール先を引き継がないよう、新しい MSI は HKCU の `Software\Kupac LLC\PrelisDesktop\PerUserMsi` にインストール先を記録します。`enableElevatedUpdateTask` と `minimumWebview2Version` は既定テンプレートで昇格が必要な処理を含むため、設定する場合は WiX テンプレート側の再設計が必要です。
+
+ビルド後は管理者権限のない Windows アカウントで、新規インストール、`msiexec /i <MSIのパス> /qn /L*v <ログのパス>` によるサイレントインストール、アンインストールを確認してください。WebView2 Runtime が未導入の環境でも、ネットワークを切った状態で UAC が出ずにインストールでき、アプリが起動することを確認します。既存のマシン単位 MSI からユーザー単位 MSI へは直接アップグレードできません。旧 MSI を管理者権限でアンインストールしてから新しい MSI をインストールする移行手順を確認してください。新しい MSI を公開する前にはアプリのバージョンを上げ、[MSI 配信手順](../../infra/ms-store/README.md)に従って新しい URL に公開します。
+
 スクリプトは VNC 用の SSH トンネルを開始し、Mutagen の同期完了後に署名用の認証情報を Windows のユーザーディレクトリへ一時転送します。Ubuntu 側の端末は開いたまま、VNC クライアントで `127.0.0.1:22118` に接続し、画面に表示された Windows 側のビルドコマンドをそのまま実行してください。`Signed Windows build completed.` と表示されたら Ubuntu 側のターミナルで Enter キーを押します。完了前に Enter を押しても確認待ちを続けます。Windows 側で失敗した場合は Ubuntu 側で Ctrl+C を押して一時認証ファイルを削除し、最初からやり直してください。スクリプトは今回の署名済みビルドの完了を確認し、NSIS と MSI の成果物および署名レポートを `scp` で Ubuntu 側の `apps/desktop/src-tauri/target/release/bundle/` に回収します。Ubuntu 側でレポートと成果物の SHA-256 を照合した後、署名状態・署名者・タイムスタンプを表で表示します。SSH トンネルと一時認証ファイルはスクリプト終了時に削除します。前回のトンネルが残っている場合は、次回の起動時に同じ制御ソケットから終了させます。
 
 ## Azure Artifact Signing の設定

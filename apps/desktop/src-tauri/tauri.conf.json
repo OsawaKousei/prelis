@@ -43,6 +43,9 @@
       "webviewInstallMode": {
         "type": "offlineInstaller"
       },
+      "wix": {
+        "template": "wix/per-user.wxs"
+      },
       "nsis": {
         "installerIcon": "icons/icon.ico",
         "uninstallerIcon": "icons/icon.ico"

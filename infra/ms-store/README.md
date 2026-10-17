@@ -44,4 +44,4 @@ AWS_PROFILE=kupacllc ./infra/ms-store/publish-msi.sh \
 
 表示された URL を `curl -fIL <URL>` で確認し、`200 OK`、`Content-Type: application/x-msi`、正しいファイル名を確認してください。必要なら `curl -fL <URL> -o /tmp/<ファイル名>` で取得し、表示された SHA-256 と照合します。
 
-現在の `0.1.0` MSI は `offlineInstaller` で再ビルド・再署名済みです。Store に提出する前に WebView2 のない環境でオフラインのサイレントインストールを検証してください。インストール時のダウンロードが発生する MSI は提出しないでください。
+現在公開中の `0.1.0` MSI は `offlineInstaller` で再ビルド・再署名済みですが、マシン単位のインストーラーです。ユーザー単位 MSI のソース設定と検証手順は [Windows ビルド手順](../../docs/development/windows.md)を参照してください。新しい MSI を Store に提出する前に、WebView2 のない標準ユーザー環境でオフラインのサイレントインストールを検証してください。インストール時のダウンロードが発生する MSI は提出しないでください。
