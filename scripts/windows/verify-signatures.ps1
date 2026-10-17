@@ -42,7 +42,13 @@ if (-not ($results | Where-Object { $_.Path -like 'msi/*.msi' })) {
 if ($results | Where-Object { $_.Status -ne 'Valid' }) {
     throw 'Installer signature verification failed.'
 }
-$report = @{ SchemaVersion = 1; Files = $results }
+$tauriConfigPath = Join-Path (Split-Path -Parent $BundleRoot) '../../tauri.conf.json'
+$tauriConfig = Get-Content -LiteralPath $tauriConfigPath -Raw | ConvertFrom-Json
+$webviewInstallMode = $tauriConfig.bundle.windows.webviewInstallMode.type
+if ([string]::IsNullOrWhiteSpace($webviewInstallMode)) {
+    $webviewInstallMode = 'downloadBootstrapper'
+}
+$report = @{ SchemaVersion = 1; Files = $results; WebviewInstallMode = $webviewInstallMode }
 $utf8 = [System.Text.UTF8Encoding]::new($false)
 [System.IO.File]::WriteAllText($ReportPath, ($report | ConvertTo-Json -Depth 5), $utf8)
 Write-Host 'EXE and MSI signatures are valid.'
