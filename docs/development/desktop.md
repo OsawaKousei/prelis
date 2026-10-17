@@ -13,6 +13,7 @@
 OS 固有のインストール方法は上記の公式文書を参照してください。
 このマシンでの確認結果は[環境メモ](../environment/local-linux.md)に記録しています。
 Windows 11 向けの同期・ビルド手順は [Windows ビルド手順](windows.md) を参照してください。
+Ubuntu 向けのビルドと頒布は [Linux 版デスクトップ](linux/README.md)を参照してください。
 
 ## 開発起動
 

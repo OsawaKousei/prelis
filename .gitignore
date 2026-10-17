@@ -4,3 +4,4 @@ ref/
 .env
 .env.*
 !.env.example
+dist/apt-repo-backup.*/

@@ -100,7 +100,7 @@ Windows SSH の既定シェルが日本語の CP932 でエラーを返す環境�
 
 NSIS インストーラーは Windows 側の `prelis-remote\apps\desktop\src-tauri\target\release\bundle\nsis\PrelisDesktop_<version>_x64-setup.exe`、MSI インストーラーは `prelis-remote\apps\desktop\src-tauri\target\release\bundle\msi\*.msi` に生成されます。一括手順では NSIS・MSI のディレクトリを入れ替えて旧版を削除し、Windows 側の `prelis-signature-report.json` をローカルの `windows-prelis-signature-report.json` として保存します。`bundle` 内の deb・AppImage など、これら以外の成果物は保持します。実行ファイル `prelis-remote\apps\desktop\src-tauri\target\release\desktop.exe` は回収しません。インストーラーの形式は [Tauri の Windows Installer](https://v2.tauri.app/distribute/windows-installer/) を参照してください。
 
-Windows 向けの頒布には NSIS インストーラーの `*-setup.exe` または MSI インストーラーの `*.msi` を渡せます。`desktop.exe` はビルド確認用の成果物で、頒布する必要はありません。Ubuntu 向けには Windows のインストーラーではなく、[Ubuntu 版リリース手順](release.md)で作成する deb または AppImage を頒布します。
+Windows 向けの頒布には NSIS インストーラーの `*-setup.exe` または MSI インストーラーの `*.msi` を渡せます。`desktop.exe` はビルド確認用の成果物で、頒布する必要はありません。Ubuntu 向けには Windows のインストーラーではなく、[Linux 向けビルド手順](linux/build.md)で作成する deb または AppImage を頒布します。
 
 同期状態の確認には次を使います。
 
