@@ -53,4 +53,4 @@ sudo snap install prelis
 ## 開発者向け
 
 構成、仕様、セットアップ、ビルド手順は [docs/](docs/README.md) を参照してください。AI エージェント向けの作業規則は [AGENTS.md](AGENTS.md) にあります。
-ウェブ版のローカル起動とビルドは [ウェブ版の開発手順](docs/development/web.md) を参照してください。公開 URL はまだありません。
+ウェブ版のローカル起動とビルドは [ウェブ版の開発手順](docs/development/web.md) を参照してください。`app-prelis.prj.kupac.co.jp` への[配信インフラ](infra/web-frontend/README.md)は Terraform 適用前です。

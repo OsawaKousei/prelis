@@ -1,6 +1,6 @@
 # Prelis LP
 
-Prelis がデスクトップと Android 向けの PoC アプリであること、実装済みの Diary・Timer・Password、OS ごとの入手方法を紹介する静的サイトです。デザインは [ガイドライン](../docs/design/guidelines.md)、機能説明は [仕様](../docs/specs/desktop-apps.md) に合わせています。
+Prelis のデスクトップ・Android・ウェブ版で提供する Diary・Timer・Password と、各版の利用方法を紹介する静的サイトです。ウェブ版は他の利用環境と並べて選択でき、公開サイトへのリンクと簡潔な注意書きを表示します。デザインは [ガイドライン](../docs/design/guidelines.md)、機能説明は [仕様](../docs/specs/desktop-apps.md) に合わせています。
 
 ## ローカル確認
 

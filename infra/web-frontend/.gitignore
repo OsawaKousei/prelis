@@ -1,0 +1,13 @@
+# Local Terraform settings and generated files
+*.tfstate
+*.tfstate.*
+*.tfvars
+backend.hcl
+.terraform/
+.terraformrc
+terraform.rc
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
