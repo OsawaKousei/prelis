@@ -1,0 +1,6 @@
+# Copy to backend.hcl (ignored by Git) before terraform init.
+# Use a state key dedicated to Prelis, separate from lp/infra.
+bucket  = "terraform-state-bucket-103492189525-ap-northeast-1-an"
+key     = "webpage/prelis-lp/terraform.tfstate"
+region  = "ap-northeast-1"
+profile = "kupacllc"
