@@ -1,17 +1,31 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+sign_only=false
+if [[ $# -eq 1 && "$1" == --sign-only ]]; then
+  sign_only=true
+elif [[ $# -ne 0 ]]; then
+  echo '使い方: build-windows.sh [--sign-only]' >&2
+  exit 2
+fi
+
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 remote_host=builduser@192.168.1.10
 remote_bundle=prelis-remote/apps/desktop/src-tauri/target/release/bundle
 local_bundle="${repo_root}/apps/desktop/src-tauri/target/release/bundle"
 tunnel_dir=
+tunnel_lock_fd=
+tunnel_lock_acquired=false
 artifact_stage=
 credential_stage=
 remote_credential=
 completion_file=
 
 cleanup() {
+  trap '' INT TERM
+  if [[ "$tunnel_lock_acquired" == true && -S "$tunnel_dir/control" ]]; then
+    ssh -o BatchMode=yes -S "$tunnel_dir/control" -O exit "$remote_host" >/dev/null 2>&1 || true
+  fi
   if [[ -n "$remote_credential" ]]; then
     ssh -o BatchMode=yes -o ConnectTimeout=5 "$remote_host" "del /f /q \"%USERPROFILE%\\$remote_credential\" 2>nul" >/dev/null 2>&1 || true
   fi
@@ -21,12 +35,6 @@ cleanup() {
   if [[ -n "$credential_stage" ]]; then
     rm -f -- "$credential_stage"
   fi
-  if [[ -n "$tunnel_dir" ]]; then
-    if [[ -S "$tunnel_dir/control" ]]; then
-      ssh -S "$tunnel_dir/control" -O exit "$remote_host" >/dev/null 2>&1 || true
-    fi
-    rm -rf -- "$tunnel_dir"
-  fi
   if [[ -n "$artifact_stage" ]]; then
     rm -rf -- "$artifact_stage"
   fi
@@ -35,7 +43,7 @@ trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-for command_name in ssh scp; do
+for command_name in ssh scp flock; do
   if ! command -v "$command_name" >/dev/null 2>&1; then
     echo "$command_name が必要です。" >&2
     exit 1
@@ -72,6 +80,11 @@ for key in "${signing_keys[@]}"; do
   fi
 done
 
+if ! ( : < /dev/tty ) 2>/dev/null; then
+  echo 'VNC 操作中は Ubuntu 側の対話端末を開いたままにしてください。/dev/tty を利用できません。' >&2
+  exit 1
+fi
+
 umask 077
 credential_stage="$(mktemp)"
 for key in "${signing_keys[@]}"; do
@@ -81,30 +94,81 @@ remote_credential="prelis-signing-$(basename "$credential_stage").env"
 completion_file="prelis-build-$(basename "$credential_stage").ok"
 
 echo 'VNC 用 SSH トンネルを開始します。'
-tunnel_dir="$(mktemp -d)"
-ssh -M -S "$tunnel_dir/control" -fN \
-  -o BatchMode=yes -o ExitOnForwardFailure=yes \
-  -L 127.0.0.1:22118:127.0.0.1:21118 \
-  "$remote_host"
+tunnel_dir="${XDG_RUNTIME_DIR:-/tmp}/prelis-windows-vnc-${UID}"
+if [[ -L "$tunnel_dir" ]]; then
+  echo "SSH トンネル用ディレクトリがシンボリックリンクです: $tunnel_dir" >&2
+  exit 1
+fi
+mkdir -m 700 -p -- "$tunnel_dir"
+if [[ "$(stat -c '%u:%a' "$tunnel_dir")" != "${UID}:700" ]]; then
+  echo "SSH トンネル用ディレクトリの所有者または権限が不正です: $tunnel_dir" >&2
+  exit 1
+fi
+exec {tunnel_lock_fd}>"$tunnel_dir/lock"
+if ! flock -n "$tunnel_lock_fd"; then
+  echo '別の Windows ビルドまたは署名スクリプトが実行中です。' >&2
+  exit 1
+fi
+tunnel_lock_acquired=true
+if [[ -S "$tunnel_dir/control" ]]; then
+  ssh -o BatchMode=yes -S "$tunnel_dir/control" -O exit "$remote_host" >/dev/null 2>&1 || true
+  for ((attempt = 0; attempt < 20; attempt++)); do
+    if ! ssh -o BatchMode=yes -S "$tunnel_dir/control" -O check "$remote_host" >/dev/null 2>&1; then
+      break
+    fi
+    sleep 0.1
+  done
+  if ssh -o BatchMode=yes -S "$tunnel_dir/control" -O check "$remote_host" >/dev/null 2>&1; then
+    echo '前回の SSH トンネルを終了できませんでした。' >&2
+    exit 1
+  fi
+  rm -f -- "$tunnel_dir/control"
+fi
+(
+  exec {tunnel_lock_fd}>&-
+  exec ssh -M -S "$tunnel_dir/control" -fN \
+    -o BatchMode=yes -o ExitOnForwardFailure=yes \
+    -L 127.0.0.1:22118:127.0.0.1:21118 \
+    "$remote_host"
+)
 
 "${repo_root}/scripts/windows/create-windows-sync.sh"
 
 echo '署名認証情報を Windows のユーザーディレクトリへ一時転送します。'
-scp -o BatchMode=yes "$credential_stage" "${remote_host}:${remote_credential}"
+ssh -o BatchMode=yes "$remote_host" \
+  "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"%USERPROFILE%\\prelis-remote\\scripts\\windows\\receive-credentials.ps1\" -CredentialFile \"$remote_credential\"" \
+  < "$credential_stage"
+ssh -o BatchMode=yes "$remote_host" \
+  "if not exist \"%USERPROFILE%\\$remote_credential\" exit /b 1"
 rm -f -- "$credential_stage"
 credential_stage=
+
+if [[ "$sign_only" == true ]]; then
+  build_option=' -SignOnly'
+  completion_prompt='署名が完了したら Enter キーを押してください。'
+else
+  build_option=
+  completion_prompt='ビルドが完了したら Enter キーを押してください。'
+fi
 
 cat <<INSTRUCTIONS
 VNC クライアントで 127.0.0.1:22118 に接続し、Windows の PowerShell で次を実行してください。
 
 cd "\$env:USERPROFILE\prelis-remote"
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\windows\build.ps1 -CredentialFile "$remote_credential" -CompletionFile "$completion_file"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\windows\build.ps1 -CredentialFile "$remote_credential" -CompletionFile "$completion_file"$build_option
 INSTRUCTIONS
 
-if ! read -r -p 'ビルドが完了したら Enter キーを押してください。' < /dev/tty; then
-  echo '入力を受け取れませんでした。' >&2
-  exit 1
-fi
+while true; do
+  if ! read -r -p "$completion_prompt" < /dev/tty; then
+    echo '入力を受け取れませんでした。' >&2
+    exit 1
+  fi
+  if ssh -o BatchMode=yes "$remote_host" \
+    "if not exist \"%USERPROFILE%\\$completion_file\" exit /b 1"; then
+    break
+  fi
+  echo 'Windows 側の署名完了を確認できません。完了後にもう一度 Enter キーを押してください。中止する場合は Ctrl+C を押してください。' >&2
+done
 
 echo 'Windows 側の NSIS・MSI 成果物を確認します。'
 ssh -o BatchMode=yes "$remote_host" \
