@@ -8,7 +8,9 @@
   ],
   "scripts": {
     "dev:desktop": "npm run tauri -w apps/desktop -- dev",
+    "dev:web": "npm run dev -w apps/web",
     "build:desktop": "npm run tauri -w apps/desktop -- build",
+    "build:web": "npm run build -w apps/web",
     "build:desktop:debug": "npm run tauri -w apps/desktop -- build --debug --no-bundle",
     "start:mobile": "npm run start -w apps/mobile --",
     "android": "npm run android -w apps/mobile --",
@@ -19,7 +21,8 @@
     "typecheck": "npm run typecheck --workspaces",
     "lint": "npm run lint -w apps/mobile",
     "test": "npm run test -w apps/mobile -- --runInBand",
-    "check": "npm run typecheck && npm run lint && npm test"
+    "test:web": "npm test -w apps/web",
+    "check": "npm run typecheck && npm run lint && npm test -- --no-watchman && npm run test:web"
   },
   "engines": {
     "node": "^22.13.0 || ^24.3.0 || >=26.0.0",

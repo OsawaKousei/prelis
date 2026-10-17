@@ -1,0 +1,57 @@
+@media (max-width: 860px) {
+  .shell {
+    height: auto;
+    min-height: 100dvh;
+  }
+
+  .app-frame {
+    overflow: visible;
+  }
+
+  .diary-workspace,
+  .timer-workspace {
+    height: auto;
+    min-height: calc(100dvh - 74px);
+  }
+
+  .diary-workspace {
+    padding-bottom: 36px;
+  }
+
+  .editor {
+    flex: none;
+    height: min(52dvh, 560px);
+    min-height: 320px;
+  }
+
+  .diary-aside .calendar {
+    display: block;
+    max-width: 380px;
+  }
+
+  .timer-layout:has(.timer-sound-settings[open]) {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .timer-sound-settings {
+    width: min(100%, 460px);
+    margin-inline: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .diary-workspace,
+  .timer-workspace {
+    min-height: calc(100dvh - 140px);
+  }
+
+  .editor {
+    height: 45dvh;
+  }
+
+  .timer-layout:not(:has(.timer-sound-settings[open])) {
+    display: flex;
+    flex-direction: column;
+  }
+}

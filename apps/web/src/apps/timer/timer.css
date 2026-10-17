@@ -1,0 +1,229 @@
+.timer-workspace {
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - 74px);
+  padding: 43px 40px;
+  max-width: 1200px;
+  margin: auto;
+}
+.timer-workspace .page-intro {
+  margin-bottom: 30px;
+}
+.timer-layout {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+.timer-layout:not(:has(.timer-sound-settings[open])) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.timer-layout:has(.timer-sound-settings[open]) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 0.95fr);
+  gap: 32px;
+  align-items: center;
+}
+.timer-center {
+  width: 100%;
+  max-width: 460px;
+  margin: 0 auto;
+  text-align: center;
+}
+.timer-center .error-message {
+  display: inline-block;
+  padding: 6px 10px;
+  margin: 0 0 4px;
+}
+.timer-ring {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(300px, 100%);
+  aspect-ratio: 1;
+  margin: 0 auto;
+}
+.timer-ring-graphic {
+  width: 100%;
+  height: 100%;
+  transform: scaleX(-1) rotate(-90deg);
+  overflow: visible;
+}
+.timer-ring-graphic circle {
+  fill: none;
+  stroke-width: 10;
+}
+.timer-ring-track {
+  stroke: #e4f1f8;
+}
+.timer-ring-progress {
+  stroke: #6ab5da;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.1s linear;
+}
+.timer-ring.completed .timer-ring-track {
+  stroke: #d97568;
+  animation: timer-alert-pulse 0.9s ease-in-out infinite alternate;
+}
+.timer-ring.completed .timer-ring-progress {
+  opacity: 0;
+}
+.timer-ring.completed .timer-clock {
+  color: #a5453f;
+  animation: timer-alert-pulse 0.9s ease-in-out infinite alternate;
+}
+.timer-ring.completed .timer-ring-content > p[role='status'] {
+  color: #a5453f;
+  font-weight: 600;
+}
+@keyframes timer-alert-pulse {
+  to {
+    opacity: 0.45;
+  }
+}
+.timer-ring-content {
+  position: absolute;
+  inset: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.timer-clock {
+  font-size: clamp(52px, 7vw, 76px);
+  line-height: 1.2;
+  font-weight: 300;
+  letter-spacing: -3px;
+  color: #456b83;
+  font-variant-numeric: tabular-nums;
+}
+.timer-clock span {
+  color: #acd3e6;
+  padding: 0 5px;
+}
+.timer-clock.running {
+  color: #26769c;
+}
+.timer-ring-content > p[role='status'] {
+  font-size: 13px;
+  color: #6b8190;
+  margin-top: 12px;
+}
+.duration-input {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  align-items: center;
+  font-size: 12px;
+  margin: 28px 0 20px;
+  color: #718594;
+}
+.duration-input input {
+  width: 80px;
+  text-align: center;
+}
+.timer-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+.timer-actions button {
+  min-width: 120px;
+}
+.timer-sound-settings {
+  min-width: 0;
+  width: 100%;
+  margin: 0;
+  text-align: left;
+}
+.timer-sound-settings[open] {
+  align-self: start;
+}
+.timer-sound-settings:not([open]) {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 180px;
+}
+.timer-sound-settings summary {
+  width: 180px;
+  margin-left: auto;
+  padding: 9px 14px;
+  font-size: 11px;
+  color: #5f7483;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+  border: 1px solid #e2ebf1;
+  border-radius: 9px;
+  background: #fff;
+}
+.timer-sound-settings summary:focus-visible {
+  outline: 2px solid #2785af;
+  outline-offset: 4px;
+}
+.timer-sound-settings summary span {
+  color: #a13f42;
+}
+.timer-sound-body {
+  margin-top: 8px;
+  padding: 18px 20px 20px;
+  border: 1px solid #e2ebf1;
+  border-radius: 9px;
+  background: #fff;
+}
+.timer-sound-controls {
+  display: grid;
+  gap: 14px;
+}
+.timer-sound-controls label {
+  display: grid;
+  gap: 6px;
+  color: #627b8b;
+  font-size: 11px;
+}
+.timer-sound-controls select,
+.timer-sound-controls input {
+  width: 100%;
+  font-size: 12px;
+}
+.timer-sound-upload input {
+  padding: 7px;
+}
+.timer-sound-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+.timer-sound-actions button {
+  font-size: 11px;
+  min-height: 32px;
+}
+.timer-sound-hint,
+.timer-sound-error {
+  margin-top: 12px;
+  font-size: 11px;
+  color: #6b8190;
+}
+.timer-sound-error p {
+  color: #a13f42;
+  margin-bottom: 8px;
+}
+.timer-note {
+  font-size: 10px;
+  color: #5f7483;
+  margin-top: 24px;
+}
+@media (max-width: 600px) {
+  .timer-workspace {
+    padding: 28px 24px;
+  }
+  .timer-clock {
+    font-size: clamp(52px, 14vw, 76px);
+  }
+  .timer-note {
+    max-width: 240px;
+    margin: 30px auto;
+  }
+}

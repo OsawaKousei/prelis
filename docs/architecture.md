@@ -2,7 +2,7 @@
 
 ## 開発対象と現在の状態
 
-Prelis は npm workspaces で管理するモノレポです。現在はデスクトップと Android の開発基盤があり、
+Prelis は npm workspaces で管理するモノレポです。現在はデスクトップ、Android、ウェブの開発基盤があり、
 Diary・Timer・Password を実装しています。機能仕様は [仕様書](specs/desktop-apps.md) に記載しています。
 iOS のプロジェクトと起動コマンドは存在しますが、対応・ビルド検証は保留中です。
 
@@ -12,9 +12,9 @@ iOS のプロジェクトと起動コマンドは存在しますが、対応・�
 機能はデスクトップで先に実装・動作確認し、その確認済みの内容をモバイルへ反映します。
 この進め方による一時的な実装時期の差は、提供する機能の仕様差とは区別して管理します。
 
-共通のロジックは `packages/core` に、両アプリで使うアイコン画像は `packages/icons` に置き、UI は各アプリで別々に開発します。
+共通のロジックは `packages/core` に、各アプリで使うアイコン画像は `packages/icons` に置き、UI は各アプリで別々に開発します。
 モバイルでは画面サイズ、タッチ操作、画面遷移などの特徴に合わせて画面構成や操作方法を変更できます。
-画面の見た目・構造の一致を前提とせず、共通機能の受け入れ条件をそれぞれの UI で満たします。両アプリの視覚・操作デザインは[デザインガイドライン](design/guidelines.md)に従います。
+画面の見た目・構造の一致を前提とせず、共通機能の受け入れ条件をそれぞれの UI で満たします。ウェブ固有の制約は[仕様書](specs/desktop-apps.md)に記録します。視覚・操作デザインは[デザインガイドライン](design/guidelines.md)に従います。
 
 ## 配置と責務
 
@@ -23,12 +23,13 @@ iOS のプロジェクトと起動コマンドは存在しますが、対応・�
 | `apps/desktop/src/` | React によるデスクトップ UI |
 | `apps/desktop/src-tauri/` | Tauri の起動、Rust 処理、ウィンドウ・権限・配布設定 |
 | `apps/desktop/vite.config.ts` | Web フロントエンドの開発サーバーとバンドル設定 |
+| `apps/web/src/`・`vite.config.ts` | ウェブ版の React UI、IndexedDB 保存、Vite 設定 |
 | `apps/mobile/App.tsx`・`src/` | React Native の UI。`index.js` から登録 |
 | `apps/mobile/metro.config.js` | モノレポ内のソース監視・JavaScript の解決設定 |
 | `apps/mobile/android/` | Android の Gradle 設定、Kotlin の起動処理、リソース |
 | `apps/mobile/ios/` | iOS のネイティブプロジェクト（対応保留） |
-| `packages/core/src/` | 両アプリが利用する UI・OS に依存しない TypeScript ロジック |
-| `packages/icons/assets/` | 両アプリが利用する透過 PNG アイコンの正本。ブランド画像もここで管理する |
+| `packages/core/src/` | 各アプリが利用する UI・OS に依存しない TypeScript ロジック |
+| `packages/icons/assets/` | 各アプリが利用する透過 PNG アイコンの正本。ブランド画像もここで管理する |
 | `scripts/` | ルートの開発コマンドを支える補助処理 |
 | `docs/` | 構成説明、規則、手順、仕様、環境メモ |
 | `ref/` | Git 管理対象外の参考資料。通常の実装・検証の対象外 |
@@ -44,20 +45,23 @@ Rust の依存は [Cargo.toml](../apps/desktop/src-tauri/Cargo.toml) と
 flowchart TD
   Desktop[apps/desktop: React UI] --> Core[packages/core: TypeScript logic]
   Mobile[apps/mobile: React Native UI] --> Core
+  Web[apps/web: React UI] --> Core
   Desktop --> Icons[packages/icons: PNG icons]
   Mobile --> Icons
+  Web --> Icons
   Desktop --> Tauri[Tauri / Rust]
   Mobile --> Native[Android native APIs]
+  Web --> Browser[IndexedDB / Browser APIs]
 ```
 
 共有ロジックはアプリを参照しません。画面や OS の API を使う処理は各アプリが担当し、
 共有処理が必要とする場合は関数・インターフェースを通して渡します。
 アプリ同士のソースを直接 import する構成にはしていません。
-デスクトップは PNG を CSS マスクとして、モバイルは PNG を React Native の `Image` として描画します。色は各アプリのテーマで設定します。
+デスクトップとウェブは PNG を CSS マスクとして、モバイルは PNG を React Native の `Image` として描画します。色は各アプリのテーマで設定します。
 
 ## core の公開エントリ
 
-両アプリは `@prelis/core` を依存として宣言し、npm workspace のリンクを通じて解決します。
+各アプリは `@prelis/core` を依存として宣言し、npm workspace のリンクを通じて解決します。
 [core の package.json](../packages/core/package.json) の exports は次の構成です。
 
 | 利用条件 | 解決先 |
@@ -78,6 +82,12 @@ Node.js 向けの成果物を使用する場合は `npm run build:core` で Java
 Tauri はポート 1420 の画面を読み込みます。
 ビルド時は `beforeBuildCommand` が型チェックと Vite ビルドを実行し、
 `apps/desktop/dist/` を Tauri の `frontendDist` として取り込みます。
+
+## ウェブ版の起動・ビルド経路
+
+`apps/web` は同じ npm workspace の `@prelis/core` と `@prelis/icons` を参照して Vite でビルドします。
+日記と終了音はブラウザー内の IndexedDB に保存します。`npm run build:web` の成果物は
+`apps/web/dist/` に生成されます。開発・配信方法は[ウェブ版の手順](development/web.md)を参照してください。
 
 ## Android の起動・ビルド経路
 
