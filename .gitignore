@@ -1,6 +1,5 @@
 node_modules/
 ref/
-dist/
 .mutagen/
 .env
 .env.*
