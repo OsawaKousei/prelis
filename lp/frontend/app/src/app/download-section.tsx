@@ -18,8 +18,9 @@ type Platform = {
 
 const releases = "https://github.com/OsawaKousei/prelis/releases";
 const readme = "https://github.com/OsawaKousei/prelis/blob/main/README.md#デスクトップ版のインストール";
-const releaseNotes =
-  "https://github.com/OsawaKousei/prelis/blob/main/dist/github-release/release-notes-v0.1.1.md#インストール方法";
+const releaseNotesFile = "https://github.com/OsawaKousei/prelis/blob/main/dist/github-release/release-notes-v0.1.1.md";
+const releaseNotes = `${releaseNotesFile}#インストール方法`;
+const androidReleaseNotes = `${releaseNotesFile}#android-apk`;
 
 const platforms: Platform[] = [
   {
@@ -71,9 +72,18 @@ const platforms: Platform[] = [
   },
   {
     name: "Android",
+    requirements: "Android 7.0 以降",
     methods: [
       { label: "ストアなどからインストール", name: "Google Play" },
-      { label: "パッケージを直接入手", name: "APK を直接入手" },
+      {
+        label: "パッケージを直接入手",
+        name: "APK",
+        description: "GitHub Releases から APK を入手します。インストール手順と SHA-256 の確認方法もご覧ください。",
+        links: [
+          { label: "リリースから入手する", href: `${releases}/tag/v0.1.1` },
+          { label: "インストール手順とハッシュの確認", href: androidReleaseNotes },
+        ],
+      },
     ],
   },
   {

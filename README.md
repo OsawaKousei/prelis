@@ -52,6 +52,12 @@ sudo snap install prelis
 
 インストール後はアプリ一覧から「Prelis Desktop」を開けます。手動で更新する場合は `sudo snap refresh prelis` を実行してください。Snap 版では、ホームディレクトリ外や隠しファイルへのアクセスが制限されます。
 
+## Android 版のインストール
+
+Android 7.0 以降の端末には、[GitHub の v0.1.1 リリース](https://github.com/OsawaKousei/prelis/releases/tag/v0.1.1)に添付された `prelis-github.apk` をダウンロードしてインストールできます。APK を開き、端末の案内に従ってダウンロード元からのインストールを許可してください。Android アプリの表示上のバージョンは 1.0 です。
+
+公開中の APK の SHA-256、署名証明書の指紋、更新方法は [v0.1.1 のリリースノート](dist/github-release/release-notes-v0.1.1.md) を参照してください。
+
 ## 開発者向け
 
 構成、仕様、セットアップ、ビルド手順は [docs/](docs/README.md) を参照してください。AI エージェント向けの作業規則は [AGENTS.md](AGENTS.md) にあります。

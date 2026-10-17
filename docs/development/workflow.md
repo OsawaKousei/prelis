@@ -68,6 +68,9 @@ git diff --check
 | `./scripts/windows/build-windows.sh` | SSH トンネルと Mutagen 同期、VNC での署名付き Windows ビルド、署名検証結果と NSIS・MSI の回収（[手順](windows.md)） |
 | `npm run build:android` | Android debug APK のビルド |
 | `npm run build:android:standalone` | JavaScript と画像を同梱した Android 動作確認用 APK のビルド |
+| `npm run build:android:play` | アップロード鍵で署名した Google Play 用 AAB の作成と検証 |
+| `npm run build:android:github` | アプリ署名鍵で署名した GitHub Releases 用 APK の作成と検証 |
+| `./scripts/android/build-all.sh` | Android の Play 用 AAB と GitHub 用 APK を続けて作成・検証 |
 
 `npm run check` にネイティブビルドは含まれません。
 現在、デスクトップ・core 専用の単体テストスクリプトはありません。
