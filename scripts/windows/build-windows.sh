@@ -172,7 +172,9 @@ done
 
 echo 'Windows 側の NSIS・MSI 成果物を確認します。'
 ssh -o BatchMode=yes "$remote_host" \
-  "if not exist \"%USERPROFILE%\$completion_file\" exit /b 1 & cd /d \"%USERPROFILE%\prelis-remote\apps\desktop\src-tauri\target\release\bundle\" && dir /b \"nsis\*-setup.exe\" >nul && dir /b \"msi\*.msi\" >nul"
+  "if not exist \"%USERPROFILE%\\$completion_file\" exit /b 1"
+ssh -o BatchMode=yes "$remote_host" \
+  "cd /d \"%USERPROFILE%\\prelis-remote\\apps\\desktop\\src-tauri\\target\\release\\bundle\" && dir /b \"nsis\\*-setup.exe\" >nul && dir /b \"msi\\*.msi\" >nul"
 
 echo '成果物を回収します。'
 artifact_stage="$(mktemp -d)"

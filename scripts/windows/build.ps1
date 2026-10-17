@@ -197,6 +197,10 @@ try {
     if (-not (Test-Path -LiteralPath $appExe -PathType Leaf) -or $nsis.Count -eq 0 -or $msi.Count -eq 0) {
         throw 'The application executable, NSIS installer, or MSI installer is missing.'
     }
+    # Tauri restores the unsigned main executable after building each installer.
+    # The copies embedded in NSIS and MSI were signed during bundling; sign the
+    # standalone executable again before the final verification.
+    & $signScript -FilePath $appExe
     foreach ($file in @($appExe) + @($nsis.FullName) + @($msi.FullName)) {
         & $signTool verify /pa /all $file
         if ($LASTEXITCODE -ne 0) { throw "Signature verification failed: $file" }
