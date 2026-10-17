@@ -41,6 +41,7 @@ git diff --check
 3. デスクトップで機能の動作と受け入れ条件を確認し、確認結果を記録します。
 4. 確認済みの機能をモバイルへ反映します。UI は `apps/mobile` で別途実装し、画面サイズ・タッチ操作などに合わせて構成や操作方法を調整します。
 5. Android で共通の受け入れ条件とモバイル固有の操作を確認し、反映状況を更新します。
+6. ウェブ版にも対象機能を反映し、ブラウザー固有の保存・操作条件を確認します。
 
 デスクトップ先行の段階で区切る場合は、仕様書に「デスクトップ確認済み・モバイル反映待ち」と残し、
 未反映の内容を明示します。モバイルへの反映まで完了した状態とは区別してください。
@@ -55,12 +56,14 @@ git diff --check
 
 | コマンド | 確認範囲 |
 | --- | --- |
-| `npm run check` | 全 workspace の型チェック → モバイル lint → モバイル Jest |
-| `npm run typecheck` | 全 workspace の TypeScript。デスクトップの Vite 設定も対象 |
+| `npm run check` | 全 workspace の型チェック → モバイル lint → モバイル Jest（Watchman 不使用）→ ウェブの仕様テスト |
+| `npm run typecheck` | 全 workspace の TypeScript。デスクトップとウェブの Vite 設定も対象 |
 | `npm run lint` | モバイルの ESLint |
 | `npm test` | モバイルの Jest（直列実行） |
+| `npm run test:web` | ウェブのタイマー完了仕様テスト |
 | `npm run build:core` | Node.js 向けの core の JavaScript・型宣言生成 |
 | `npm run build -w apps/desktop` | デスクトップの型チェックと Vite ビルド |
+| `npm run build:web` | ウェブの型チェックと Vite ビルド |
 | `npm run build:desktop:debug` | デスクトップの debug ネイティブビルド |
 | `./scripts/windows/build-windows.sh` | SSH トンネルと Mutagen 同期、VNC での署名付き Windows ビルド、署名検証結果と NSIS・MSI の回収（[手順](windows.md)） |
 | `npm run build:android` | Android debug APK のビルド |
@@ -76,8 +79,9 @@ git diff --check
 | --- | --- | --- |
 | 文書のみ | 相対リンク、参照先、記載コマンドと設定の整合、`git diff --check` | アプリの再ビルドは不要 |
 | デスクトップ UI | デスクトップのフロントエンドビルド、画面の動作確認 | Tauri API を使う変更はネイティブ起動も確認 |
+| ウェブ UI・保存・タイマー | `npm run check`、`npm run build:web`、ブラウザーで変更した操作を確認 | 保存・音声・画面切り替えを含む変更は実ブラウザーで確認 |
 | モバイル UI | `npm run check`、Android 上で変更した操作を確認 | native module の追加は APK の再ビルドも実施 |
-| core のロジック・公開 API | `npm run check`、デスクトップビルド、Android 向け JS バンドル | 両アプリの利用箇所・変更した振る舞いも確認 |
+| core のロジック・公開 API | `npm run check`、デスクトップ・ウェブビルド、Android 向け JS バンドル | 各アプリの利用箇所・変更した振る舞いも確認 |
 | core exports・Vite・Metro・React の依存 | 型チェック、両バンドラーでの解決、依存ツリー | 両アプリの起動と core の変更反映を確認 |
 | Rust・Tauri 設定 | デスクトップの debug ビルドと起動 | 配布設定変更は対象 OS の配布ビルドも確認 |
 | Gradle・Android native 設定 | APK ビルドと Android 起動 | release 固有の変更は release の検証を別途実施 |

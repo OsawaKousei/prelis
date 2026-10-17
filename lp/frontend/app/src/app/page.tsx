@@ -42,10 +42,10 @@ export default function Home() {
       <main id="top">
         <section className="hero wrap" aria-labelledby="hero-title">
           <div className="hero-copy">
-            <p className="eyebrow">デスクトップとモバイルへ</p>
+            <p className="eyebrow">デスクトップ・モバイル・ウェブへ</p>
             <h1 id="hero-title">Prelis<span>マルチプラットフォームの<br />PoC アプリ</span></h1>
             <p className="lead">
-              対応状況と入手方法は、お使いの OS を選んで確認できます。
+              デスクトップ・Android・ウェブ版の対応状況と利用方法をご案内します。
             </p>
             <a className="button primary" href="#features">
               実装機能を見る <span aria-hidden="true">↘</span>

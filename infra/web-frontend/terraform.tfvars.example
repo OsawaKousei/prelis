@@ -1,0 +1,10 @@
+# Copy to terraform.tfvars (ignored by Git) before terraform plan.
+aws_profile         = "kupacllc"
+bucket_name         = "prelis-web-103492189525-ap-northeast-1"
+public_domain       = "app-prelis.prj.kupac.co.jp"
+acm_certificate_arn = "arn:aws:acm:us-east-1:103492189525:certificate/7b6cdfdb-5b63-4572-936c-f7362c471713"
+route53_zone_id     = "Z06893261CC94H6AKTJGK"
+
+tags = {
+  Project = "prelis-web-frontend"
+}

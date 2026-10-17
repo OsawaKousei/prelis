@@ -70,7 +70,9 @@ a:focus-visible { outline: 3px solid var(--blue); outline-offset: 5px; }
 .download-platform-heading h3 { margin: 0; font-size: 26px; letter-spacing: -.04em; }
 .download-platform-heading p { margin: 0; color: var(--muted); font-size: 13px; }
 .download-methods { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.download-methods.single { grid-template-columns: 1fr; }
 .download-method { min-height: 230px; padding: 30px 34px 34px 0; }
+.download-methods.single .download-method { min-height: 0; }
 .download-method + .download-method { padding-left: 34px; border-left: 1px solid var(--line); }
 .download-method-label { margin: 0 0 14px; color: var(--blue); font-size: 12px; font-weight: 700; }
 .download-method-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px 16px; }
@@ -81,6 +83,7 @@ a:focus-visible { outline: 3px solid var(--blue); outline-offset: 5px; }
 .download-links { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 20px; }
 .download-links a { color: #246f94; font-size: 13px; font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
 .download-links a:hover { color: #174e69; }
+.download-note { margin: 18px 0 0; color: var(--muted); font-size: 13px; line-height: 1.8; }
 .site-footer { min-height: 85px; display: flex; align-items: center; justify-content: space-between; gap: 20px; border-top: 1px solid var(--line); color: #8196a1; font-size: 11px; }
 @media (max-width: 900px) {
   .hero { grid-template-columns: 1fr; gap: 18px; padding-block: 62px 82px; }
