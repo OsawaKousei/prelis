@@ -1,0 +1,27 @@
+# Extracted DEB contents
+/payload/
+/.build.*/
+
+# Snapcraft build artifacts
+/parts/
+/prime/
+/stage/
+/*.snap
+/*.snap-build
+
+# Snapcraft local state
+/.snapcraft/
+/.snapcraft-state/
+
+# Temporary files and backups
+*.log
+*.tmp
+*.bak
+*.swp
+*~
+
+# Keep Snapcraft configuration and assets
+!/snap/
+!/snap/snapcraft.yaml
+!/snap/gui/
+!/snap/gui/**

@@ -1,4 +1,7 @@
 node_modules/
 ref/
-windows-artifacts/
 .mutagen/
+.env
+.env.*
+!.env.example
+dist/apt-repo-backup.*/

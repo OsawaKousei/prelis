@@ -1,13 +1,14 @@
-# リリース手順（Ubuntu 版デスクトップ）
+# Linux 向け deb・AppImage のビルド
 
 Ubuntu（amd64）向けに AppImage と deb パッケージを作成する手順です。
-コマンドはリポジトリのルートで実行します。環境条件は[デスクトップ開発](desktop.md)を参照してください。
+コマンドはリポジトリのルートで実行します。全体像は[Linux 版デスクトップ](README.md)、環境条件は[デスクトップ開発](../desktop.md)を参照してください。
 
 ## 事前準備
 
-- [共通セットアップ](workflow.md)を完了し、`npm run check` が成功すること。
+- [共通セットアップ](../workflow.md)を完了し、`npm run check` が成功すること。
 - Tauri の Linux 前提パッケージ（WebKitGTK 4.1・GTK 3 の開発ライブラリなど）が入っていること。
 - AppImage の作成時に linuxdeploy が GitHub から自動ダウンロードされるため、ネットワーク接続が必要です。
+- deb と AppImage の署名に使う GPG 秘密鍵（フィンガープリント `5985489712B7621E3FD07DEC77B8FD8948B3E363`）をビルド環境で利用できること。
 - ビルドは配布先と同じ CPU アーキテクチャ（amd64）の Linux で行います。
 
 ## 1. バージョンを更新する
@@ -16,9 +17,9 @@ Ubuntu（amd64）向けに AppImage と deb パッケージを作成する手順
 
 | ファイル | 項目 |
 | --- | --- |
-| [tauri.conf.json](../../apps/desktop/src-tauri/tauri.conf.json) | `version` |
-| [Cargo.toml](../../apps/desktop/src-tauri/Cargo.toml) | `version` |
-| [apps/desktop/package.json](../../apps/desktop/package.json) | `version` |
+| [tauri.conf.json](../../../apps/desktop/src-tauri/tauri.conf.json) | `version` |
+| [Cargo.toml](../../../apps/desktop/src-tauri/Cargo.toml) | `version` |
+| [apps/desktop/package.json](../../../apps/desktop/package.json) | `version` |
 
 `Cargo.toml` を更新したら `Cargo.lock` の更新も差分に含めます。
 
@@ -32,16 +33,18 @@ npm run build -w apps/desktop
 ## 3. パッケージを作成する
 
 ```sh
-npm run build:desktop -- --bundles deb,appimage
+./scripts/linux/build-ubuntu.sh
 ```
 
-`--bundles` を省略すると、実行 OS で作成可能な全形式が対象になります（[tauri.conf.json](../../apps/desktop/src-tauri/tauri.conf.json) の `bundle.targets` は `all`）。
+スクリプトは deb と AppImage を作成し、AppImage に GPG 埋め込み署名を付けてその存在を確認します。両ファイルに分離署名（`.asc`）も付け、`gpg --verify` で検証します。別の鍵を使う場合は `RELEASE_KEY_FPR=<フィンガープリント> ./scripts/linux/build-ubuntu.sh` と指定できます。
 初回は Rust の依存コンパイルに数分かかります。
 
 | 成果物 | 出力先 |
 | --- | --- |
 | deb | `apps/desktop/src-tauri/target/release/bundle/deb/PrelisDesktop_<version>_amd64.deb` |
+| deb の署名 | `apps/desktop/src-tauri/target/release/bundle/deb/PrelisDesktop_<version>_amd64.deb.asc` |
 | AppImage | `apps/desktop/src-tauri/target/release/bundle/appimage/PrelisDesktop_<version>_amd64.AppImage` |
+| AppImage の分離署名 | `apps/desktop/src-tauri/target/release/bundle/appimage/PrelisDesktop_<version>_amd64.AppImage.asc` |
 
 パッケージのメタデータは次の設定から生成されます。
 
@@ -54,9 +57,14 @@ npm run build:desktop -- --bundles deb,appimage
 ## 4. 成果物を確認する
 
 ```sh
-dpkg-deb -I apps/desktop/src-tauri/target/release/bundle/deb/PrelisDesktop_*_amd64.deb
-dpkg-deb -c apps/desktop/src-tauri/target/release/bundle/deb/PrelisDesktop_*_amd64.deb
-sha256sum apps/desktop/src-tauri/target/release/bundle/*/PrelisDesktop_*
+version="$(node -p 'require("./apps/desktop/package.json").version')"
+deb="apps/desktop/src-tauri/target/release/bundle/deb/PrelisDesktop_${version}_amd64.deb"
+appimage="apps/desktop/src-tauri/target/release/bundle/appimage/PrelisDesktop_${version}_amd64.AppImage"
+dpkg-deb -I "$deb"
+dpkg-deb -c "$deb"
+gpg --verify "${deb}.asc" "$deb"
+gpg --verify "${appimage}.asc" "$appimage"
+sha256sum "$deb" "${deb}.asc" "$appimage" "${appimage}.asc"
 ```
 
 Ubuntu 実機（可能ならクリーンな環境）で次を確認します。
@@ -77,19 +85,22 @@ chmod +x PrelisDesktop_<version>_amd64.AppImage
 - Ubuntu 22.04 以降では AppImage の実行に FUSE 2（`libfuse2`）が必要な場合があります。
   無い環境では `sudo apt install libfuse2`、または `--appimage-extract-and-run` を付けて実行します。
 
-## 5. 頒布する
+## 5. 直接頒布する
 
 1. 変更をコミットし、`v<version>` のタグを付けて push します。
-2. GitHub Releases などに deb と AppImage、`sha256sum` の結果を添付します。
+2. GitHub Releases などに deb、対応する `.deb.asc`、AppImage、対応する `.AppImage.asc`、`sha256sum` の結果を添付します。
 3. リリースノートに対応 OS（Ubuntu amd64）、インストール手順、既知の問題を記載します。
+
+APT リポジトリでも deb を頒布する場合は、[APT での頒布](apt.md)に従って同じ `.deb` を `reprepro` に登録・署名し、公開前後の検証を行います。`.deb.asc` は APT リポジトリの署名には使いません。
 
 ## 注意
 
-- AppImage には `bundleMediaFramework: true`（[tauri.conf.json](../../apps/desktop/src-tauri/tauri.conf.json)）で GStreamer を同梱しています。
+- AppImage には `bundleMediaFramework: true`（[tauri.conf.json](../../../apps/desktop/src-tauri/tauri.conf.json)）で GStreamer を同梱しています。
   無効だと `GStreamer element appsink not found` が出て、WebView がフリーズします。
   同梱にはビルド機に GStreamer（`libgstreamer1.0-dev`、`gstreamer1.0-plugins-base/good/bad` など）が必要です。
 
-- 現状はコード署名をしていません。署名を導入する場合は Tauri の署名設定を追加し、本書を更新してください。
+- AppImage 署名には `LDAI_SIGN` と `LDAI_SIGN_KEY` を使います。`APPIMAGETOOL_FORCE_SIGN` は現行の appimagetool では削除されているため、スクリプトは生成後に署名の有無を確認します。
+- `.deb.asc` は deb ファイルを検証するための分離署名です。`apt install ./...deb` はこの署名を自動検証しません。APT リポジトリで配布する場合は、リポジトリの `InRelease` または `Release.gpg` の署名が別途必要です。
 - arm64 向けは別途 arm64 環境（または対応するクロスビルド環境）でのビルド・検証が必要で、未検証です。
 - 成果物は `target/` 配下で Git の管理対象外です。コミットしないでください。
-- Windows 11 向けのパッケージ作成手順は [Windows ビルド手順](windows.md) を参照してください。macOS 向けは未整備です。
+- Windows 11 向けのパッケージ作成手順は [Windows ビルド手順](../windows.md) を参照してください。macOS 向けは未整備です。

@@ -1,0 +1,35 @@
+name: prelis
+title: Prelis Desktop
+base: core24
+version: '0.1.0'
+
+summary: Prelis Desktop application
+description: |
+  Prelis Desktop is a desktop application
+  developed by KUPAC LLC.
+
+grade: stable
+confinement: strict
+
+apps:
+  prelis:
+    command: usr/bin/PrelisDesktop
+    extensions: [gnome]
+    plugs:
+      - network
+      - home
+      - audio-playback
+    environment:
+      GTK_USE_PORTAL: "0"
+
+parts:
+  prelis:
+    plugin: dump
+    source: payload
+    source-type: local
+    stage-packages:
+      - gstreamer1.0-plugins-base
+      - gstreamer1.0-plugins-good
+      - gstreamer1.0-plugins-bad
+      - gstreamer1.0-pulseaudio
+      - gstreamer1.0-tools
