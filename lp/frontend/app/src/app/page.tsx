@@ -4,22 +4,22 @@ const features = [
   {
     number: "01",
     name: "Diary",
-    title: "今日のことを、今日の日付に。",
-    description: "日付を選んで、思ったことをそのまま記録。書いた内容は端末内に保存され、あとから同じ日付で読み返せます。",
+    title: "日付ごとの日記",
+    description: "日付を選んでテキストを入力し、端末内に保存できます。",
     icon: "/diary.png",
   },
   {
     number: "02",
     name: "Timer",
-    title: "集中する時間を、見える形に。",
-    description: "1〜180分から時間を決めてスタート。一時停止や再開もすぐにでき、終了音には手持ちの音声を設定できます。",
+    title: "1〜180分のタイマー",
+    description: "開始・一時停止・再開・リセットに対応します。MP3 / WAV の終了音を設定できます。",
     icon: "/timer.png",
   },
   {
     number: "03",
     name: "Password",
-    title: "必要なときに、すばやく生成。",
-    description: "長さと文字種を選ぶだけ。端末の暗号学的乱数を使ってパスワードを生成し、ボタンでコピーできます。",
+    title: "パスワード生成",
+    description: "文字数と文字種を選んで生成し、コピーできます。乱数には OS の暗号学的乱数を使います。",
     icon: "/password.png",
   },
 ];
@@ -33,27 +33,25 @@ export default function Home() {
           <span>prelis<span className="brand-dot">.</span></span>
         </a>
         <nav aria-label="メインナビゲーション">
-          <a href="#features">できること</a>
-          <a href="#platforms">利用環境</a>
+          <a href="#features">機能</a>
+          <a href="#platforms">対応環境</a>
         </nav>
       </header>
 
       <main id="top">
         <section className="hero wrap" aria-labelledby="hero-title">
           <div className="hero-copy">
-            <p className="eyebrow">CLEAR / LIGHT / SPEED</p>
-            <h1 id="hero-title">日々を、<br /><span>軽やかに整える。</span></h1>
+            <p className="eyebrow">デスクトップ / Android</p>
+            <h1 id="hero-title">Prelis<span>マルチプラットフォームの<br />PoC アプリ</span></h1>
             <p className="lead">
-              書く、時間を計る、パスワードをつくる。<br />
-              毎日の小さな作業を、ひとつの場所で迷わず進めるアプリです。
+              日記、タイマー、パスワード生成の3機能を実装しています。
             </p>
             <a className="button primary" href="#features">
-              3つの機能を見る <span aria-hidden="true">↘</span>
+              実装機能を見る <span aria-hidden="true">↘</span>
             </a>
-            <p className="hero-note">デスクトップ / Android 向けに開発中</p>
           </div>
 
-          <div className="hero-visual" aria-label="Prelis の画面イメージ。日記、タイマー、パスワードの3機能を選べます。">
+          <div className="hero-visual" aria-label="Prelis のデスクトップ画面を模した図。日記、タイマー、パスワードの3機能を選べます。">
             <div className="preview-window" aria-hidden="true">
               <div className="preview-sidebar">
                 <div className="preview-brand"><Image src="/brand.png" alt="" width={24} height={24} /> prelis<span>.</span></div>
@@ -62,25 +60,24 @@ export default function Home() {
                 <div className="preview-nav"><Image src="/password.png" alt="" width={17} height={17} /> Password</div>
               </div>
               <div className="preview-content">
-                <div className="preview-kicker">DAILY SPACE</div>
-                <div className="preview-title">Diary<span>今日の記録</span></div>
+                <div className="preview-kicker">日記画面</div>
+                <div className="preview-title">Diary<span>日記</span></div>
                 <div className="preview-date">◀ &nbsp; 2026年10月17日 &nbsp; ▶</div>
                 <div className="preview-editor">
-                  <span>今日のメモを、ここから。</span>
+                  <span>日記を入力</span>
                   <i /><i className="short" />
                 </div>
                 <div className="preview-save">保存する <span>↗</span></div>
               </div>
             </div>
-            <div className="visual-caption">A clear space for your everyday.</div>
+            <div className="visual-caption">デスクトップ画面のイメージ</div>
           </div>
         </section>
 
         <section id="features" className="features section wrap" aria-labelledby="features-title">
           <div className="section-intro">
-            <p className="eyebrow">THREE ESSENTIAL TOOLS</p>
-            <h2 id="features-title">使いたい機能へ、すぐに。</h2>
-            <p>日常の作業に必要な機能を、すっきりとまとめました。</p>
+            <p className="eyebrow">機能一覧</p>
+            <h2 id="features-title">実装している機能</h2>
           </div>
           <div className="feature-list">
             {features.map((feature) => (
@@ -101,26 +98,20 @@ export default function Home() {
         <section id="platforms" className="platforms section" aria-labelledby="platforms-title">
           <div className="wrap platforms-inner">
             <div>
-              <p className="eyebrow">DESKTOP & ANDROID</p>
-              <h2 id="platforms-title">いつもの端末で、<br />自分のペースで。</h2>
+              <p className="eyebrow">対応プラットフォーム</p>
+              <h2 id="platforms-title">デスクトップと Android</h2>
             </div>
             <div className="platform-copy">
-              <p>Prelis はデスクトップと Android で、同じ3つの機能を提供します。それぞれの画面に合った操作で、必要なことに集中できます。</p>
-              <p className="platform-note">日記のデータは端末ごとに保存されます。端末間の同期機能はありません。</p>
+              <p>両プラットフォームに同じ3機能を実装しています。画面構成と操作方法は各プラットフォームに合わせて設計しています。</p>
+              <p className="platform-note">日記データは端末ごとに保存され、端末間では同期されません。</p>
             </div>
           </div>
-        </section>
-
-        <section className="closing wrap" aria-labelledby="closing-title">
-          <p className="eyebrow">PRELIS</p>
-          <h2 id="closing-title">毎日を、もっと明快に。</h2>
-          <a className="text-link" href="#top">ページの先頭へ戻る <span aria-hidden="true">↑</span></a>
         </section>
       </main>
 
       <footer className="site-footer wrap">
         <span>© 2026 Prelis</span>
-        <span>Clear interfaces. Light structures. Fluid motion.</span>
+        <span>デスクトップ / Android 向け PoC アプリ</span>
       </footer>
     </>
   );
