@@ -2,7 +2,7 @@
 
 MSI インストーラーを、非公開 S3 バケットと CloudFront OAC から公開します。ホスト `prelis-windows-downloads.prj.kupac.co.jp` は既存の `*.prj.kupac.co.jp` 証明書でカバーされます。NSIS はこの S3 バケットへアップロードしません。
 
-Microsoft Store の Package URL: `https://prelis-windows-downloads.prj.kupac.co.jp/windows/0.1.0/PrelisDesktop_0.1.0_x64_en-US.msi`
+Microsoft Store の次の Package URL（0.1.1 の署名付き MSI を公開後に使用）: `https://prelis-windows-downloads.prj.kupac.co.jp/windows/0.1.1/PrelisDesktop_0.1.1_x64_en-US.msi`
 
 Microsoft は [HTTPS の直接リンク、バージョン付き URL、提出後に不変のバイナリ、オフラインで動くインストーラー](https://learn.microsoft.com/en-us/windows/apps/publish/publish-your-app/msi/app-package-requirements)を要求しています。この構成は URL とファイルの配信部分を扱います。MSI 本体と含まれる PE の署名、サイレントインストール、オフラインでのインストールは Windows ビルド側で検証してください。
 
@@ -35,12 +35,16 @@ terraform -chdir=infra/ms-store plan
 
 ## MSI の公開
 
-署名付き Windows ビルドの回収と検証には [Windows ビルド手順](../../docs/development/windows.md)を使います。`publish-msi.sh` は署名レポートの `WebviewInstallMode = offlineInstaller`、署名状態、タイムスタンプ、SHA-256 を照合し、MSI だけを存在しないキーにアップロードします。アップロード後に S3 の SHA-256 を照合して URL を表示します。同じ内容が既に公開済みなら再実行できます。違う内容で同じ URL を使うことはできません。
+署名付き Windows ビルドの回収と検証には [Windows ビルド手順](../../docs/development/windows.md)を使います。`publish-msi.sh` はローカルの `windows-prelis-signature-report.json` にある `WebviewInstallMode = offlineInstaller`、署名状態、タイムスタンプ、SHA-256 を照合し、MSI だけを存在しないキーにアップロードします。アップロード後に S3 の SHA-256 を照合して URL を表示します。同じ内容が既に公開済みなら再実行できます。違う内容で同じ URL を使うことはできません。
+
+0.1.0 の URL には別の MSI が公開済みです。0.1.1 の署名付き MSI を新しくビルド・回収してから、次のコマンドを実行します。ファイル名だけを変えた旧 MSI は使用できません。
 
 ```sh
-AWS_PROFILE=kupacllc ./infra/ms-store/publish-msi.sh \
-  apps/desktop/src-tauri/target/release/bundle/msi/PrelisDesktop_0.1.0_x64_en-US.msi
+./infra/ms-store/publish-msi.sh \
+  apps/desktop/src-tauri/target/release/bundle/msi/PrelisDesktop_0.1.1_x64_en-US.msi
 ```
+
+このスクリプトは既定で AWS profile `kupacllc` を使用します。別の profile を使う場合は `AWS_PROFILE=<profile名>` を指定してください。
 
 表示された URL を `curl -fIL <URL>` で確認し、`200 OK`、`Content-Type: application/x-msi`、正しいファイル名を確認してください。必要なら `curl -fL <URL> -o /tmp/<ファイル名>` で取得し、表示された SHA-256 と照合します。
 

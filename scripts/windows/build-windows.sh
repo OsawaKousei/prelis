@@ -16,7 +16,9 @@ tunnel_lock_fd=
 tunnel_lock_acquired=false
 artifact_stage=
 artifact_backup=
-artifact_promoted=false
+artifact_backup_entries=()
+artifact_promoted_entries=()
+local_bundle_created=false
 bundle_validated=false
 credential_stage=
 remote_credential=
@@ -24,14 +26,24 @@ completion_file=
 
 cleanup() {
   trap '' INT TERM
-  if [[ "$artifact_promoted" == true && "$bundle_validated" != true ]]; then
-    rm -rf -- "$local_bundle"
+  set +e
+  if [[ "$bundle_validated" != true ]]; then
+    for entry in "${artifact_promoted_entries[@]}"; do
+      rm -rf -- "$local_bundle/$entry"
+    done
+    for entry in "${artifact_backup_entries[@]}"; do
+      mv -- "$artifact_backup/$entry" "$local_bundle/$entry" ||
+        echo "以前の成果物を復元できませんでした: $entry" >&2
+    done
+    if [[ "$local_bundle_created" == true ]]; then
+      rmdir -- "$local_bundle" 2>/dev/null || true
+    fi
   fi
   if [[ -n "$artifact_backup" && -d "$artifact_backup" ]]; then
     if [[ "$bundle_validated" == true ]]; then
       rm -rf -- "$artifact_backup"
     else
-      mv -- "$artifact_backup" "$local_bundle" || echo '以前の成果物を復元できませんでした。' >&2
+      rmdir -- "$artifact_backup" 2>/dev/null || true
     fi
   fi
   if [[ "$tunnel_lock_acquired" == true && -S "$tunnel_dir/control" ]]; then
@@ -182,17 +194,32 @@ ssh -o BatchMode=yes "$remote_host" \
 echo '成果物を回収します。'
 mkdir -p "$local_release"
 artifact_stage="$(mktemp -d "$local_release/.prelis-bundle-stage.XXXXXXXX")"
-scp -r -o BatchMode=yes "${remote_host}:${remote_bundle}/." "$artifact_stage/"
+mkdir -p "$artifact_stage/nsis" "$artifact_stage/msi"
+scp -r -o BatchMode=yes "${remote_host}:${remote_bundle}/nsis/." "$artifact_stage/nsis/"
+scp -r -o BatchMode=yes "${remote_host}:${remote_bundle}/msi/." "$artifact_stage/msi/"
+scp -o BatchMode=yes "${remote_host}:${remote_bundle}/prelis-signature-report.json" "$artifact_stage/"
 python3 "$repo_root/scripts/windows/verify-artifact-report.py" --quiet "$artifact_stage"
+mv -- "$artifact_stage/prelis-signature-report.json" "$artifact_stage/windows-prelis-signature-report.json"
 
-if [[ -e "$local_bundle" || -L "$local_bundle" ]]; then
-  artifact_backup="$(mktemp -d "$local_release/.prelis-bundle-backup.XXXXXXXX")"
-  rmdir -- "$artifact_backup"
-  mv -- "$local_bundle" "$artifact_backup"
+if [[ -L "$local_bundle" || ( -e "$local_bundle" && ! -d "$local_bundle" ) ]]; then
+  echo "成果物ディレクトリが通常のディレクトリではありません: $local_bundle" >&2
+  exit 1
 fi
-mv -- "$artifact_stage" "$local_bundle"
-artifact_stage=
-artifact_promoted=true
-python3 "$repo_root/scripts/windows/verify-artifact-report.py" "$local_bundle"
+if [[ ! -d "$local_bundle" ]]; then
+  mkdir -- "$local_bundle"
+  local_bundle_created=true
+fi
+artifact_backup="$(mktemp -d "$local_release/.prelis-bundle-backup.XXXXXXXX")"
+for entry in nsis msi windows-prelis-signature-report.json; do
+  if [[ -e "$local_bundle/$entry" || -L "$local_bundle/$entry" ]]; then
+    mv -- "$local_bundle/$entry" "$artifact_backup/$entry"
+    artifact_backup_entries+=("$entry")
+  fi
+done
+for entry in nsis msi windows-prelis-signature-report.json; do
+  mv -- "$artifact_stage/$entry" "$local_bundle/$entry"
+  artifact_promoted_entries+=("$entry")
+done
+python3 "$repo_root/scripts/windows/verify-artifact-report.py" --allow-extra-files --report-name windows-prelis-signature-report.json "$local_bundle"
 bundle_validated=true
 echo "成果物: $local_bundle"

@@ -14,7 +14,7 @@ MSI は [per-user WiX テンプレート](../../apps/desktop/src-tauri/wix/per-u
 
 ビルド後は管理者権限のない Windows アカウントで、新規インストール、`msiexec /i <MSIのパス> /qn /L*v <ログのパス>` によるサイレントインストール、アンインストールを確認してください。WebView2 Runtime が未導入の環境でも、ネットワークを切った状態で UAC が出ずにインストールでき、アプリが起動することを確認します。既存のマシン単位 MSI からユーザー単位 MSI へは直接アップグレードできません。旧 MSI を管理者権限でアンインストールしてから新しい MSI をインストールする移行手順を確認してください。新しい MSI を公開する前にはアプリのバージョンを上げ、[MSI 配信手順](../../infra/ms-store/README.md)に従って新しい URL に公開します。
 
-スクリプトは VNC 用の SSH トンネルを開始し、Mutagen の同期完了後に署名用の認証情報を Windows のユーザーディレクトリへ一時転送します。Ubuntu 側の端末は開いたまま、VNC クライアントで `127.0.0.1:22118` に接続し、画面に表示された Windows 側のビルドコマンドをそのまま実行してください。`Signed Windows build completed.` と表示されたら Ubuntu 側のターミナルで Enter キーを押します。完了前に Enter を押しても確認待ちを続けます。Windows 側で失敗した場合は Ubuntu 側で Ctrl+C を押して一時認証ファイルを削除し、最初からやり直してください。スクリプトは今回の署名済みビルドの完了を確認し、NSIS と MSI の成果物および署名レポートを `scp` で Ubuntu 側の `apps/desktop/src-tauri/target/release/bundle/` に回収します。Ubuntu 側でレポートと成果物の SHA-256 を照合した後、署名状態・署名者・タイムスタンプを表で表示します。SSH トンネルと一時認証ファイルはスクリプト終了時に削除します。前回のトンネルが残っている場合は、次回の起動時に同じ制御ソケットから終了させます。
+スクリプトは VNC 用の SSH トンネルを開始し、Mutagen の同期完了後に署名用の認証情報を Windows のユーザーディレクトリへ一時転送します。Ubuntu 側の端末は開いたまま、VNC クライアントで `127.0.0.1:22118` に接続し、画面に表示された Windows 側のビルドコマンドをそのまま実行してください。`Signed Windows build completed.` と表示されたら Ubuntu 側のターミナルで Enter キーを押します。完了前に Enter を押しても確認待ちを続けます。Windows 側で失敗した場合は Ubuntu 側で Ctrl+C を押して一時認証ファイルを削除し、最初からやり直してください。スクリプトは今回の署名済みビルドの完了を確認し、NSIS と MSI の成果物および署名レポートを `scp` で Ubuntu 側の `apps/desktop/src-tauri/target/release/bundle/` に回収します。ローカルのレポート名は `windows-prelis-signature-report.json` です。Ubuntu 側でレポートと成果物の SHA-256 を照合した後、署名状態・署名者・タイムスタンプを表で表示します。SSH トンネルと一時認証ファイルはスクリプト終了時に削除します。前回のトンネルが残っている場合は、次回の起動時に同じ制御ソケットから終了させます。
 
 ## Azure Artifact Signing の設定
 
@@ -98,7 +98,7 @@ Windows SSH の既定シェルが日本語の CP932 でエラーを返す環境�
 
 送信元は Ubuntu のリポジトリ、送信先は `builduser@192.168.1.10:prelis-remote`（`C:\Users\builduser\prelis-remote`）です。同期モードは `one-way-safe` です。Git 管理情報、依存やビルドの生成物、`.env`、ローカル設定などは同期しません。Windows 側の `node_modules` と `target` は Windows で生成して再利用します。
 
-NSIS インストーラーは Windows 側の `prelis-remote\apps\desktop\src-tauri\target\release\bundle\nsis\PrelisDesktop_<version>_x64-setup.exe`、MSI インストーラーは `prelis-remote\apps\desktop\src-tauri\target\release\bundle\msi\*.msi` に生成されます。一括手順では `bundle` ディレクトリの内容と `prelis-signature-report.json` を Ubuntu 側の同じ相対パスへ回収します。実行ファイル `prelis-remote\apps\desktop\src-tauri\target\release\desktop.exe` は回収しません。インストーラーの形式は [Tauri の Windows Installer](https://v2.tauri.app/distribute/windows-installer/) を参照してください。
+NSIS インストーラーは Windows 側の `prelis-remote\apps\desktop\src-tauri\target\release\bundle\nsis\PrelisDesktop_<version>_x64-setup.exe`、MSI インストーラーは `prelis-remote\apps\desktop\src-tauri\target\release\bundle\msi\*.msi` に生成されます。一括手順では NSIS・MSI のディレクトリを入れ替えて旧版を削除し、Windows 側の `prelis-signature-report.json` をローカルの `windows-prelis-signature-report.json` として保存します。`bundle` 内の deb・AppImage など、これら以外の成果物は保持します。実行ファイル `prelis-remote\apps\desktop\src-tauri\target\release\desktop.exe` は回収しません。インストーラーの形式は [Tauri の Windows Installer](https://v2.tauri.app/distribute/windows-installer/) を参照してください。
 
 Windows 向けの頒布には NSIS インストーラーの `*-setup.exe` または MSI インストーラーの `*.msi` を渡せます。`desktop.exe` はビルド確認用の成果物で、頒布する必要はありません。Ubuntu 向けには Windows のインストーラーではなく、[Ubuntu 版リリース手順](release.md)で作成する deb または AppImage を頒布します。
 

@@ -30,7 +30,7 @@ export const Sidebar = ({ apps, activeId, onSelect }: Props) => (
       ))}
     </nav>
     <div className="sidebar-bottom">
-      <span className="version">v0.1.0</span>
+      <span className="version">v0.1.1</span>
     </div>
   </aside>
 );

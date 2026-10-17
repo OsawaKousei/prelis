@@ -8,9 +8,10 @@ from pathlib import Path, PurePosixPath
 import re
 
 
-def verify(bundle: Path):
+def verify(bundle: Path, allow_extra_files: bool = False,
+           report_name: str = "prelis-signature-report.json"):
     bundle = bundle.absolute()
-    report_path = bundle / "prelis-signature-report.json"
+    report_path = bundle / report_name
     report = json.loads(report_path.read_text(encoding="utf-8"))
     if (not isinstance(report, dict) or type(report.get("SchemaVersion")) is not int
             or report["SchemaVersion"] != 1 or not isinstance(report.get("Files"), list)):
@@ -28,11 +29,13 @@ def verify(bundle: Path):
             raise ValueError("署名レポートに相対パスがありません")
         relative = PurePosixPath(name)
         if (relative.is_absolute() or name != relative.as_posix()
-                or len(relative.parts) < 2 or ".." in relative.parts
+                or len(relative.parts) != 2 or relative.parts[0] not in ("nsis", "msi")
+                or ".." in relative.parts
                 or "\\" in name or name in reported_paths):
             raise ValueError(f"署名レポートの相対パスが不正です: {name}")
         reported_paths.add(name)
-        if relative.suffix.lower() not in (".exe", ".msi"):
+        if ((relative.parts[0] == "nsis" and relative.suffix.lower() != ".exe")
+                or (relative.parts[0] == "msi" and relative.suffix.lower() != ".msi")):
             raise ValueError(f"署名対象外のファイルです: {name}")
         if result.get("File") != relative.name or result.get("Status") != "Valid":
             raise ValueError(f"署名が有効でないファイルです: {name}")
@@ -65,13 +68,14 @@ def verify(bundle: Path):
 
     if not has_nsis or not has_msi:
         raise ValueError("NSIS EXE または MSI の署名結果がありません")
-    actual_paths = {
-        path.relative_to(bundle).as_posix()
-        for path in bundle.rglob("*")
-        if path.is_file() and path.suffix.lower() in (".exe", ".msi")
-    }
-    if actual_paths != reported_paths:
-        raise ValueError("署名レポートと回収した EXE/MSI の一覧が一致しません")
+    if not allow_extra_files:
+        actual_paths = {
+            path.relative_to(bundle).as_posix()
+            for path in bundle.rglob("*")
+            if path.is_file() and path.suffix.lower() in (".exe", ".msi")
+        }
+        if actual_paths != reported_paths:
+            raise ValueError("署名レポートと回収した EXE/MSI の一覧が一致しません")
     return results
 
 
@@ -79,9 +83,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("bundle", type=Path)
     parser.add_argument("--quiet", action="store_true")
+    parser.add_argument("--allow-extra-files", action="store_true")
+    parser.add_argument("--report-name", choices=(
+        "prelis-signature-report.json", "windows-prelis-signature-report.json"),
+        default="prelis-signature-report.json")
     args = parser.parse_args()
     try:
-        results = verify(args.bundle)
+        results = verify(args.bundle, allow_extra_files=args.allow_extra_files,
+                         report_name=args.report_name)
     except (OSError, ValueError, json.JSONDecodeError) as error:
         parser.exit(1, f"署名レポート検証失敗: {error}\n")
     if args.quiet:

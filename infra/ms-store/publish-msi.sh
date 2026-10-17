@@ -10,6 +10,8 @@ if [[ $# -ne 1 ]]; then
   exit 2
 fi
 
+export AWS_PROFILE="${AWS_PROFILE:-kupacllc}"
+
 msi_path="$(realpath -- "$1")"
 msi_name="$(basename -- "$msi_path")"
 if [[ "$(dirname -- "$msi_path")" != "$bundle_dir/msi" ||
@@ -20,7 +22,7 @@ fi
 version="${BASH_REMATCH[1]}"
 
 checksum_hex="$(sha256sum -- "$msi_path" | cut -d ' ' -f1)"
-checksum="$(python3 - "$bundle_dir/prelis-signature-report.json" "$msi_name" "$checksum_hex" <<'PY'
+checksum="$(python3 - "$bundle_dir/windows-prelis-signature-report.json" "$msi_name" "$checksum_hex" <<'PY'
 import base64
 import json
 import sys
@@ -67,7 +69,10 @@ else
 fi
 
 if [[ "$remote_checksum" != "$checksum" ]]; then
-  echo "S3 checksum differs from the local MSI: $key" >&2
+  echo "Existing S3 object cannot be published from this MSI: $key" >&2
+  echo "S3 SHA-256 (base64): $remote_checksum" >&2
+  echo "Local SHA-256 (base64): $checksum" >&2
+  echo "Build and sign a new app version, then publish it at a new versioned URL." >&2
   exit 1
 fi
 
