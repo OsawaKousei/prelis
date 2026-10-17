@@ -59,15 +59,32 @@ a:focus-visible { outline: 3px solid var(--blue); outline-offset: 5px; }
 .feature-name { display: flex; align-items: center; gap: 14px; font-size: 26px; font-weight: 650; letter-spacing: -.04em; }
 .feature-row h3 { margin: 0 0 10px; font-size: 19px; letter-spacing: -.035em; }
 .feature-row p { max-width: 530px; margin: 0; color: var(--muted); font-size: 14px; line-height: 1.9; }
-.platforms { background: linear-gradient(120deg, #f1f9fb, #f8fcfd); }
-.platforms-inner { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 80px; }
-.platform-copy p { max-width: 490px; margin: 0; color: #4d6675; font-size: 15px; line-height: 2; }
-.platform-copy .platform-note { margin-top: 24px; padding-left: 17px; border-left: 2px solid #b5dbe8; color: #647d8a; font-size: 12px; line-height: 1.8; }
+.download-intro { margin: 20px 0 0; color: var(--muted); font-size: 15px; line-height: 1.9; }
+.os-options { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 46px; }
+.os-option { min-height: 46px; padding: 0 20px; border: 1px solid var(--line); border-radius: 9px; background: #fff; color: var(--muted); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; transition: color .18s ease, background .18s ease, border-color .18s ease; }
+.os-option:hover { border-color: #91c9df; color: #246f94; }
+.os-option.selected { border-color: #278bb8; background: #e9f7fb; color: #216e95; }
+.os-option:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+.download-result { margin-top: 46px; border-top: 1px solid var(--line); }
+.download-platform-heading { display: flex; align-items: baseline; gap: 18px; padding: 28px 0; }
+.download-platform-heading h3 { margin: 0; font-size: 26px; letter-spacing: -.04em; }
+.download-platform-heading p { margin: 0; color: var(--muted); font-size: 13px; }
+.download-methods { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.download-method { min-height: 230px; padding: 30px 34px 34px 0; }
+.download-method + .download-method { padding-left: 34px; border-left: 1px solid var(--line); }
+.download-method-label { margin: 0 0 14px; color: var(--blue); font-size: 12px; font-weight: 700; }
+.download-method-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px 16px; }
+.download-method-heading h3 { margin: 0; font-size: 21px; letter-spacing: -.04em; }
+.download-status { color: #788e9a; font-size: 12px; font-weight: 700; }
+.download-status.available { color: #237fa6; }
+.download-method-description { max-width: 460px; margin: 16px 0 0; color: var(--muted); font-size: 13px; line-height: 1.8; }
+.download-links { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 20px; }
+.download-links a { color: #246f94; font-size: 13px; font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
+.download-links a:hover { color: #174e69; }
 .site-footer { min-height: 85px; display: flex; align-items: center; justify-content: space-between; gap: 20px; border-top: 1px solid var(--line); color: #8196a1; font-size: 11px; }
 @media (max-width: 900px) {
   .hero { grid-template-columns: 1fr; gap: 18px; padding-block: 62px 82px; }
   .hero-visual { width: min(100%, 630px); margin-inline: auto; }
-  .platforms-inner { gap: 36px; }
 }
 @media (max-width: 620px) {
   .wrap { width: min(100% - 36px, 1160px); }
@@ -95,10 +112,16 @@ a:focus-visible { outline: 3px solid var(--blue); outline-offset: 5px; }
   .feature-heading { gap: 25px; }
   .feature-name { font-size: 23px; }
   .feature-row h3 { font-size: 17px; }
-  .platforms-inner { grid-template-columns: 1fr; }
+  .os-options { gap: 8px; margin-top: 34px; }
+  .os-option { min-height: 42px; padding-inline: 14px; font-size: 13px; }
+  .download-result { margin-top: 34px; }
+  .download-platform-heading { flex-direction: column; gap: 4px; }
+  .download-methods { grid-template-columns: 1fr; }
+  .download-method { min-height: 0; padding: 26px 0; }
+  .download-method + .download-method { padding-left: 0; border-left: 0; border-top: 1px solid var(--line); }
   .site-footer { align-items: flex-start; flex-direction: column; justify-content: center; padding-block: 20px; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .button { transition: none; }
+  .button, .os-option { transition: none; }
 }

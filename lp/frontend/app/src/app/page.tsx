@@ -1,4 +1,5 @@
 import Image from "next/image";
+import DownloadSection from "./download-section";
 
 const features = [
   {
@@ -34,17 +35,17 @@ export default function Home() {
         </a>
         <nav aria-label="メインナビゲーション">
           <a href="#features">機能</a>
-          <a href="#platforms">対応環境</a>
+          <a href="#download">入手方法</a>
         </nav>
       </header>
 
       <main id="top">
         <section className="hero wrap" aria-labelledby="hero-title">
           <div className="hero-copy">
-            <p className="eyebrow">デスクトップ / Android</p>
+            <p className="eyebrow">デスクトップとモバイルへ</p>
             <h1 id="hero-title">Prelis<span>マルチプラットフォームの<br />PoC アプリ</span></h1>
             <p className="lead">
-              日記、タイマー、パスワード生成の3機能を実装しています。
+              対応状況と入手方法は、お使いの OS を選んで確認できます。
             </p>
             <a className="button primary" href="#features">
               実装機能を見る <span aria-hidden="true">↘</span>
@@ -95,23 +96,12 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="platforms" className="platforms section" aria-labelledby="platforms-title">
-          <div className="wrap platforms-inner">
-            <div>
-              <p className="eyebrow">対応プラットフォーム</p>
-              <h2 id="platforms-title">デスクトップと Android</h2>
-            </div>
-            <div className="platform-copy">
-              <p>両プラットフォームに同じ3機能を実装しています。画面構成と操作方法は各プラットフォームに合わせて設計しています。</p>
-              <p className="platform-note">日記データは端末ごとに保存され、端末間では同期されません。</p>
-            </div>
-          </div>
-        </section>
+        <DownloadSection />
       </main>
 
       <footer className="site-footer wrap">
         <span>© 2026 Prelis</span>
-        <span>デスクトップ / Android 向け PoC アプリ</span>
+        <span>マルチプラットフォームの PoC アプリ</span>
       </footer>
     </>
   );

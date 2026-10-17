@@ -1,28 +1,55 @@
 # Prelis
 
-デスクトップとモバイルで TypeScript のロジックを共有する npm workspaces モノレポです。
-デスクトップは Tauri + React、モバイルは React Native を使用します。
-現在の開発対象はデスクトップと Android で、iOS 対応は保留中です。
-提供機能を共通にし、UI は各アプリで個別に開発します。
-開発はデスクトップでの確認からモバイルへの反映へ進めます。方針は [基本原則](AGENTS.md) を参照してください。
+Prelis は、日記・タイマー・パスワード生成をひとつにまとめたアプリです。デスクトップ版と Android 版があります。
 
-| ディレクトリ | 役割 |
-| --- | --- |
-| [apps/desktop](apps/desktop/README.md) | デスクトップアプリ |
-| [apps/mobile](apps/mobile/README.md) | モバイルアプリ |
-| [packages/core](packages/core/package.json) | UI・OS に依存しない共有ロジック |
-| [packages/icons](packages/icons/README.md) | 両アプリで使う PNG アイコン |
-| [scripts](scripts/) | ワークスペース共通の補助スクリプト |
-| [docs](docs/README.md) | 構成説明、仕様、開発手順、環境メモ |
+- **日記**: 日付ごとに文章を端末内へ保存できます。別の端末との同期機能はありません。
+- **タイマー**: 1～180 分の時間を設定できます。終了音には MP3・WAV ファイルを追加できます。
+- **パスワード生成**: 文字数と使用する文字種を選び、生成したパスワードをコピーできます。
 
-## 開発を始める
+## デスクトップ版のインストール
 
-- [共通セットアップと作業手順](docs/development/workflow.md)
-- [デスクトップの開発手順](docs/development/desktop.md)
-- [Windows 11 向けビルド手順](docs/development/windows.md)
-- [Android の開発手順](docs/development/android.md)
-- [ワークスペースの構成](docs/architecture.md)
-- [デザインガイドライン](docs/design/guidelines.md)
-- [ドキュメント索引](docs/README.md)
+お使いの OS に合う方法を選んでください。GitHub Release から直接ダウンロードする場合は、[リリース一覧](https://github.com/OsawaKousei/prelis/releases)の最新版にあるファイルを使います。各形式の手順は [v0.1.1 のインストール案内](dist/github-release/release-notes-v0.1.1.md#インストール方法) を参照してください。
 
-AI エージェント向けの入口は [AGENTS.md](AGENTS.md) です。
+deb と AppImage には署名ファイル（`.asc`）が付きます。インストール前に署名を確認する方法も [v0.1.1 のリリースノート](dist/github-release/release-notes-v0.1.1.md) に記載しています。
+
+| OS | 方法 | インストールと更新 |
+| --- | --- | --- |
+| Ubuntu（amd64） | APT | 以下の手順でリポジトリを登録。以後は APT で更新できます。 |
+| Ubuntu（amd64） | Snap | `sudo snap install prelis`。以後は Snap の設定に従って更新されます。 |
+| Ubuntu（amd64） | deb | リリースから `.deb` を取得し、`sudo apt install ./ファイル名.deb`。更新時は新しいファイルを取得します。 |
+| Ubuntu（amd64） | AppImage | リリースから `.AppImage` を取得し、実行権限を付けて起動。更新時は新しいファイルに差し替えます。 |
+| Windows 11（x64） | NSIS または MSI | リリースから `-setup.exe` または `.msi` を取得して実行します。 |
+
+### Ubuntu: APT でインストール
+
+初回のみ、公開鍵をダウンロードして指紋が **`6E2711636C689C79E2283BD9FF5A37D5E9D0457A`** と一致することを確認してください。一致しない場合は以降のコマンドを実行しないでください。
+
+```sh
+curl -fsSLo /tmp/prelis-archive-keyring.gpg https://prelis-apt-packages.prj.kupac.co.jp/apt/prelis-archive-keyring.gpg
+gpg --show-keys --with-fingerprint /tmp/prelis-archive-keyring.gpg
+```
+
+一致を確認したら、リポジトリを登録してインストールします。
+
+```sh
+sudo install -D -m 0644 /tmp/prelis-archive-keyring.gpg /etc/apt/keyrings/prelis-archive-keyring.gpg
+echo 'deb [arch=amd64 signed-by=/etc/apt/keyrings/prelis-archive-keyring.gpg] https://prelis-apt-packages.prj.kupac.co.jp/apt stable main' | sudo tee /etc/apt/sources.list.d/prelis.list >/dev/null
+sudo apt update
+sudo apt install prelis-desktop
+```
+
+更新するときは `sudo apt update && sudo apt upgrade` を実行します。既に同じリポジトリを登録している場合、登録を重複させずに更新コマンドだけを実行してください。
+
+### Ubuntu: Snap でインストール
+
+Snap Store の stable チャンネルで公開されている版は、次のコマンドでインストールできます。
+
+```sh
+sudo snap install prelis
+```
+
+インストール後はアプリ一覧から「Prelis Desktop」を開けます。手動で更新する場合は `sudo snap refresh prelis` を実行してください。Snap 版では、ホームディレクトリ外や隠しファイルへのアクセスが制限されます。
+
+## 開発者向け
+
+構成、仕様、セットアップ、ビルド手順は [docs/](docs/README.md) を参照してください。AI エージェント向けの作業規則は [AGENTS.md](AGENTS.md) にあります。
