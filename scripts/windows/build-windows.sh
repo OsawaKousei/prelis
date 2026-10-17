@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-sign_only=false
-if [[ $# -eq 1 && "$1" == --sign-only ]]; then
-  sign_only=true
-elif [[ $# -ne 0 ]]; then
-  echo '使い方: build-windows.sh [--sign-only]' >&2
+if [[ $# -ne 0 ]]; then
+  echo '使い方: build-windows.sh' >&2
   exit 2
 fi
 
@@ -13,16 +10,30 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 remote_host=builduser@192.168.1.10
 remote_bundle=prelis-remote/apps/desktop/src-tauri/target/release/bundle
 local_bundle="${repo_root}/apps/desktop/src-tauri/target/release/bundle"
+local_release="${repo_root}/apps/desktop/src-tauri/target/release"
 tunnel_dir=
 tunnel_lock_fd=
 tunnel_lock_acquired=false
 artifact_stage=
+artifact_backup=
+artifact_promoted=false
+bundle_validated=false
 credential_stage=
 remote_credential=
 completion_file=
 
 cleanup() {
   trap '' INT TERM
+  if [[ "$artifact_promoted" == true && "$bundle_validated" != true ]]; then
+    rm -rf -- "$local_bundle"
+  fi
+  if [[ -n "$artifact_backup" && -d "$artifact_backup" ]]; then
+    if [[ "$bundle_validated" == true ]]; then
+      rm -rf -- "$artifact_backup"
+    else
+      mv -- "$artifact_backup" "$local_bundle" || echo '以前の成果物を復元できませんでした。' >&2
+    fi
+  fi
   if [[ "$tunnel_lock_acquired" == true && -S "$tunnel_dir/control" ]]; then
     ssh -o BatchMode=yes -S "$tunnel_dir/control" -O exit "$remote_host" >/dev/null 2>&1 || true
   fi
@@ -43,7 +54,7 @@ trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-for command_name in ssh scp flock; do
+for command_name in ssh scp flock python3; do
   if ! command -v "$command_name" >/dev/null 2>&1; then
     echo "$command_name が必要です。" >&2
     exit 1
@@ -143,23 +154,15 @@ ssh -o BatchMode=yes "$remote_host" \
 rm -f -- "$credential_stage"
 credential_stage=
 
-if [[ "$sign_only" == true ]]; then
-  build_option=' -SignOnly'
-  completion_prompt='署名が完了したら Enter キーを押してください。'
-else
-  build_option=
-  completion_prompt='ビルドが完了したら Enter キーを押してください。'
-fi
-
 cat <<INSTRUCTIONS
 VNC クライアントで 127.0.0.1:22118 に接続し、Windows の PowerShell で次を実行してください。
 
 cd "\$env:USERPROFILE\prelis-remote"
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\windows\build.ps1 -CredentialFile "$remote_credential" -CompletionFile "$completion_file"$build_option
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\windows\build.ps1 -CredentialFile "$remote_credential" -CompletionFile "$completion_file"
 INSTRUCTIONS
 
 while true; do
-  if ! read -r -p "$completion_prompt" < /dev/tty; then
+  if ! read -r -p 'ビルドが完了したら Enter キーを押してください。' < /dev/tty; then
     echo '入力を受け取れませんでした。' >&2
     exit 1
   fi
@@ -177,14 +180,19 @@ ssh -o BatchMode=yes "$remote_host" \
   "cd /d \"%USERPROFILE%\\prelis-remote\\apps\\desktop\\src-tauri\\target\\release\\bundle\" && dir /b \"nsis\\*-setup.exe\" >nul && dir /b \"msi\\*.msi\" >nul"
 
 echo '成果物を回収します。'
-artifact_stage="$(mktemp -d)"
+mkdir -p "$local_release"
+artifact_stage="$(mktemp -d "$local_release/.prelis-bundle-stage.XXXXXXXX")"
 scp -r -o BatchMode=yes "${remote_host}:${remote_bundle}/." "$artifact_stage/"
-if [[ ! -d "$artifact_stage/nsis" || -z "$(find "$artifact_stage/nsis" -maxdepth 1 -type f -name '*-setup.exe' -print -quit)" ||
-      ! -d "$artifact_stage/msi" || -z "$(find "$artifact_stage/msi" -maxdepth 1 -type f -name '*.msi' -print -quit)" ]]; then
-  echo '回収した成果物に NSIS または MSI インストーラーがありません。' >&2
-  exit 1
-fi
+python3 "$repo_root/scripts/windows/verify-artifact-report.py" --quiet "$artifact_stage"
 
-mkdir -p "$local_bundle"
-cp -a "$artifact_stage/." "$local_bundle/"
+if [[ -e "$local_bundle" || -L "$local_bundle" ]]; then
+  artifact_backup="$(mktemp -d "$local_release/.prelis-bundle-backup.XXXXXXXX")"
+  rmdir -- "$artifact_backup"
+  mv -- "$local_bundle" "$artifact_backup"
+fi
+mv -- "$artifact_stage" "$local_bundle"
+artifact_stage=
+artifact_promoted=true
+python3 "$repo_root/scripts/windows/verify-artifact-report.py" "$local_bundle"
+bundle_validated=true
 echo "成果物: $local_bundle"

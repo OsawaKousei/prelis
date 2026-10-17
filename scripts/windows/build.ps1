@@ -5,9 +5,7 @@ param(
 
     [Parameter(Mandatory = $true)]
     [ValidatePattern('^prelis-build-[a-zA-Z0-9._-]+\.ok$')]
-    [string]$CompletionFile,
-
-    [switch]$SignOnly
+    [string]$CompletionFile
 )
 
 $ErrorActionPreference = 'Stop'
@@ -16,8 +14,8 @@ $credentialPath = Join-Path $env:USERPROFILE $CredentialFile
 $completionPath = Join-Path $env:USERPROFILE $CompletionFile
 $metadataPath = Join-Path $env:TEMP ("prelis-signing-metadata-{0}.json" -f [guid]::NewGuid().ToString('N'))
 $configPath = Join-Path $env:TEMP ("prelis-signing-config-{0}.json" -f [guid]::NewGuid().ToString('N'))
-$signOnlyStage = $null
-$preserveSignOnlyStage = $false
+$bundleRoot = Join-Path $repoRoot 'apps/desktop/src-tauri/target/release/bundle'
+$reportPath = Join-Path $bundleRoot 'prelis-signature-report.json'
 $utf8 = [System.Text.UTF8Encoding]::new($false)
 $signingKeys = @(
     'AZURE_TENANT_ID', 'AZURE_CLIENT_ID', 'AZURE_CLIENT_SECRET',
@@ -95,74 +93,7 @@ try {
     $env:PRELIS_ARTIFACT_SIGNING_METADATA = $metadataPath
 
     $signScript = Join-Path $PSScriptRoot 'sign-artifact.ps1'
-    $bundleRoot = Join-Path $repoRoot 'apps/desktop/src-tauri/target/release/bundle'
     $appExe = Join-Path $repoRoot 'apps/desktop/src-tauri/target/release/desktop.exe'
-
-    if ($SignOnly) {
-        $nsisDir = Join-Path $bundleRoot 'nsis'
-        $msiDir = Join-Path $bundleRoot 'msi'
-        if (-not (Test-Path -LiteralPath $nsisDir -PathType Container) -or
-            -not (Test-Path -LiteralPath $msiDir -PathType Container)) {
-            throw 'Existing NSIS and MSI installer directories are required for sign-only mode.'
-        }
-        $nsis = @(Get-ChildItem -LiteralPath $nsisDir -Filter '*-setup.exe' -File)
-        $msi = @(Get-ChildItem -LiteralPath $msiDir -Filter '*.msi' -File)
-        if ($nsis.Count -eq 0 -or $msi.Count -eq 0) {
-            throw 'Existing NSIS and MSI installers are required for sign-only mode.'
-        }
-
-        $files = @()
-        foreach ($file in ($nsis + $msi)) { $files += $file.FullName }
-        if (Test-Path -LiteralPath $appExe -PathType Leaf) { $files += $appExe }
-        $signOnlyStage = Join-Path $env:TEMP ("prelis-sign-only-{0}" -f [guid]::NewGuid().ToString('N'))
-        New-Item -ItemType Directory -Path $signOnlyStage | Out-Null
-
-        foreach ($key in @('AZURE_TENANT_ID', 'AZURE_CLIENT_ID', 'AZURE_CLIENT_SECRET')) {
-            [Environment]::SetEnvironmentVariable($key, $values[$key], 'Process')
-        }
-        $stagedFiles = @()
-        $index = 0
-        foreach ($file in $files) {
-            $extension = [System.IO.Path]::GetExtension($file)
-            $signedPath = Join-Path $signOnlyStage ("signed-{0}{1}" -f $index, $extension)
-            $backupPath = Join-Path $signOnlyStage ("backup-{0}{1}" -f $index, $extension)
-            Copy-Item -LiteralPath $file -Destination $signedPath
-            Copy-Item -LiteralPath $file -Destination $backupPath
-            & $signScript -FilePath $signedPath
-            & $signTool verify /pa /all $signedPath
-            if ($LASTEXITCODE -ne 0) { throw "Signature verification failed: $file" }
-            $stagedFiles += [pscustomobject]@{ Original = $file; Signed = $signedPath; Backup = $backupPath }
-            $index++
-        }
-
-        try {
-            foreach ($entry in $stagedFiles) {
-                Copy-Item -LiteralPath $entry.Signed -Destination $entry.Original -Force
-                & $signTool verify /pa /all $entry.Original
-                if ($LASTEXITCODE -ne 0) { throw "Signature verification failed: $($entry.Original)" }
-            }
-        }
-        catch {
-            $restoreFailed = $false
-            foreach ($entry in $stagedFiles) {
-                try {
-                    Copy-Item -LiteralPath $entry.Backup -Destination $entry.Original -Force
-                }
-                catch {
-                    Write-Warning "Could not restore $($entry.Original): $_"
-                    $restoreFailed = $true
-                }
-            }
-            if ($restoreFailed) {
-                $preserveSignOnlyStage = $true
-                Write-Warning "Original copies are preserved at $signOnlyStage"
-            }
-            throw
-        }
-        [System.IO.File]::WriteAllText($completionPath, 'signed', $utf8)
-        Write-Host 'Existing Windows artifacts signed and verified. No build was run.'
-        return
-    }
 
     $config = @{
         bundle = @{
@@ -177,6 +108,7 @@ try {
     [System.IO.File]::WriteAllText($configPath, ($config | ConvertTo-Json -Depth 6 -Compress), $utf8)
 
     Set-Location $repoRoot
+    if (Test-Path -LiteralPath $reportPath) { Remove-Item -LiteralPath $reportPath -Force }
     foreach ($bundleType in @('nsis', 'msi')) {
         $oldBundle = Join-Path $bundleRoot $bundleType
         if (Test-Path -LiteralPath $oldBundle) { Remove-Item -LiteralPath $oldBundle -Recurse -Force }
@@ -192,8 +124,8 @@ try {
     & npm.cmd run build:desktop -- --bundles nsis,msi --config $configPath
     if ($LASTEXITCODE -ne 0) { throw "Tauri build failed ($LASTEXITCODE)." }
 
-    $nsis = @(Get-ChildItem -Path (Join-Path $bundleRoot 'nsis') -Filter '*-setup.exe' -File)
-    $msi = @(Get-ChildItem -Path (Join-Path $bundleRoot 'msi') -Filter '*.msi' -File)
+    $nsis = @(Get-ChildItem -LiteralPath (Join-Path $bundleRoot 'nsis') -Filter '*-setup.exe' -File)
+    $msi = @(Get-ChildItem -LiteralPath (Join-Path $bundleRoot 'msi') -Filter '*.msi' -File)
     if (-not (Test-Path -LiteralPath $appExe -PathType Leaf) -or $nsis.Count -eq 0 -or $msi.Count -eq 0) {
         throw 'The application executable, NSIS installer, or MSI installer is missing.'
     }
@@ -205,13 +137,12 @@ try {
         & $signTool verify /pa /all $file
         if ($LASTEXITCODE -ne 0) { throw "Signature verification failed: $file" }
     }
+    & (Join-Path $PSScriptRoot 'verify-signatures.ps1') `
+        -BundleRoot $bundleRoot -ApplicationPath $appExe -ReportPath $reportPath
     [System.IO.File]::WriteAllText($completionPath, 'signed', $utf8)
     Write-Host 'Signed Windows build completed.'
 }
 finally {
-    if ($signOnlyStage -and -not $preserveSignOnlyStage -and (Test-Path -LiteralPath $signOnlyStage)) {
-        Remove-Item -LiteralPath $signOnlyStage -Recurse -Force
-    }
     foreach ($path in @($credentialPath, $metadataPath, $configPath)) {
         if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path -Force }
     }
