@@ -1,6 +1,6 @@
 node_modules/
 ref/
-windows-artifacts/
+dist/
 .mutagen/
 .env
 .env.*

@@ -14,6 +14,7 @@ $credentialPath = Join-Path $env:USERPROFILE $CredentialFile
 $completionPath = Join-Path $env:USERPROFILE $CompletionFile
 $metadataPath = Join-Path $env:TEMP ("prelis-signing-metadata-{0}.json" -f [guid]::NewGuid().ToString('N'))
 $configPath = Join-Path $env:TEMP ("prelis-signing-config-{0}.json" -f [guid]::NewGuid().ToString('N'))
+$signingLogPath = Join-Path $env:TEMP ("prelis-signing-output-{0}.log" -f [guid]::NewGuid().ToString('N'))
 $bundleRoot = Join-Path $repoRoot 'apps/desktop/src-tauri/target/release/bundle'
 $reportPath = Join-Path $bundleRoot 'prelis-signature-report.json'
 $utf8 = [System.Text.UTF8Encoding]::new($false)
@@ -91,6 +92,7 @@ try {
     $env:PRELIS_SIGNTOOL_PATH = $signTool
     $env:PRELIS_ARTIFACT_SIGNING_DLIB_PATH = $dlib
     $env:PRELIS_ARTIFACT_SIGNING_METADATA = $metadataPath
+    $env:PRELIS_SIGNING_LOG_PATH = $signingLogPath
 
     $signScript = Join-Path $PSScriptRoot 'sign-artifact.ps1'
     $appExe = Join-Path $repoRoot 'apps/desktop/src-tauri/target/release/desktop.exe'
@@ -142,13 +144,23 @@ try {
     [System.IO.File]::WriteAllText($completionPath, 'signed', $utf8)
     Write-Host 'Signed Windows build completed.'
 }
+catch {
+    if (Test-Path -LiteralPath $signingLogPath -PathType Leaf) {
+        $diagnostics = (Get-Content -LiteralPath $signingLogPath -Encoding UTF8 -Tail 80) -join [Environment]::NewLine
+        if ($values -and $values.ContainsKey('AZURE_CLIENT_SECRET') -and $values['AZURE_CLIENT_SECRET']) {
+            $diagnostics = $diagnostics.Replace($values['AZURE_CLIENT_SECRET'], '[redacted]')
+        }
+        Write-Host "Artifact Signing diagnostics:`n$diagnostics"
+    }
+    throw
+}
 finally {
-    foreach ($path in @($credentialPath, $metadataPath, $configPath)) {
+    foreach ($path in @($credentialPath, $metadataPath, $configPath, $signingLogPath)) {
         if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path -Force }
     }
     foreach ($key in @('AZURE_TENANT_ID', 'AZURE_CLIENT_ID', 'AZURE_CLIENT_SECRET',
                       'PRELIS_SIGNTOOL_PATH', 'PRELIS_ARTIFACT_SIGNING_DLIB_PATH',
-                      'PRELIS_ARTIFACT_SIGNING_METADATA')) {
+                      'PRELIS_ARTIFACT_SIGNING_METADATA', 'PRELIS_SIGNING_LOG_PATH')) {
         [Environment]::SetEnvironmentVariable($key, $null, 'Process')
     }
 }
