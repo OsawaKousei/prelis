@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 session_name=prelis-windows
 remote_host=builduser@192.168.1.10
-remote_root=Dev/prelis-remote
+remote_root=prelis-remote
 remote_endpoint="${remote_host}:${remote_root}"
 
 # Keep this project's daemon separate so its SSH wrapper is used consistently.
@@ -24,9 +24,21 @@ fi
 echo "同期元: $repo_root"
 echo "同期先: $remote_endpoint"
 echo 'Windows 側の同期先ディレクトリを準備します。'
-ssh -o BatchMode=yes "$remote_host" 'if not exist "Dev\prelis-remote" mkdir "Dev\prelis-remote"'
+ssh -o BatchMode=yes "$remote_host" 'if not exist "%USERPROFILE%\prelis-remote" mkdir "%USERPROFILE%\prelis-remote"'
 
 sessions="$(mutagen sync list --template '{{range .}}{{.Name}}{{"\n"}}{{end}}')"
+if grep -Fxq "$session_name" <<< "$sessions"; then
+  session_endpoints="$(mutagen sync list "$session_name" --template '{{range .}}{{.Alpha.Path}}|{{.Beta.User}}@{{.Beta.Host}}:{{.Beta.Path}}{{end}}')"
+  if [[ "$session_endpoints" == "${repo_root}|${remote_host}:Dev/prelis-remote" ]]; then
+    echo "Mutagen セッション $session_name を新しい同期先へ移行します。"
+    mutagen sync terminate "$session_name"
+    sessions=
+  elif [[ "$session_endpoints" != "${repo_root}|${remote_endpoint}" ]]; then
+    echo "Mutagen セッション $session_name の同期先が想定と異なります: $session_endpoints" >&2
+    exit 1
+  fi
+fi
+
 if ! grep -Fxq "$session_name" <<< "$sessions"; then
   echo "Mutagen セッション $session_name を作成します。"
   mutagen sync create \
@@ -94,4 +106,4 @@ if [[ "$conflict_count" != 0 ]]; then
 fi
 
 echo 'Windows 側のファイルを確認します。'
-ssh -o BatchMode=yes "$remote_host" 'cd Dev\prelis-remote && cd && if exist package.json (echo package.json: OK) else (echo package.json: MISSING & exit /b 1)'
+ssh -o BatchMode=yes "$remote_host" 'cd /d "%USERPROFILE%\prelis-remote" && if exist package.json (echo package.json: OK) else (echo package.json: MISSING & exit /b 1)'
