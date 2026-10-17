@@ -8,7 +8,7 @@ Ubuntu のリポジトリルートで、次を実行します。
 ./scripts/windows/build-windows.sh
 ```
 
-Windows 配布ビルドは `tauri.conf.json` の `offlineInstaller` 設定で WebView2 オフラインインストーラーを同梱します。従来より MSI と NSIS のサイズが大きくなり、ビルド時には WebView2 インストーラーのダウンロードが必要です。Microsoft Store に提出する MSI は [MSI 配信手順](../../infra/ms-store/README.md)を参照してください。設定変更前の `0.1.0` MSI をそのまま提出しないでください。
+Windows 配布ビルドは `tauri.conf.json` の `offlineInstaller` 設定で WebView2 オフラインインストーラーを同梱します。従来より MSI と NSIS のサイズが大きくなり、ビルド時には WebView2 インストーラーのダウンロードが必要です。Microsoft Store に提出する MSI の公開は [MSI 配信手順](../../infra/ms-store/README.md)を参照してください。
 
 スクリプトは VNC 用の SSH トンネルを開始し、Mutagen の同期完了後に署名用の認証情報を Windows のユーザーディレクトリへ一時転送します。Ubuntu 側の端末は開いたまま、VNC クライアントで `127.0.0.1:22118` に接続し、画面に表示された Windows 側のビルドコマンドをそのまま実行してください。`Signed Windows build completed.` と表示されたら Ubuntu 側のターミナルで Enter キーを押します。完了前に Enter を押しても確認待ちを続けます。Windows 側で失敗した場合は Ubuntu 側で Ctrl+C を押して一時認証ファイルを削除し、最初からやり直してください。スクリプトは今回の署名済みビルドの完了を確認し、NSIS と MSI の成果物および署名レポートを `scp` で Ubuntu 側の `apps/desktop/src-tauri/target/release/bundle/` に回収します。Ubuntu 側でレポートと成果物の SHA-256 を照合した後、署名状態・署名者・タイムスタンプを表で表示します。SSH トンネルと一時認証ファイルはスクリプト終了時に削除します。前回のトンネルが残っている場合は、次回の起動時に同じ制御ソケットから終了させます。
 

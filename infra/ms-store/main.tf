@@ -93,7 +93,7 @@ resource "aws_s3_bucket_policy" "packages" {
         Effect    = "Allow"
         Principal = { Service = "cloudfront.amazonaws.com" }
         Action    = "s3:GetObject"
-        Resource  = "${aws_s3_bucket.packages.arn}/windows/*"
+        Resource  = "${aws_s3_bucket.packages.arn}/windows/*.msi"
         Condition = { StringEquals = { "AWS:SourceArn" = aws_cloudfront_distribution.packages.arn } }
       },
       {
@@ -101,7 +101,7 @@ resource "aws_s3_bucket_policy" "packages" {
         Effect    = "Deny"
         Principal = "*"
         Action    = "s3:PutObject"
-        Resource  = "${aws_s3_bucket.packages.arn}/windows/*"
+        Resource  = "${aws_s3_bucket.packages.arn}/windows/*.msi"
         Condition = {
           Null = { "s3:if-none-match" = "true" }
           Bool = { "s3:ObjectCreationOperation" = "true" }
@@ -112,7 +112,7 @@ resource "aws_s3_bucket_policy" "packages" {
         Effect    = "Deny"
         Principal = "*"
         Action    = ["s3:DeleteObject", "s3:DeleteObjectVersion"]
-        Resource  = "${aws_s3_bucket.packages.arn}/windows/*"
+        Resource  = "${aws_s3_bucket.packages.arn}/windows/*.msi"
       }
     ]
   })
