@@ -2,7 +2,7 @@
 
 [公式サイト（LP）](https://prelis.prj.kupac.co.jp/)
 
-Prelis は、日記・タイマー・パスワード生成をひとつにまとめたアプリです。デスクトップ版、Android 版、ウェブ版があります。
+Prelis は、日記・タイマー・パスワード生成をひとつにまとめたアプリです。デスクトップ版、Android 版、ウェブ版に加え、開発中の iOS Simulator 版があります。**iOS 版は正常に動作しません。**
 
 - **日記**: 日付ごとに文章を端末内へ保存できます。別の端末との同期機能はありません。
 - **タイマー**: 1～180 分の時間を設定できます。終了音には MP3・WAV ファイルを追加できます。
@@ -21,6 +21,7 @@ deb と AppImage には署名ファイル（`.asc`）が付きます。インス
 | Ubuntu（amd64） | deb | リリースから `.deb` を取得し、`sudo apt install ./ファイル名.deb`。更新時は新しいファイルを取得します。 |
 | Ubuntu（amd64） | AppImage | リリースから `.AppImage` を取得し、実行権限を付けて起動。更新時は新しいファイルに差し替えます。 |
 | Windows 11（x64） | NSIS または MSI | リリースから `-setup.exe` または `.msi` を取得して実行します。 |
+| macOS（Apple Silicon） | DMG または `.app` ZIP | リリースの Assets に添付された場合に入手できます。署名・公証なしの開発用です。 |
 
 ### Ubuntu: APT でインストール
 
@@ -57,6 +58,10 @@ sudo snap install prelis
 Android 7.0 以降の端末には、[GitHub の v0.1.1 リリース](https://github.com/OsawaKousei/prelis/releases/tag/v0.1.1)に添付された `prelis-github.apk` をダウンロードしてインストールできます。APK を開き、端末の案内に従ってダウンロード元からのインストールを許可してください。Android アプリの表示上のバージョンは 1.0 です。
 
 公開中の APK の SHA-256、署名証明書の指紋、更新方法は [v0.1.1 のリリースノート](dist/github-release/release-notes-v0.1.1.md) を参照してください。
+
+## iOS Simulator 版
+
+開発中の iOS 版は正常に動作しません。`PrelisMobile-simulator.app.zip` は [v0.1.1 の GitHub Release](https://github.com/OsawaKousei/prelis/releases/tag/v0.1.1)に添付された場合に入手できます。Xcode の Simulator 専用で、iPhone・iPad にはインストールできません。詳しくは [リリースノート](dist/github-release/release-notes-v0.1.1.md)を参照してください。
 
 ## 開発者向け
 

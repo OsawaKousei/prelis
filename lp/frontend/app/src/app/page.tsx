@@ -45,7 +45,7 @@ export default function Home() {
             <p className="eyebrow">デスクトップ・モバイル・ウェブへ</p>
             <h1 id="hero-title">Prelis<span>マルチプラットフォームの<br />PoC アプリ</span></h1>
             <p className="lead">
-              デスクトップ・Android・ウェブ版の対応状況と利用方法をご案内します。
+              デスクトップ・Android・iOS・ウェブ版の対応状況と利用方法をご案内します。
             </p>
             <a className="button primary" href="#features">
               実装機能を見る <span aria-hidden="true">↘</span>

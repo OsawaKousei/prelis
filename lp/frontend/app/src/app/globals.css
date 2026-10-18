@@ -79,11 +79,13 @@ a:focus-visible { outline: 3px solid var(--blue); outline-offset: 5px; }
 .download-method-heading h3 { margin: 0; font-size: 21px; letter-spacing: -.04em; }
 .download-status { color: #788e9a; font-size: 12px; font-weight: 700; }
 .download-status.available { color: #237fa6; }
+.download-status.development { color: #9a4b18; }
 .download-method-description { max-width: 460px; margin: 16px 0 0; color: var(--muted); font-size: 13px; line-height: 1.8; }
 .download-links { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 20px; }
 .download-links a { color: #246f94; font-size: 13px; font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
 .download-links a:hover { color: #174e69; }
 .download-note { margin: 18px 0 0; color: var(--muted); font-size: 13px; line-height: 1.8; }
+.download-note.warning { padding: 12px 16px; border: 1px solid #eec8a8; border-radius: 8px; background: #fff5ed; color: #873e14; font-weight: 700; }
 .site-footer { min-height: 85px; display: flex; align-items: center; justify-content: space-between; gap: 20px; border-top: 1px solid var(--line); color: #8196a1; font-size: 11px; }
 @media (max-width: 900px) {
   .hero { grid-template-columns: 1fr; gap: 18px; padding-block: 62px 82px; }
