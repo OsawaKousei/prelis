@@ -66,6 +66,7 @@ git diff --check
 | `npm run build:web` | ウェブの型チェックと Vite ビルド |
 | `npm run build:desktop:debug` | デスクトップの debug ネイティブビルド |
 | `./scripts/windows/build-windows.sh` | SSH トンネルと Mutagen 同期、VNC での署名付き Windows ビルド、署名検証結果と NSIS・MSI の回収（[手順](windows.md)） |
+| `./scripts/macos/build-macos.sh` | Mac への同期、署名なしの `.app` ビルド、ZIP・DMG の回収と SHA-256 照合（[手順](macos.md)） |
 | `npm run build:android` | Android debug APK のビルド |
 | `npm run build:android:standalone` | JavaScript と画像を同梱した Android 動作確認用 APK のビルド |
 | `npm run build:android:play` | アップロード鍵で署名した Google Play 用 AAB の作成と検証 |

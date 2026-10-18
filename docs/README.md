@@ -13,6 +13,7 @@ Prelis の構成説明、仕様、開発手順、環境メモを管理します�
 | ウェブ版を開発・ビルドする | [ウェブ版開発](development/web.md) |
 | Linux 版デスクトップのビルド・頒布を調べる | [Linux 版デスクトップ](development/linux/README.md) |
 | Windows 11 向けパッケージをビルドする | [Windows ビルド手順](development/windows.md) |
+| macOS 向けデスクトップアプリをビルドする | [macOS ビルド手順](development/macos.md) |
 | Microsoft Store 向け MSI の配信 URL を用意する | [MSI 配信インフラ](../infra/ms-store/README.md) |
 | ウェブ版の配信インフラを用意する | [ウェブ版配信インフラ](../infra/web-frontend/README.md) |
 | Android を開発する | [Android 開発](development/android.md) |

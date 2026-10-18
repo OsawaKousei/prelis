@@ -13,6 +13,7 @@
 OS 固有のインストール方法は上記の公式文書を参照してください。
 このマシンでの確認結果は[環境メモ](../environment/local-linux.md)に記録しています。
 Windows 11 向けの同期・ビルド手順は [Windows ビルド手順](windows.md) を参照してください。
+macOS 向けの同期・ビルド手順は [macOS ビルド手順](macos.md)を参照してください。
 Ubuntu 向けのビルドと頒布は [Linux 版デスクトップ](linux/README.md)を参照してください。
 
 ## 開発起動
@@ -50,7 +51,7 @@ npm run build:desktop
 | --- | --- |
 | フロントエンド | `apps/desktop/dist/` |
 | debug 実行ファイル | `apps/desktop/src-tauri/target/debug/desktop`（Windows は `.exe`） |
-| release 実行ファイル | Ubuntu: `apps/desktop/src-tauri/target/release/PrelisDesktop`、Windows: `apps/desktop/src-tauri/target/release/desktop.exe` |
+| release 実行ファイル | Ubuntu: `apps/desktop/src-tauri/target/release/PrelisDesktop`、Windows: `apps/desktop/src-tauri/target/release/desktop.exe`、macOS: `apps/desktop/src-tauri/target/release/desktop` |
 | 配布パッケージ | `apps/desktop/src-tauri/target/release/bundle/` |
 
 `CARGO_TARGET_DIR` を指定した場合、Rust 側の出力先はそのディレクトリになります。
@@ -65,7 +66,7 @@ npm run build:desktop
 | Ubuntu の実行ファイル名とランチャー用アイコン名 | [tauri.linux.conf.json](../../apps/desktop/src-tauri/tauri.linux.conf.json) |
 | ネイティブ権限 | [capabilities/default.json](../../apps/desktop/src-tauri/capabilities/default.json) |
 | Rust の依存と release 設定 | [Cargo.toml](../../apps/desktop/src-tauri/Cargo.toml) |
-| Windows・Ubuntu のアプリアイコン | [共有アイコンの生成手順](../../packages/icons/README.md) |
+| デスクトップのアプリアイコン | [共有アイコンの生成手順](../../packages/icons/README.md) |
 | 開発サーバー・ポート・HMR | [vite.config.ts](../../apps/desktop/vite.config.ts) |
 | UI の型チェック | [tsconfig.json](../../apps/desktop/tsconfig.json) |
 | Vite 設定の型チェック | [tsconfig.node.json](../../apps/desktop/tsconfig.node.json) |
