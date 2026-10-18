@@ -4,7 +4,7 @@
 
 Prelis は npm workspaces で管理するモノレポです。現在はデスクトップ、Android、ウェブの開発基盤があり、
 Diary・Timer・Password を実装しています。機能仕様は [仕様書](specs/desktop-apps.md) に記載しています。
-iOS のプロジェクトと起動コマンドは存在しますが、対応・ビルド検証は保留中です。
+iOS には Android と同じ JavaScript API のネイティブ処理があり、Simulator 向けビルドと起動を確認しています。機能操作の確認状況は[仕様書](specs/desktop-apps.md)に記録します。
 
 ## 機能と UI の共有方針
 
@@ -27,7 +27,7 @@ iOS のプロジェクトと起動コマンドは存在しますが、対応・�
 | `apps/mobile/App.tsx`・`src/` | React Native の UI。`index.js` から登録 |
 | `apps/mobile/metro.config.js` | モノレポ内のソース監視・JavaScript の解決設定 |
 | `apps/mobile/android/` | Android の Gradle 設定、Kotlin の起動処理、リソース |
-| `apps/mobile/ios/` | iOS のネイティブプロジェクト（対応保留） |
+| `apps/mobile/ios/` | iOS の Xcode 設定、アプリ起動、日記・乱数・音声などのネイティブ処理 |
 | `packages/core/src/` | 各アプリが利用する UI・OS に依存しない TypeScript ロジック |
 | `packages/icons/assets/` | 各アプリが利用する透過 PNG アイコンの正本。ブランド画像もここで管理する |
 | `scripts/` | ルートの開発コマンドを支える補助処理 |
@@ -50,7 +50,7 @@ flowchart TD
   Mobile --> Icons
   Web --> Icons
   Desktop --> Tauri[Tauri / Rust]
-  Mobile --> Native[Android native APIs]
+  Mobile --> Native[Android / iOS native APIs]
   Web --> Browser[IndexedDB / Browser APIs]
 ```
 

@@ -7,7 +7,7 @@ const baseUrl =
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: "Prelis | マルチプラットフォームの PoC アプリ",
-  description: "デスクトップ・Android・ウェブで Diary・Timer・Password を提供する PoC アプリです。各版の利用方法とウェブ版の注意点をご案内します。",
+  description: "デスクトップ・Android・iOS・ウェブ向けの Prelis を紹介します。GitHub Release の入手方法と、開発中の iOS 版に関する注意点をご案内します。",
   alternates: { canonical: "/" },
   icons: { icon: "/brand.png" },
 };

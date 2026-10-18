@@ -103,4 +103,4 @@ APT リポジトリでも deb を頒布する場合は、[APT での頒布](apt.
 - `.deb.asc` は deb ファイルを検証するための分離署名です。`apt install ./...deb` はこの署名を自動検証しません。APT リポジトリで配布する場合は、リポジトリの `InRelease` または `Release.gpg` の署名が別途必要です。
 - arm64 向けは別途 arm64 環境（または対応するクロスビルド環境）でのビルド・検証が必要で、未検証です。
 - 成果物は `target/` 配下で Git の管理対象外です。コミットしないでください。
-- Windows 11 向けのパッケージ作成手順は [Windows ビルド手順](../windows.md) を参照してください。macOS 向けは未整備です。
+- Windows 11 向けのパッケージ作成手順は [Windows ビルド手順](../windows.md)、macOS 向けは [macOS ビルド手順](../macos.md)を参照してください。

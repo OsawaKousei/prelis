@@ -7,6 +7,7 @@ type DownloadMethod = {
   name: string;
   description?: string;
   links?: { label: string; href: string }[];
+  developmentStatus?: "開発用" | "開発中";
 };
 
 type Platform = {
@@ -14,9 +15,11 @@ type Platform = {
   requirements?: string;
   methods: DownloadMethod[];
   note?: string;
+  warning?: boolean;
 };
 
 const releases = "https://github.com/OsawaKousei/prelis/releases";
+const release = `${releases}/tag/v0.1.1`;
 const readme = "https://github.com/OsawaKousei/prelis/blob/main/README.md#デスクトップ版のインストール";
 const releaseNotesFile = "https://github.com/OsawaKousei/prelis/blob/main/dist/github-release/release-notes-v0.1.1.md";
 const releaseNotes = `${releaseNotesFile}#インストール方法`;
@@ -41,9 +44,19 @@ const platforms: Platform[] = [
   },
   {
     name: "macOS",
+    requirements: "Apple Silicon（arm64）",
     methods: [
       { label: "ストアなどからインストール", name: "App Store" },
-      { label: "パッケージを直接入手", name: "直接ダウンロード" },
+      {
+        label: "パッケージを直接入手",
+        name: "DMG / .app ZIP",
+        developmentStatus: "開発用",
+        description: "GitHub Release に添付された場合に入手できる開発用パッケージです。Apple の署名・公証はなく、macOS で起動を止められる場合があります。",
+        links: [
+          { label: "GitHub Release を確認", href: release },
+          { label: "パッケージと注意事項", href: releaseNotesFile },
+        ],
+      },
     ],
   },
   {
@@ -80,7 +93,7 @@ const platforms: Platform[] = [
         name: "APK",
         description: "GitHub Releases から APK を入手します。インストール手順と SHA-256 の確認方法もご覧ください。",
         links: [
-          { label: "リリースから入手する", href: `${releases}/tag/v0.1.1` },
+          { label: "リリースから入手する", href: release },
           { label: "インストール手順とハッシュの確認", href: androidReleaseNotes },
         ],
       },
@@ -88,10 +101,22 @@ const platforms: Platform[] = [
   },
   {
     name: "iOS",
+    requirements: "Xcode の iOS Simulator 専用",
     methods: [
       { label: "ストアなどからインストール", name: "App Store" },
-      { label: "パッケージを直接入手", name: "直接ダウンロード" },
+      {
+        label: "パッケージを直接入手",
+        name: "Simulator 用 .app ZIP",
+        developmentStatus: "開発中",
+        description: "GitHub Release に添付された場合に入手できる開発用パッケージです。iPhone・iPad にはインストールできません。",
+        links: [
+          { label: "GitHub Release を確認", href: release },
+          { label: "Simulator 用パッケージの説明", href: releaseNotesFile },
+        ],
+      },
     ],
+    note: "警告：iOS 版は開発中で、正常に動作しません。Simulator での検証目的以外には使用しないでください。",
+    warning: true,
   },
   {
     name: "Web",
@@ -115,8 +140,8 @@ function Method({ method }: { method: DownloadMethod }) {
       <p className="download-method-label">{method.label}</p>
       <div className="download-method-heading">
         <h3>{method.name}</h3>
-        <span className={available ? "download-status available" : "download-status"}>
-          {available ? "利用可能" : "Coming soon"}
+        <span className={method.developmentStatus ? "download-status development" : available ? "download-status available" : "download-status"}>
+          {method.developmentStatus ?? (available ? "利用可能" : "Coming soon")}
         </span>
       </div>
       {available && (
@@ -167,7 +192,7 @@ export default function DownloadSection() {
         <div className={platform.methods.length === 1 ? "download-methods single" : "download-methods"}>
           {platform.methods.map((method) => <Method method={method} key={method.label} />)}
         </div>
-        {platform.note && <p className="download-note">{platform.note}</p>}
+        {platform.note && <p className={platform.warning ? "download-note warning" : "download-note"}>{platform.note}</p>}
       </div>
     </section>
   );
