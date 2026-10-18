@@ -1,7 +1,7 @@
 # 共通セットアップと作業・検証手順
 
 以下のコマンドは、特記がない限りリポジトリのルートで実行します。
-ネイティブ開発の前提環境は[デスクトップ](desktop.md)・[Android](android.md)を参照してください。
+ネイティブ開発の前提環境は[デスクトップ](desktop.md)・[Android](android.md)・[iOS](ios.md)を参照してください。
 
 ## 初回セットアップ
 
@@ -67,6 +67,7 @@ git diff --check
 | `npm run build:desktop:debug` | デスクトップの debug ネイティブビルド |
 | `./scripts/windows/build-windows.sh` | SSH トンネルと Mutagen 同期、VNC での署名付き Windows ビルド、署名検証結果と NSIS・MSI の回収（[手順](windows.md)） |
 | `./scripts/macos/build-macos.sh` | Mac への同期、署名なしの `.app` ビルド、ZIP・DMG の回収と SHA-256 照合（[手順](macos.md)） |
+| `./scripts/ios/build-ios-simulator.sh` | Mac への同期、署名なしの iOS Simulator `.app` ビルド、ZIP の回収と SHA-256 照合（[手順](ios.md)） |
 | `npm run build:android` | Android debug APK のビルド |
 | `npm run build:android:standalone` | JavaScript と画像を同梱した Android 動作確認用 APK のビルド |
 | `npm run build:android:play` | アップロード鍵で署名した Google Play 用 AAB の作成と検証 |
@@ -89,6 +90,7 @@ git diff --check
 | core exports・Vite・Metro・React の依存 | 型チェック、両バンドラーでの解決、依存ツリー | 両アプリの起動と core の変更反映を確認 |
 | Rust・Tauri 設定 | デスクトップの debug ビルドと起動 | 配布設定変更は対象 OS の配布ビルドも確認 |
 | Gradle・Android native 設定 | APK ビルドと Android 起動 | release 固有の変更は release の検証を別途実施 |
+| Xcode・iOS native 設定 | Simulator 向けビルドと起動（[手順](ios.md)） | 変更した機能は Simulator の画面で操作を確認 |
 
 Android 向け JS バンドルのコマンドは [Android 開発手順](android.md) に記載しています。
 環境制約で実行できない項目は、静的確認の結果と実行未確認の範囲を分けて記録します。
