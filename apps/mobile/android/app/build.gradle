@@ -77,7 +77,7 @@ android {
 
     namespace "com.prelismobile"
     defaultConfig {
-        applicationId "com.prelismobile"
+        applicationId "jp.co.kupacllc.prelis"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

@@ -119,7 +119,7 @@ release の署名と頒布用成果物については、次の節を参照して
 
 実行前に [`.env.example`](../../scripts/android/.env.example) を `scripts/android/.env` にコピーし、四つのパスワードを記入してください。`PRELIS_PLAY_STORE_PASSWORD` と `PRELIS_PLAY_KEY_PASSWORD` は Play 用、`PRELIS_APP_STORE_PASSWORD` と `PRELIS_APP_KEY_PASSWORD` は GitHub 用です。キーストアと鍵のパスワードが同じ場合も両方を記入します。鍵の場所・別名を変更する場合は `PRELIS_PLAY_KEYSTORE` / `PRELIS_PLAY_KEY_ALIAS` または `PRELIS_APP_KEYSTORE` / `PRELIS_APP_KEY_ALIAS` を記入します。スクリプトは `.env` をシェルとして実行せず、対応する変数だけを読み込みます。既に環境変数が設定されている場合は、その値を優先します。`.env` は Git 管理対象外です。
 
-各ビルドは Gradle の `clean` を実行します。一括スクリプトは最初の成果物を一時ディレクトリへ保管してから次をビルドします。同じファイル名の成果物は成功時に更新されます。配布前に `applicationId`、`versionCode`、`versionName` を [app/build.gradle](../../apps/mobile/android/app/build.gradle) で確認し、次回の更新では `versionCode` を増やしてください。両成果物を同じ版として頒布するときは、その間にこれらの値を変更しないでください。
+各ビルドは Gradle の `clean` を実行します。一括スクリプトは最初の成果物を一時ディレクトリへ保管してから次をビルドします。同じファイル名の成果物は成功時に更新されます。Google Play に登録したパッケージ名は `jp.co.kupacllc.prelis` です。配布前に `applicationId` がこの値であることと、`versionCode`、`versionName` を [app/build.gradle](../../apps/mobile/android/app/build.gradle) で確認し、次回の更新では `versionCode` を増やしてください。両成果物を同じ版として頒布するときは、その間にこれらの値を変更しないでください。
 
 Google Play と GitHub Releases の APK を相互更新できるようにするには、Play Console のアプリ署名鍵として `app-signing.jks` の鍵を登録し、アップロード鍵として `play-upload.jks` を登録する必要があります。Play Console で Google 生成のアプリ署名鍵を選択した場合、ここで作る APK はその署名と一致しません。登録後、Play Console のアプリ署名証明書の SHA-256 と、GitHub 用スクリプトが表示する SHA-256 が一致することを確認してください。AAB のアップロードや APK の公開は、このスクリプトには含まれません。
 

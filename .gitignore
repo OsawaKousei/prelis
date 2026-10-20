@@ -10,3 +10,4 @@ dist/android/
 *.jks
 *.p12
 *.keystore
+docs/specs/account-storage-sync.md
