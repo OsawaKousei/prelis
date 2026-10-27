@@ -87,7 +87,14 @@ const platforms: Platform[] = [
     name: "Android",
     requirements: "Android 7.0 以降",
     methods: [
-      { label: "ストアなどからインストール", name: "Google Play" },
+      {
+        label: "ストアなどからインストール",
+        name: "Google Play",
+        description: "Google Play から Android 版をインストールできます。",
+        links: [
+          { label: "Google Play で入手する", href: "https://play.google.com/store/apps/details?id=jp.co.kupacllc.prelis" },
+        ],
+      },
       {
         label: "パッケージを直接入手",
         name: "APK",
