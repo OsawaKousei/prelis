@@ -1,4 +1,4 @@
-import {copyFile, mkdtemp, readFile, readdir, rm, writeFile} from 'node:fs/promises';
+import {copyFile, mkdir, mkdtemp, readFile, readdir, rm, writeFile} from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
@@ -33,6 +33,9 @@ try {
         await copyFile(path.join(generated, entry.name), path.join(output, entry.name));
       }
     }
+    const webPublic = path.join(repoRoot, 'apps/web/public');
+    await mkdir(webPublic, {recursive: true});
+    await copyFile(path.join(generated, '32x32.png'), path.join(webPublic, 'favicon.png'));
   }
 } finally {
   await rm(temporaryDir, {recursive: true, force: true});
