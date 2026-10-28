@@ -35,7 +35,7 @@ try {
     }
     const webPublic = path.join(repoRoot, 'apps/web/public');
     await mkdir(webPublic, {recursive: true});
-    await copyFile(path.join(generated, '32x32.png'), path.join(webPublic, 'favicon.png'));
+    await copyFile(path.join(repoRoot, 'lp/frontend/app/public/brand.png'), path.join(webPublic, 'brand.png'));
   }
 } finally {
   await rm(temporaryDir, {recursive: true, force: true});
