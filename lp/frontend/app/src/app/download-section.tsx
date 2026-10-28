@@ -19,6 +19,7 @@ type Platform = {
 };
 
 const releases = "https://github.com/OsawaKousei/prelis/releases";
+const microsoftStore = "https://apps.microsoft.com/detail/xp99h4k206pvbv?hl=ja-JP&gl=JP";
 const release = `${releases}/tag/v0.1.1`;
 const readme = "https://github.com/OsawaKousei/prelis/blob/main/README.md#デスクトップ版のインストール";
 const releaseNotesFile = "https://github.com/OsawaKousei/prelis/blob/main/dist/github-release/release-notes-v0.1.1.md";
@@ -30,7 +31,12 @@ const platforms: Platform[] = [
     name: "Windows",
     requirements: "Windows 11（x64）",
     methods: [
-      { label: "ストアなどからインストール", name: "Microsoft Store" },
+      {
+        label: "ストアなどからインストール",
+        name: "Microsoft Store",
+        description: "Microsoft Store から Windows 版をインストールできます。",
+        links: [{ label: "Microsoft Store で入手する", href: microsoftStore }],
+      },
       {
         label: "パッケージを直接入手",
         name: "NSIS / MSI",
