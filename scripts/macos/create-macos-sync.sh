@@ -113,7 +113,7 @@ fi
 ssh -o BatchMode=yes "$remote_host" '
   set -eu
   remote="$HOME/prelis-remote"
-  for file in package.json package-lock.json apps/desktop/package.json apps/desktop/src-tauri/tauri.conf.json packages/core/package.json packages/icons/package.json scripts/macos/build-on-mac.sh scripts/macos/build-appstore-on-mac.sh; do
+  for file in package.json package-lock.json apps/desktop/package.json apps/desktop/src-tauri/tauri.conf.json apps/desktop/src-tauri/tauri.github.conf.json packages/core/package.json packages/icons/package.json scripts/macos/build-on-mac.sh scripts/macos/build-appstore-on-mac.sh scripts/macos/build-github-on-mac.sh; do
     test -f "$remote/$file"
   done
   for path in .git apps/mobile apps/web docs infra lp scripts/android scripts/ios scripts/linux scripts/windows scripts/mutagen-ssh scripts/macos/.env; do

@@ -67,7 +67,9 @@ git diff --check
 | `npm run build:desktop:debug` | デスクトップの debug ネイティブビルド |
 | `./scripts/windows/build-windows.sh` | SSH トンネルと Mutagen 同期、VNC での署名付き Windows ビルド、署名検証結果と NSIS・MSI の回収（[手順](windows.md)） |
 | `./scripts/macos/build-macos.sh` | Mac への同期、署名なしの `.app` ビルド、ZIP・DMG の回収と SHA-256 照合（[手順](macos.md)） |
-| `./scripts/macos/build-appstore.sh` | Mac への同期、Apple Distribution 署名済み `.app` のビルドと回収、署名・Entitlements・SHA-256 の検証（[手順](macos.md)） |
+| `./scripts/macos/build-appstore.sh` | Mac への同期、Apple Distribution 署名済み `.app` と Mac Installer Distribution 署名済み提出用 `.pkg` の作成・回収、署名・Entitlements・SHA-256 の検証（[手順](macos.md)） |
+| `./scripts/macos/build-github.sh` | Mac への同期、Universal `.app` の Developer ID 署名、署名済み DMG と App ZIP の生成・回収、SHA-256 の検証（[手順](macos.md)） |
+| `./scripts/macos/notarize-github.sh` | 既存の GitHub 向け App ZIP と DMG を別々に公証し、チケット付き成果物を回収（[手順](macos.md)） |
 | `./scripts/ios/build-ios-simulator.sh` | Mac への同期、署名なしの iOS Simulator `.app` ビルド、ZIP の回収と SHA-256 照合（[手順](ios.md)） |
 | `npm run build:android` | Android debug APK のビルド |
 | `npm run build:android:standalone` | JavaScript と画像を同梱した Android 動作確認用 APK のビルド |
