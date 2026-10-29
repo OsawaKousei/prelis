@@ -1,0 +1,11 @@
+{
+  "identifier": "jp.co.kupac.prelis",
+  "bundle": {
+    "macOS": {
+      "entitlements": "./Entitlements.appstore.plist",
+      "files": {
+        "embedded.provisionprofile": "./signing/Prelis.provisionprofile"
+      }
+    }
+  }
+}

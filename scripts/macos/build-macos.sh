@@ -7,7 +7,7 @@ if [[ $# -ne 0 ]]; then
 fi
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-remote_host=kousei@192.168.1.80
+remote_host=kousei@192.168.10.22
 remote_bundle=prelis-remote/apps/desktop/src-tauri/target/release/bundle
 local_bundle="$repo_root/apps/desktop/src-tauri/target/release/bundle"
 

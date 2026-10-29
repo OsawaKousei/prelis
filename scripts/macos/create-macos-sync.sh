@@ -3,7 +3,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 session_name=prelis-macos
-remote_host=kousei@192.168.1.80
+remote_host=kousei@192.168.10.22
 remote_root=prelis-remote
 remote_endpoint="${remote_host}:${remote_root}"
 
@@ -43,6 +43,7 @@ else
     --ignore=dist \
     --ignore=build \
     --ignore=DerivedData \
+    --ignore=.cxx \
     --ignore=.gradle \
     --ignore=.terraform \
     --ignore=.next \
@@ -54,6 +55,7 @@ else
     --ignore='*.p12' \
     --ignore='*.p8' \
     --ignore='*.mobileprovision' \
+    --ignore='*.provisionprofile' \
     --ignore='*.tfstate' \
     --ignore='*.tfstate.*' \
     --ignore='*.jks' \
