@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Image from "next/image";
 import DownloadSection from "./download-section";
 
@@ -101,7 +102,7 @@ export default function Home() {
 
       <footer className="site-footer wrap">
         <span>© 2026 Prelis</span>
-        <span>マルチプラットフォームの PoC アプリ</span>
+        <Link href="https://prelis.prj.kupac.co.jp/privacy/">プライバシーポリシー</Link>
       </footer>
     </>
   );

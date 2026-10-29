@@ -67,3 +67,7 @@ Android 7.0 以降の端末には、[GitHub の v0.1.1 リリース](https://git
 
 構成、仕様、セットアップ、ビルド手順は [docs/](docs/README.md) を参照してください。AI エージェント向けの作業規則は [AGENTS.md](AGENTS.md) にあります。
 ウェブ版のローカル起動とビルドは [ウェブ版の開発手順](docs/development/web.md) を参照してください。`app-prelis.prj.kupac.co.jp` への[配信インフラ](infra/web-frontend/README.md)は Terraform 適用前です。
+
+## ライセンス
+
+本リポジトリの当方開発部分は [Apache License 2.0](LICENSE) で提供します。サードパーティ製ライブラリなどの第三者制作物には、それぞれのライセンスが適用されます。
