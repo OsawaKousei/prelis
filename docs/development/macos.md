@@ -51,9 +51,11 @@ Mac 側では `tauri.appstore.conf.json` を重ね、Bundle ID `jp.co.kupac.prel
 ./scripts/macos/create-macos-sync.sh
 ```
 
-`kousei@192.168.10.22:prelis-remote` に Mutagen の `one-way-safe` セッション `prelis-macos` で同期します。スクリプトは同期完了・競合なし・Mac 側の `package.json` を確認します。Windows 用の SSH ラッパーを使わないよう、Mutagen のデータは `.mutagen-macos/` に分けています。
+`kousei@192.168.10.22:prelis-remote` に Mutagen の `one-way-safe` セッション `prelis-macos` で同期します。スクリプトは同期完了・競合なし・必要ファイルの存在と不要ディレクトリの不在を確認します。Windows 用の SSH ラッパーを使わないよう、Mutagen のデータは `.mutagen-macos/` に分けています。
 
-Git 管理情報、依存、ビルド生成物、Terraform 生成物、認証ファイルは同期しません。Mac 側の `node_modules` と Rust の `target` は Mac で生成して再利用します。
+同期対象はルートの npm 定義、`apps/desktop`、`packages/core`、`packages/icons`、Mac 側のビルドスクリプトです。Android・iOS・ウェブのアプリ、インフラ、LP、ドキュメント、他 OS のスクリプト、アイコン生成スクリプト、サンプル画像、Git 管理情報、依存、`*.tsbuildinfo` と `src-tauri/gen` を含むビルド生成物、認証ファイルは除外します。Mac 側の `node_modules` と Rust の `target` は Mac で生成して再利用します。
+
+2026-10-30 に同期先を削除してから再作成し、86 ファイル・1.2 MB、競合 0 件を確認しました。この同期先から `npm ci` は 39 パッケージを導入し、App Store 向けの署名済み `.app` を再ビルドしています。
 
 ## Mac 側で直接ビルドする場合
 
