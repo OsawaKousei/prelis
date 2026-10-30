@@ -7,8 +7,8 @@ if [[ $# -ne 0 ]]; then
 fi
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-remote_host=kousei@192.168.1.80
-remote_build=prelis-remote/apps/mobile/ios/build
+remote_host=kousei@192.168.10.22
+remote_build=prelis-ios-remote/apps/mobile/ios/build
 local_build="$repo_root/apps/mobile/ios/build"
 zip_name=PrelisMobile-simulator.app.zip
 
@@ -19,8 +19,8 @@ for command_name in ssh scp sha256sum unzip; do
   fi
 done
 
-"$repo_root/scripts/macos/create-macos-sync.sh"
-ssh -o BatchMode=yes "$remote_host" 'bash "$HOME/prelis-remote/scripts/ios/build-on-mac.sh"'
+"$repo_root/scripts/ios/create-ios-sync.sh"
+ssh -o BatchMode=yes "$remote_host" 'bash "$HOME/prelis-ios-remote/scripts/ios/build-on-mac.sh"'
 
 mkdir -p "$local_build"
 stage="$(mktemp -d "$local_build/.prelis-ios-stage.XXXXXXXX")"

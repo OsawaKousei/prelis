@@ -104,6 +104,7 @@ Metro が JavaScript を変換し、Gradle が Android アプリをビルドし�
 [Metro 設定](../apps/mobile/metro.config.js) はリポジトリルートを `watchFolders` に含めます。
 `nodeModulesPaths` にルートの依存を指定し、パッケージ固有のネストされた依存を解決できるよう
 通常の階層探索も有効にしています。
+共有 PNG はモバイルのプロジェクトルート外にあるため、開発時の `/assets/../../packages/icons/assets/` を含む URL とその正規化済み URL を、`rewriteRequestUrl` で `/assets/` と `unstable_path` クエリに変換します。これにより iOS でも Metro から画像を取得できます。バンドルの入口と Release の画像配置には影響しません。
 
 React はルートの `overrides` と lockfile により両アプリ・推移的依存で同一バージョンに揃えています。
 更新方針は[開発規則](development/rules.md)、検証範囲は[作業手順](development/workflow.md)を参照してください。

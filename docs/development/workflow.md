@@ -61,6 +61,7 @@ git diff --check
 | `npm run lint` | モバイルの ESLint |
 | `npm test` | モバイルの Jest（直列実行） |
 | `npm run test:web` | ウェブのタイマー完了仕様テスト |
+| `node --test apps/mobile/tests/metro-assets.test.cjs` | 一時 HTTP サーバーで共有 PNG 全11枚の iOS・Android 向け配信を確認。バンドル・ソースマップの URL とクエリの維持も検証 |
 | `npm run build:core` | Node.js 向けの core の JavaScript・型宣言生成 |
 | `npm run build -w apps/desktop` | デスクトップの型チェックと Vite ビルド |
 | `npm run build:web` | ウェブの型チェックと Vite ビルド |

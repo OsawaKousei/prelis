@@ -2,6 +2,7 @@ node_modules/
 ref/
 .mutagen/
 .mutagen-macos/
+.mutagen-ios/
 .env
 .env.*
 !.env.example
