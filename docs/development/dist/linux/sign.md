@@ -42,6 +42,7 @@ unset CARGO_TARGET_DIR
 ```
 
 Cargo のユーザー設定やプロジェクト設定で `build.target-dir` を指定している場合も、配布スクリプトを使う際は既定の出力先に戻してください。
+スクリプトは Cargo の出力先を確認し、既定値と異なる場合はビルド前に停止します。
 
 ## 1. パッケージを作成する
 
@@ -53,16 +54,20 @@ Cargo のユーザー設定やプロジェクト設定で `build.target-dir` を
 Tauri の `beforeBuildCommand` によりフロントエンドもビルドされます。初回は Rust の依存コンパイルに時間がかかります。
 
 AppImage には `LDAI_SIGN=1` と `LDAI_SIGN_KEY` で GPG 埋め込み署名を付けます。
-生成後、`--appimage-signature` の出力に署名が存在することを確認します。この確認は埋め込み署名の暗号学的な検証ではありません。
+生成後、`--appimage-signature` が正常終了し、出力に署名が存在することを確認します。この確認は埋め込み署名の暗号学的な検証ではありません。
 さらに deb と AppImage の両方に分離署名（`.asc`）を付け、`gpg --verify` で検証します。
+各分離署名は一時ファイルに作成し、検証成功後に既存の `.asc` を置き換えます。
 別の鍵を使う場合は `RELEASE_KEY_FPR=<40桁のフィンガープリント> ./scripts/linux/build-ubuntu.sh` と指定します。
+
+両方の分離署名の検証が成功すると、最終成果物を `dist/linux/v<version>/` にコピーします。
+同じバージョンで再実行した場合は、そのディレクトリ内の同名ファイルを置き換えます。
 
 | 成果物 | 出力先 |
 | --- | --- |
-| deb | `apps/desktop/src-tauri/target/release/bundle/deb/PrelisDesktop_<version>_amd64.deb` |
-| deb の分離署名 | `apps/desktop/src-tauri/target/release/bundle/deb/PrelisDesktop_<version>_amd64.deb.asc` |
-| AppImage | `apps/desktop/src-tauri/target/release/bundle/appimage/PrelisDesktop_<version>_amd64.AppImage` |
-| AppImage の分離署名 | `apps/desktop/src-tauri/target/release/bundle/appimage/PrelisDesktop_<version>_amd64.AppImage.asc` |
+| deb | `dist/linux/v<version>/PrelisDesktop_<version>_amd64.deb` |
+| deb の分離署名 | `dist/linux/v<version>/PrelisDesktop_<version>_amd64.deb.asc` |
+| AppImage | `dist/linux/v<version>/PrelisDesktop_<version>_amd64.AppImage` |
+| AppImage の分離署名 | `dist/linux/v<version>/PrelisDesktop_<version>_amd64.AppImage.asc` |
 
 パッケージのメタデータと Linux 固有の設定は次のとおりです。
 
@@ -79,8 +84,8 @@ AppImage には `LDAI_SIGN=1` と `LDAI_SIGN_KEY` で GPG 埋め込み署名を�
 
 ```sh
 version="$(node -p 'require("./apps/desktop/package.json").version')"
-deb="apps/desktop/src-tauri/target/release/bundle/deb/PrelisDesktop_${version}_amd64.deb"
-appimage="apps/desktop/src-tauri/target/release/bundle/appimage/PrelisDesktop_${version}_amd64.AppImage"
+deb="dist/linux/v${version}/PrelisDesktop_${version}_amd64.deb"
+appimage="dist/linux/v${version}/PrelisDesktop_${version}_amd64.AppImage"
 dpkg-deb -f "$deb" Package Version Architecture Maintainer Section Depends
 dpkg-deb -I "$deb"
 dpkg-deb -c "$deb"
@@ -143,4 +148,4 @@ FUSE を使えない環境では `"./${appimage}" --appimage-extract-and-run` �
 
 - AppImage は `tauri.conf.json` の `bundle.linux.appimage.bundleMediaFramework: true` で GStreamer を同梱します。無効にすると `GStreamer element appsink not found` などの不具合が発生する場合があります。この同梱機能は Ubuntu のビルド環境を前提とし、実行時に必要なプラグインをビルド環境へ用意します。
 - `.deb.asc` は deb ファイルを検証するための分離署名です。`apt install ./...deb` はこの署名を自動検証しません。APT リポジトリでは別の鍵で `InRelease` または `Release.gpg` に署名します。Snap Store の署名も直接頒布用の GPG 署名とは別です。
-- 成果物は `target/` 配下で Git の管理対象外です。コミットしないでください。
+- ビルド時の成果物は `target/`、最終成果物は `dist/linux/` 配下に置き、どちらも Git の管理対象外です。コミットしないでください。

@@ -8,6 +8,7 @@ ref/
 !.env.example
 dist/apt-repo-backup.*/
 dist/android/
+/dist/linux/
 *.jks
 *.p12
 *.p8
