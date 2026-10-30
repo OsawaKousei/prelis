@@ -44,6 +44,50 @@ flowchart LR
 ## 依存管理
 
 - アプリと共有パッケージは、ルートの [package.json](../../package.json) が定義する npm workspaces（`apps/*`・`packages/*`）で管理し、依存解決はルートの [package-lock.json](../../package-lock.json) で固定します。
-- Node.js の基準は [.nvmrc](../../.nvmrc)、許容範囲と npm の要件はルートの `package.json` に定義します。React 関連の共通バージョン指定はルートの `overrides` にあります。
+- Node.js の基準は [.nvmrc](../../.nvmrc) の 24.19.0、許容範囲と npm の要件はルートの `package.json` の `engines` に定義します。React 関連の共通バージョン指定はルートの `overrides` にあります。
 - [core の exports](../../packages/core/package.json) は、型・ブラウザー・React Native 向けに TypeScript ソースを、通常の Node.js 向けに `dist/` の JavaScript を公開します。
 - Rust の依存は `apps/desktop/src-tauri/` の `Cargo.toml`・`Cargo.lock`、LP の npm 依存は `lp/frontend/app/` の `package.json`・`package-lock.json` で別に管理します。
+
+## 共通セットアップ
+
+以下のコマンドは、リポジトリのルートで実行します。
+
+### 初回セットアップ
+
+Node.js のバージョン管理には fnm を使用します。
+fnm のインストールと使用するシェルへの初期化設定を済ませてから、以下を実行してください。
+`fnm install` と `fnm use` は、ルートの `.nvmrc` に指定されたバージョンを使用します。
+
+```sh
+fnm install
+fnm use
+
+npm ci
+npm run check
+```
+
+`npm ci` はルートの lockfile に従って依存をインストールします。
+既存の `node_modules/` は再作成されるため、開発サーバーを停止した状態で実行します。
+
+`npm run check` は全 workspace の型チェック、モバイルの lint・Jest（Watchman 不使用）、ウェブの仕様テストを順に実行します。
+ネイティブビルドは含まれません。コマンドの定義元はルートの [package.json](../../package.json) です。
+
+### 依存の追加・更新
+
+依存追加はルートから対象の workspace を指定します。以下は書式例で、実際のパッケージ名に置き換えます。
+
+```sh
+npm install <package> -w apps/desktop
+npm install <package> -w apps/mobile
+npm install <package> -w apps/web
+npm install -D <package> -w packages/core
+```
+
+React 関連の変更時は宣言・ルートの `overrides`・lockfile を揃え、解決結果を確認します。
+
+```sh
+npm ls react react-dom react-test-renderer --all
+```
+
+通常のアプリ開発は core の生成物に依存しません。
+Node.js から core を使う作業では、ソース変更後に `npm run build:core` を実行します。
