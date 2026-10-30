@@ -2,71 +2,95 @@
 
 [公式サイト（LP）](https://prelis.prj.kupac.co.jp/)
 
-Prelis は、日記・タイマー・パスワード生成をひとつにまとめたアプリです。デスクトップ版、Android 版、ウェブ版に加え、開発中の iOS Simulator 版があります。**iOS 版は正常に動作しません。**
+Prelis は、日記・タイマー・パスワード生成をひとつにまとめたデスクトップアプリです。
 
-- **日記**: 日付ごとに文章を端末内へ保存できます。別の端末との同期機能はありません。
-- **タイマー**: 1～180 分の時間を設定できます。終了音には MP3・WAV ファイルを追加できます。
-- **パスワード生成**: 文字数と使用する文字種を選び、生成したパスワードをコピーできます。
+- **日記**: 日付ごとに文章をこのデバイスへ保存できます。別の端末との同期機能はありません。
+- **タイマー**: 1〜180分を設定できます。終了音には MP3・WAV ファイルを追加できます。
+- **パスワード生成**: 文字数と文字種を選べます。間違えやすい文字を除く設定にも対応し、生成した文字列はコピーできます。
 
 ## デスクトップ版のインストール
 
-お使いの OS に合う方法を選んでください。GitHub Release の配布ファイルは [リリース一覧](https://github.com/OsawaKousei/prelis/releases)から取得できます。Ubuntu 向け deb・AppImage は [v0.1.2 のインストール案内](dist/github-release/v0.1.2/release-notes.md#インストール方法)、その他の形式は [v0.1.1 のインストール案内](dist/github-release/v0.1.1/release-notes.md#インストール方法)を参照してください。
+v0.1.2 の対象は Ubuntu 24.04（amd64）です。次のいずれかの方法でインストールできます。
 
-deb と AppImage には署名ファイル（`.asc`）が付きます。インストール前に署名を確認する方法も [v0.1.2 のリリースノート](dist/github-release/v0.1.2/release-notes.md)に記載しています。
-
-| OS | 方法 | インストールと更新 |
+| 方法 | 入手先・手順 | 更新方法 |
 | --- | --- | --- |
-| Ubuntu（amd64） | APT | 以下の手順でリポジトリを登録。以後は APT で更新できます。 |
-| Ubuntu（amd64） | Snap | `sudo snap install prelis`。以後は Snap の設定に従って更新されます。 |
-| Ubuntu（amd64） | deb | リリースから `.deb` を取得し、`sudo apt install ./ファイル名.deb`。更新時は新しいファイルを取得します。 |
-| Ubuntu（amd64） | AppImage | リリースから `.AppImage` を取得し、実行権限を付けて起動。更新時は新しいファイルに差し替えます。 |
-| Windows 11（x64） | NSIS または MSI | リリースから `-setup.exe` または `.msi` を取得して実行します。 |
-| macOS（Apple Silicon） | DMG または `.app` ZIP | リリースの Assets に添付された場合に入手できます。署名・公証なしの開発用です。 |
+| deb | [GitHub Release から取得](#github-release-deb) | 新しい deb を取得してインストール |
+| AppImage | [GitHub Release から取得](#github-release-appimage) | 新しい AppImage に差し替え |
+| APT | [KUPAC 公式 APT リポジトリを登録](#apt) | APT で更新 |
+| Snap | [Snap Store の stable 版をインストール](#snap) | Snap による自動更新 |
 
-### Ubuntu: APT でインストール
+### GitHub Release: deb
 
-初回のみ、公開鍵をダウンロードして指紋が **`6E2711636C689C79E2283BD9FF5A37D5E9D0457A`** と一致することを確認してください。一致しない場合は以降のコマンドを実行しないでください。
+[v0.1.2 の GitHub Release](https://github.com/OsawaKousei/prelis/releases/tag/v0.1.2)から [PrelisDesktop_0.1.2_amd64.deb](https://github.com/OsawaKousei/prelis/releases/download/v0.1.2/PrelisDesktop_0.1.2_amd64.deb) をダウンロードします。ファイルがあるディレクトリで実行してください。
 
 ```sh
-curl -fsSLo /tmp/prelis-archive-keyring.gpg https://prelis-apt-packages.prj.kupac.co.jp/apt/prelis-archive-keyring.gpg
-gpg --show-keys --with-fingerprint /tmp/prelis-archive-keyring.gpg
+sudo apt install ./PrelisDesktop_0.1.2_amd64.deb
 ```
 
-一致を確認したら、リポジトリを登録してインストールします。
+必要な依存パッケージも APT がインストールします。インストール後はアプリ一覧から Prelis を開けます。直接取得した deb の更新は、新しい版の deb をダウンロードして同じ方法で行います。
+
+### GitHub Release: AppImage
+
+[v0.1.2 の GitHub Release](https://github.com/OsawaKousei/prelis/releases/tag/v0.1.2)から [PrelisDesktop_0.1.2_amd64.AppImage](https://github.com/OsawaKousei/prelis/releases/download/v0.1.2/PrelisDesktop_0.1.2_amd64.AppImage) をダウンロードします。ファイルがあるディレクトリで実行権限を付けて起動します。
 
 ```sh
-sudo install -D -m 0644 /tmp/prelis-archive-keyring.gpg /etc/apt/keyrings/prelis-archive-keyring.gpg
-echo 'deb [arch=amd64 signed-by=/etc/apt/keyrings/prelis-archive-keyring.gpg] https://prelis-apt-packages.prj.kupac.co.jp/apt stable main' | sudo tee /etc/apt/sources.list.d/prelis.list >/dev/null
+chmod +x PrelisDesktop_0.1.2_amd64.AppImage
+./PrelisDesktop_0.1.2_amd64.AppImage
+```
+
+FUSE を利用できない環境では、次の方法で展開して起動できます。
+
+```sh
+./PrelisDesktop_0.1.2_amd64.AppImage --appimage-extract-and-run
+```
+
+更新時は新しい AppImage をダウンロードして差し替えてください。
+
+### APT
+
+KUPAC 公式 APT リポジトリ `https://packages.kupac.co.jp/apt/` を登録します。初回のみ公開鍵を取得し、主鍵の指紋が **`6E2711636C689C79E2283BD9FF5A37D5E9D0457A`** と一致することを確認してください。
+
+```sh
+curl -fsSLo /tmp/kupac-archive-keyring.gpg https://packages.kupac.co.jp/apt/kupac-archive-keyring.gpg
+gpg --show-keys --with-fingerprint /tmp/kupac-archive-keyring.gpg
+```
+
+公式サイトなど、鍵の取得先とは別の経路でも指紋を照合してください。一致を確認したら、公開鍵と deb822 形式のソースを登録します。
+
+```sh
+sudo install -D -m 0644 /tmp/kupac-archive-keyring.gpg /etc/apt/keyrings/kupac-archive-keyring.gpg
+sudo tee /etc/apt/sources.list.d/kupac.sources >/dev/null <<'EOF'
+Types: deb
+URIs: https://packages.kupac.co.jp/apt
+Suites: stable
+Components: main
+Architectures: amd64
+Signed-By: /etc/apt/keyrings/kupac-archive-keyring.gpg
+EOF
 sudo apt update
 sudo apt install prelis-desktop
 ```
 
-更新するときは `sudo apt update && sudo apt upgrade` を実行します。既に同じリポジトリを登録している場合、登録を重複させずに更新コマンドだけを実行してください。
-
-### Ubuntu: Snap でインストール
-
-Snap Store の stable チャンネルで公開されている版は、次のコマンドでインストールできます。
+登録は一度だけ行います。更新時は次を実行してください。`apt update` だけではアプリ本体は更新されません。
 
 ```sh
-sudo snap install prelis
+sudo apt update
+sudo apt install prelis-desktop
 ```
 
-インストール後はアプリ一覧から「Prelis Desktop」を開けます。手動で更新する場合は `sudo snap refresh prelis` を実行してください。Snap 版では、ホームディレクトリ外や隠しファイルへのアクセスが制限されます。
+### Snap
 
-## Android 版のインストール
+[Snap Store](https://snapcraft.io/prelis) の stable 版をインストールします。
 
-Android 7.0 以降の端末には、[GitHub の v0.1.1 リリース](https://github.com/OsawaKousei/prelis/releases/tag/v0.1.1)に添付された `prelis-github.apk` をダウンロードしてインストールできます。APK を開き、端末の案内に従ってダウンロード元からのインストールを許可してください。Android アプリの表示上のバージョンは 1.0 です。
+```sh
+sudo snap install prelis --channel=stable
+```
 
-公開中の APK の SHA-256、署名証明書の指紋、更新方法は [v0.1.1 のリリースノート](dist/github-release/v0.1.1/release-notes.md) を参照してください。
-
-## iOS Simulator 版
-
-開発中の iOS 版は正常に動作しません。`PrelisMobile-simulator.app.zip` は [v0.1.1 の GitHub Release](https://github.com/OsawaKousei/prelis/releases/tag/v0.1.1)に添付された場合に入手できます。Xcode の Simulator 専用で、iPhone・iPad にはインストールできません。詳しくは [リリースノート](dist/github-release/v0.1.1/release-notes.md)を参照してください。
+インストール後はアプリ一覧から Prelis を開けます。以後は Snap の設定に従って自動更新されます。手動で更新する場合は `sudo snap refresh prelis` を実行してください。Snap 版では、ホームディレクトリ外や隠しファイルへのアクセスが制限されます。
 
 ## 開発者向け
 
-構成、仕様、セットアップ、ビルド手順は [docs/](docs/README.md) を参照してください。AI エージェント向けの作業規則は [AGENTS.md](AGENTS.md) にあります。
-ウェブ版のローカル起動とビルドは [ウェブ版の開発手順](docs/development/web.md) を参照してください。`app-prelis.prj.kupac.co.jp` への[配信インフラ](infra/web-frontend/README.md)は Terraform 適用前です。
+構成と共通セットアップは [全体構成](docs/development/architecture.md)、デスクトップの開発・ビルドは [デスクトップ開発](docs/development/desktop.md)、Linux の配布物作成は [ビルド・署名手順](docs/development/dist/linux/sign.md)を参照してください。APT 管理者への成果物提出・公開依頼は [APT での頒布](docs/development/dist/linux/apt.md)、Snap の公開は [Snap での頒布](docs/development/dist/linux/snap.md)にまとめています。AI エージェント向けの作業規則は [AGENTS.md](AGENTS.md) にあります。
 
 ## ライセンス
 

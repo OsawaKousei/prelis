@@ -1,8 +1,0 @@
-Origin: KUPAC LLC
-Label: Prelis
-Codename: stable
-Suite: stable
-Architectures: amd64
-Components: main
-Description: Prelis Desktop APT Repository
-SignWith: 6E2711636C689C79E2283BD9FF5A37D5E9D0457A

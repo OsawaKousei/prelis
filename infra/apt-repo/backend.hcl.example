@@ -1,5 +1,0 @@
-# Copy to backend.hcl (ignored by Git) before terraform init.
-bucket  = "terraform-state-bucket-103492189525-ap-northeast-1-an"
-key     = "prelis/apt-repo/terraform.tfstate"
-region  = "ap-northeast-1"
-profile = "kupacllc"
