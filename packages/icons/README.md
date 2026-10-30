@@ -18,6 +18,12 @@ Android のホーム画面用アイコンは `brand.png` から生成します�
 npm run launcher:android -w packages/icons
 ```
 
+iOS のホーム画面用アイコンも同じ背景色 `#EAF7FC` とロゴ配置（通常の Android アイコンと同じ幅76%・余白12%）で生成します。角のマスクは iOS に任せ、提出用にアルファチャンネルを持たない 1024×1024 の RGB PNG を保存します。Xcode が iPhone・iPad 向けのサイズを生成します。
+
+```sh
+npm run launcher:ios -w packages/icons
+```
+
 Windows・Ubuntu・macOS のデスクトップアプリアイコンも同じ `brand.png` から生成します。背景色・角丸・ロゴの配置は Android の通常アイコンと同じです。ウェブ版のタブアイコン `apps/web/public/brand.png` には LP の `lp/frontend/app/public/brand.png` をそのままコピーします。ブランド画像を変更したら、LP の画像も更新してから両方の生成コマンドを実行します。
 
 ```sh

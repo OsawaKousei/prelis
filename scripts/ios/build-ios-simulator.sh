@@ -27,6 +27,7 @@ stage="$(mktemp -d "$local_build/.prelis-ios-stage.XXXXXXXX")"
 trap 'rm -rf -- "$stage"' EXIT
 mkdir "$stage/simulator"
 scp -o BatchMode=yes "$remote_host:$remote_build/simulator/$zip_name" "$stage/simulator/"
+scp -o BatchMode=yes "$remote_host:$remote_build/simulator/verification.json" "$stage/simulator/"
 scp -o BatchMode=yes "$remote_host:$remote_build/ios-simulator-artifacts.sha256" "$stage/"
 (
   cd "$stage"
@@ -36,6 +37,7 @@ unzip -tq "$stage/simulator/$zip_name" >/dev/null
 
 mkdir -p "$local_build/simulator"
 mv -f "$stage/simulator/$zip_name" "$local_build/simulator/$zip_name"
+mv -f "$stage/simulator/verification.json" "$local_build/simulator/verification.json"
 mv -f "$stage/ios-simulator-artifacts.sha256" "$local_build/ios-simulator-artifacts.sha256"
 echo "成果物: $local_build/simulator/$zip_name"
 echo "SHA-256: $local_build/ios-simulator-artifacts.sha256"

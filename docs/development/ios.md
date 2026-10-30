@@ -1,6 +1,6 @@
 # iOS 開発（Simulator・iPhone 実機）
 
-コマンドはリポジトリのルートで実行します。通常の動作確認は、Mac で Metro を起動し、Debug アプリを iOS Simulator または iPhone 実機で実行します。Linux で編集したソースを Mac へ同期する構成です。実機用 IPA や App Store 配布物は作成しません。
+コマンドはリポジトリのルートで実行します。通常の動作確認は、Mac で Metro を起動し、Debug アプリを iOS Simulator または iPhone 実機で実行します。Linux で編集したソースを Mac へ同期する構成です。配布には別途 Release ビルドを使用します。
 
 ## 初回だけ必要な準備
 
@@ -131,6 +131,36 @@ npm run start:mobile -- --reset-cache
 
 ## Metro を使わない Release ビルド
 
+### Simulator と App Store 提出用を一括生成する
+
+Mac の Metro を停止してから、Ubuntu で実行します。
+
+```sh
+./scripts/ios/build-all.sh
+```
+
+Mac のホームに `KUPACLLC-Apple-Distribution.p12` と `kupacprelismobileiosappstore.mobileprovision` を配置します。後者は Team `GLQCJ8YF9S`、App ID `jp.co.kupac.prelis`、名前 `kupac-prelis-mobile-ios-appstore` の App Store Connect 用プロファイルです。パスワードは macOS 版と共通の `scripts/macos/.env` の `PRELIS_APPSTORE_P12_PASSWORD` を読み、SSH の標準入力で渡します。
+
+共通の同期・`npm ci`・`pod install --deployment` の後に、Release / Simulator と Release / iphoneos Archive を別々にビルドします。Simulator は arm64・x86_64、実機用は arm64 です。バージョンとビルド番号は Xcode の Release 設定の `MARKETING_VERSION`・`CURRENT_PROJECT_VERSION` を両方で使います。再提出時はビルド番号を更新してください。
+
+実機用は一時キーチェーンへ配布証明書を読み込み、Archive を作成して `xcodebuild -exportArchive` の `app-store-connect` / `destination=export` で IPA を生成します。キーチェーンの既定値と検索対象は終了時に復元し、一時キーチェーンは削除します。開発用署名は既存の Debug 設定を使います。
+
+| 成果物 | Ubuntu への回収先 |
+| --- | --- |
+| GitHub Releases 向け Simulator ZIP | `apps/mobile/ios/build/simulator/PrelisMobile-simulator.app.zip` |
+| App Store Connect 提出用 IPA | `apps/mobile/ios/build/appstore/PrelisMobile.ipa` |
+| dSYM を含む保管用 Archive ZIP | `apps/mobile/ios/build/appstore/PrelisMobile.xcarchive.zip` |
+| ビルド内容・署名の検証結果 | `apps/mobile/ios/build/{simulator,appstore}/verification.json` |
+| 全成果物の SHA-256 一覧 | `apps/mobile/ios/build/ios-release-artifacts.sha256` |
+
+アプリの Bundle ID、プラットフォーム、CPU、バージョンの一致、JavaScript・共有 PNG・アプリアイコンの収録、実機用の署名・証明書とプロファイルの対応・開発用 Entitlement の不在を検証します。回収後も SHA-256 と ZIP/IPA の整合性を検証してから保存します。失敗した工程で停止し、Mac の `apps/mobile/ios/build/logs/` にログを残します。
+
+Simulator ZIP と IPA は Metro を使わずに実行するための成果物です。GitHub Release の公開、App Store Connect へのアップロード、Apple 側の検証・審査提出はこのスクリプトでは行いません。Archive の作成・IPA のローカル検証成功と、Apple 側の受理・審査合格は別に確認します。[Apple の配布手順](https://developer.apple.com/documentation/xcode/distributing-your-app-for-beta-testing-and-releases)も参照してください。
+
+2026-10-30 に Xcode 27.1 / Mac 標準 Bash 3.2 で一括生成を実行し、version `1.0` / build `1` の Simulator ZIP、Apple Distribution 署名済み IPA、dSYM を含む Archive ZIP を Ubuntu へ回収しました。全5ファイルの SHA-256、ZIP/IPA の整合性、共有 PNG 全11枚とアプリアイコンの同梱、署名とプロファイルの対応を確認済みです。ZIP 内のアプリを iPhone 18 Pro Simulator へインストールし、Metro が停止した状態でホーム画面とアプリ内アイコンの表示を確認しました。ビルド後の既定キーチェーンと検索対象の復元も確認しています。App Store Connect へのアップロード・Apple 側の検証・審査は未実施です。
+
+### Simulator 用だけ生成する
+
 ```sh
 ./scripts/ios/build-ios-simulator.sh
 ```
@@ -180,6 +210,9 @@ Metro を使った Debug 実行でも、Release 成果物の実行でも、画�
 ```sh
 cd ~/prelis-ios-remote
 bash scripts/ios/build-on-mac.sh
+
+# Simulator ZIP と提出用 IPA / Archive の一括生成（パスワードは対話入力）
+bash scripts/ios/build-on-mac.sh --all
 ```
 
 Mac の `xcode-select` が Command Line Tools を指している場合も、スクリプトは `/Applications/Xcode.app` を使用します。生成先は Mac 側の `apps/mobile/ios/build/` です。

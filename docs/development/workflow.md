@@ -72,6 +72,7 @@ git diff --check
 | `./scripts/macos/build-github.sh` | Mac への同期、Universal `.app` の Developer ID 署名、署名済み DMG と App ZIP の生成・回収、SHA-256 の検証（[手順](macos.md)） |
 | `./scripts/macos/notarize-github.sh` | 既存の GitHub 向け App ZIP と DMG を別々に公証し、チケット付き成果物を回収（[手順](macos.md)） |
 | `./scripts/ios/build-ios-simulator.sh` | Mac への同期、署名なしの iOS Simulator `.app` ビルド、ZIP の回収と SHA-256 照合（[手順](ios.md)） |
+| `./scripts/ios/build-all.sh` | 共通の依存準備後に Simulator ZIP と Apple Distribution 署名済み App Store 提出用 IPA・Archive を生成、内容・署名検証と回収後の SHA-256 照合（[手順](ios.md)） |
 | `./scripts/ios/setup-device-signing.sh` | Mac の開発用キーチェーンと iOS 開発用プロファイルを初回設定。日常の実機起動は Metro と `run-ios --mode Debug --device` を使用（[手順](ios.md)） |
 | `npm run build:android` | Android debug APK のビルド |
 | `npm run build:android:standalone` | JavaScript と画像を同梱した Android 動作確認用 APK のビルド |
