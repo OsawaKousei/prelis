@@ -69,7 +69,7 @@ npm run check
 `npm ci` はルートの lockfile に従って依存をインストールします。
 既存の `node_modules/` は再作成されるため、開発サーバーを停止した状態で実行します。
 
-`npm run check` は全 workspace の型チェック、モバイルの lint・Jest（Watchman 不使用）、ウェブの仕様テストを順に実行します。
+`npm run check` は全 workspace の型チェック、モバイルの lint・Jest（Watchman 不使用）、core の生成ロジックテスト、ウェブの仕様テストを順に実行します。
 ネイティブビルドは含まれません。コマンドの定義元はルートの [package.json](../../package.json) です。
 
 ### 依存の追加・更新

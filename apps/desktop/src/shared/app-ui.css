@@ -21,11 +21,7 @@
   background: linear-gradient(135deg, #f0f8fc, #f9fcff);
   border-radius: 19px;
   border: 1px solid #e7f1f7;
-  transform: rotate(-8deg);
   margin-right: 10px;
-}
-.app-emblem .prelis-icon {
-  transform: rotate(8deg);
 }
 .primary-button {
   background: linear-gradient(180deg, #e7f6fe, #d8eefb);
