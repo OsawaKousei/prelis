@@ -195,6 +195,32 @@ ZIP は Simulator 専用です。実機へのインストール、TestFlight、A
 
 2026-10-18 に Xcode 27.1、CocoaPods 1.17.0、Node.js 24.22.0 の Mac で Release / Simulator ビルドと JS バンドルの同梱、ZIP の整合性、回収後の SHA-256 を確認しました。アプリ本体には開発チームの署名がありません。同日に iPhone 18 Pro Simulator へのインストール、起動、ホーム画面の表示を確認しました。
 
+## App Store Connect へのアップロード
+
+macOS 版と同様に、ビルドとは別のコマンドで回収済み IPA を明示します。
+
+```sh
+./scripts/ios/upload-appstore.sh \
+  apps/mobile/ios/build/appstore/PrelisMobile.ipa
+```
+
+アップロードせず Apple 側の検証だけ行う場合は、先頭引数に `--validate-only` を追加します。このモードも App Store Connect と通信します。
+
+```sh
+./scripts/ios/upload-appstore.sh --validate-only \
+  apps/mobile/ios/build/appstore/PrelisMobile.ipa
+```
+
+`build-all.sh` が回収したディレクトリ構成と `ios-release-artifacts.sha256` を保持してください。スクリプトは一覧の IPA の SHA-256 と指定ファイルを比較し、Mac の `~/prelis-ios-remote/apps/mobile/ios/build/appstore/PrelisMobile.ipa` のコピーとも一致することを確認します。指定した IPA のビルド後に Mac で再ビルドして内容が変わっている場合は停止します。ビルド、ソース同期、IPA の転送、再署名は行いません。
+
+認証は macOS 版と共通の `scripts/macos/.env` の `PRELIS_APPSTORE_API_KEY_ID`・`PRELIS_APPSTORE_API_ISSUER_ID` と、Mac 上の `~/.appstoreconnect/private_keys/AuthKey_<KEY_ID>.p8` を使用します。秘密鍵の内容を Ubuntu へコピーしません。スクリプト本体は SSH の標準入力で送るため、アップロード用スクリプトの事前同期は不要です。
+
+Mac で IPA を一時コピーし、実機用 arm64、Bundle ID、バージョン、JavaScript・アセット、署名、プロファイルの有効期限、証明書とプロファイルの対応、配布用 Entitlements を確認します。そのコピーを [Apple が案内する](https://developer.apple.com/help/app-store-connect/manage-builds/upload-builds/) `xcrun altool` で検証し、検証成功後にアップロードします。エラー時は停止し、自動再試行は行いません。
+
+アップロード後の Apple 側の処理完了、提出するビルドの選択、メタデータの入力、審査開始は App Store Connect で別途行います。アップロード成功と審査提出完了は区別してください。
+
+2026-10-30 にスクリプトを追加し、シェルと埋め込み Python の構文、差分を静的確認しました。ユーザーの指示によりスクリプトの実行、Apple 側の検証、アップロードは行っていません。
+
 ## Release 成果物を Simulator で起動する
 
 一括ビルド後、Mac のターミナルで実行します。SSH から `simctl` を実行する場合も、同じコマンドを使用できます。`boot` はデバイスが停止しているときだけ実行してください。表示画面を操作するには、Mac の画面で Device Hub を開いて起動済みのシミュレーターを選ぶか、画面共有を使います。
