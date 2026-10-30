@@ -3,10 +3,21 @@ title: Prelis Desktop
 base: core24
 version: '0.1.0'
 
-summary: Prelis Desktop application
+summary: 日記、タイマー、パスワード生成をひとつのデスクトップアプリで
 description: |
-  Prelis Desktop is a desktop application
-  developed by KUPAC LLC.
+  Prelis Desktop は、日記・タイマー・パスワード生成をひとつにまとめたデスクトップアプリです。サイドバーから使いたい機能を選べます。KUPAC LLC が開発しています。
+
+  日記
+  日付ごとに文章を記録し、このデバイスに保存できます。カレンダーや前日・翌日のボタンから日付を選べます。別の端末との同期機能はありません。
+
+  タイマー
+  1〜180分のタイマーを開始・一時停止・再開・リセットできます。アプリ内で画面を切り替えても計時を続けます。手持ちの MP3・WAV ファイル（10 MB 以下）を終了音として追加し、選択・試聴できます。
+
+  パスワード生成
+  大文字・小文字・数字・記号から文字種を選び、4・8・12・16文字のパスワードを生成できます。間違えやすい文字を除く設定にも対応し、生成した文字列はコピーできます。
+
+  Snap 版について
+  Snap の制限により、ホームディレクトリ外や隠しファイルへのアクセスが制限されます。
 
 grade: stable
 confinement: strict

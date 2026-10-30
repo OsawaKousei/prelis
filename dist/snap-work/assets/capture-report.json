@@ -1,0 +1,19 @@
+{
+  "captured_on": "2026-10-31",
+  "application": "Prelis Desktop",
+  "version": "0.1.2",
+  "snap_file": "dist/snap-work/prelis_0.1.2_amd64.snap",
+  "snap_sha256": "22406b4adbfd7e6f388c4d0c377127b305e2113c9b00ccb5171946649bff885a",
+  "executable_sha256": "46c375f269527e006651a23d06bbad811ac724f9bd2b4df345235b47937b9504",
+  "capture_method": "Extracted packaged executable on Linux with Xvfb and an isolated XDG data/config/cache directory; no Snap command-chain or strict confinement.",
+  "width": 1600,
+  "height": 900,
+  "private_diary_data": false,
+  "password_generated": false,
+  "screenshots": [
+    "screenshots/01-home.png",
+    "screenshots/02-diary.png",
+    "screenshots/03-timer.png",
+    "screenshots/04-password.png"
+  ]
+}
