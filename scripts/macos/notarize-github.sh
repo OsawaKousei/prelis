@@ -39,13 +39,28 @@ dmg_hash="$(sha256sum "$local_bundle/$dmg_name" | awk '{print $1}')"
 api_key="$(node "$repo_root/scripts/macos/read-appstore-env.mjs" --api-key-id)"
 api_issuer="$(node "$repo_root/scripts/macos/read-appstore-env.mjs" --api-issuer-id)"
 
-ssh -T -o BatchMode=yes "$remote_host" \
+echo 'Mac 上で公証を開始します。ZIP と DMG の状態を約 20 秒ごとに表示します。'
+if ! ssh -T -o BatchMode=yes "$remote_host" \
   "bash -s -- '$version' '$zip_hash' '$dmg_hash' '$api_key' '$api_issuer'" \
-  < "$repo_root/scripts/macos/notarize-github-on-mac.sh"
+  < "$repo_root/scripts/macos/notarize-github-on-mac.sh"; then
+  echo 'Mac 側の公証処理が失敗しました。保存済み申請 ID から再開するには、同じコマンドを再実行してください。' >&2
+  exit 1
+fi
 
 mkdir -p "$local_final_bundle"
 stage="$(mktemp -d "$local_final_bundle/.prelis-github-notary-stage.XXXXXXXX")"
 trap 'rm -rf -- "$stage"' EXIT
+if ! scp -o BatchMode=yes "$remote_host:$remote_bundle/SOURCE_SHA256SUMS" "$stage/"; then
+  echo 'Mac 側で公証済み成果物の作成が完了していません。保存済み申請 ID から再開するには、同じコマンドを再実行してください。' >&2
+  exit 1
+fi
+source_zip_hash="$(awk -v name="$zip_name" '$2 == name {print $1}' "$stage/SOURCE_SHA256SUMS")"
+source_dmg_hash="$(awk -v name="$dmg_name" '$2 == name {print $1}' "$stage/SOURCE_SHA256SUMS")"
+if [[ "$source_zip_hash" != "$zip_hash" || "$source_dmg_hash" != "$dmg_hash" ]]; then
+  echo 'Mac 側の公証済み成果物は、今回の公証前 ZIP・DMG に対応していません。' >&2
+  exit 1
+fi
+echo '公証済み成果物をローカルへ回収します。'
 scp -o BatchMode=yes "$remote_host:$remote_bundle/$zip_name" "$stage/"
 scp -o BatchMode=yes "$remote_host:$remote_bundle/$dmg_name" "$stage/"
 scp -o BatchMode=yes "$remote_host:$remote_bundle/SHA256SUMS" "$stage/"

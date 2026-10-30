@@ -71,24 +71,112 @@ fi
 
 stage="$(mktemp -d)"
 trap 'rm -rf -- "$stage"' EXIT
-submit_and_check() {
-  local input="$1"
-  local result="$2"
-  xcrun notarytool submit "$input" \
-    --key "$key_file" --key-id "$api_key" --issuer "$api_issuer" \
-    --wait --output-format json > "$result" </dev/null
-  python3 - "$result" <<'PY'
+mkdir -p "$final_bundle"
+credentials=(--key "$key_file" --key-id "$api_key" --issuer "$api_issuer")
+
+progress() {
+  printf '[%s] %s\n' "$(date '+%H:%M:%S')" "$*" >&2
+}
+
+read_submission_field() {
+  python3 - "$1" "$2" <<'PY'
 import json, sys
 with open(sys.argv[1], encoding='utf-8') as file:
     response = json.load(file)
-print(f"公証結果: {response.get('status')} (ID: {response.get('id')})")
-if response.get('status') != 'Accepted':
-    raise SystemExit('Apple の公証結果が Accepted ではありません。')
+value = response.get(sys.argv[2])
+if not isinstance(value, str) or not value:
+    raise SystemExit(f'notarytool の応答に {sys.argv[2]} がありません。')
+print(value)
 PY
 }
 
-echo 'App ZIP を公証します。'
-submit_and_check "$github_bundle/$zip_name" "$stage/app-result.json"
+submission_id() {
+  local kind="$1" input="$2" hash="$3"
+  local record="$final_bundle/.${kind}-${hash}.submission-id"
+  local id
+  if [[ -f "$record" ]]; then
+    id="$(cat "$record")"
+    if [[ ! "$id" =~ ^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$ ]]; then
+      echo "保存済みの $kind 公証 ID が不正です: $record" >&2
+      exit 1
+    fi
+    progress "$kind の既存申請を再利用します (ID: $id)。"
+  else
+    progress "$kind を Apple にアップロードします。"
+    xcrun notarytool submit "$input" "${credentials[@]}" \
+      --output-format json > "$stage/$kind-submit.json" </dev/null
+    id="$(read_submission_field "$stage/$kind-submit.json" id)"
+    if [[ ! "$id" =~ ^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$ ]]; then
+      echo "notarytool から返された $kind 公証 ID が不正です。" >&2
+      exit 1
+    fi
+    printf '%s\n' "$id" > "$record.tmp.$$"
+    mv -f "$record.tmp.$$" "$record"
+    progress "$kind の申請を受け付けました (ID: $id)。"
+  fi
+  printf '%s\n' "$id"
+}
+
+show_notary_log() {
+  local kind="$1" id="$2" log="$stage/$kind-log.json"
+  if xcrun notarytool log "$id" "${credentials[@]}" "$log" </dev/null; then
+    python3 - "$log" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding='utf-8') as file:
+    response = json.load(file)
+print(response.get('statusSummary', '公証ログを取得しました。'), file=sys.stderr)
+for issue in response.get('issues', []):
+    print(f"{issue.get('severity', 'issue')}: {issue.get('path', '')}: {issue.get('message', '')}", file=sys.stderr)
+PY
+  else
+    echo "$kind の公証ログを取得できませんでした (ID: $id)。" >&2
+  fi
+}
+
+progress 'ZIP と DMG を順にアップロードし、Apple 側の処理を並行して待ちます。'
+zip_id="$(submission_id ZIP "$github_bundle/$zip_name" "$zip_hash")"
+dmg_id="$(submission_id DMG "$github_bundle/$dmg_name" "$dmg_hash")"
+zip_status=''
+dmg_status=''
+started_at=$SECONDS
+while [[ "$zip_status" != Accepted || "$dmg_status" != Accepted ]]; do
+  for kind in ZIP DMG; do
+    if [[ "$kind" == ZIP ]]; then
+      id="$zip_id"
+      status="$zip_status"
+    else
+      id="$dmg_id"
+      status="$dmg_status"
+    fi
+    if [[ "$status" == Accepted ]]; then
+      continue
+    fi
+    xcrun notarytool info "$id" "${credentials[@]}" \
+      --output-format json > "$stage/$kind-info.json" </dev/null
+    status="$(read_submission_field "$stage/$kind-info.json" status)"
+    # macOS の Bash 3.2 では、日本語の直前に置いた変数名を誤って拡張する場合がある。
+    progress "$kind: $status (ID: ${id}、経過 $((SECONDS - started_at)) 秒)"
+    case "$status" in
+      Accepted) ;;
+      'In Progress') ;;
+      *)
+        show_notary_log "$kind" "$id"
+        echo "$kind の公証が $status で終了しました。" >&2
+        exit 1
+        ;;
+    esac
+    if [[ "$kind" == ZIP ]]; then
+      zip_status="$status"
+    else
+      dmg_status="$status"
+    fi
+  done
+  if [[ "$zip_status" != Accepted || "$dmg_status" != Accepted ]]; then
+    sleep 20
+  fi
+done
+
+progress '両方の公証が Accepted になりました。App にチケットを付与します。'
 if ! xcrun stapler validate "$app" >/dev/null 2>&1; then
   xcrun stapler staple "$app" </dev/null
 fi
@@ -97,9 +185,8 @@ codesign --verify --deep --strict "$app"
 ditto -c -k --sequesterRsrc --keepParent "$app" "$stage/$zip_name"
 unzip -tq "$stage/$zip_name" >/dev/null
 
-echo 'DMG を公証します。'
+progress 'DMG にチケットを付与します。'
 cp "$github_bundle/$dmg_name" "$stage/$dmg_name"
-submit_and_check "$stage/$dmg_name" "$stage/dmg-result.json"
 xcrun stapler staple "$stage/$dmg_name" </dev/null
 xcrun stapler validate "$stage/$dmg_name" </dev/null
 codesign --verify --strict "$stage/$dmg_name"
@@ -116,4 +203,4 @@ mv -f "$stage/$zip_name" "$final_bundle/$zip_name"
 mv -f "$stage/$dmg_name" "$final_bundle/$dmg_name"
 mv -f "$stage/SHA256SUMS" "$final_bundle/SHA256SUMS"
 mv -f "$stage/SOURCE_SHA256SUMS" "$final_bundle/SOURCE_SHA256SUMS"
-echo '公証チケットを付与した ZIP と DMG を生成しました。'
+progress '公証チケットを付与した ZIP と DMG を生成しました。'
