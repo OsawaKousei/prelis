@@ -97,24 +97,28 @@ else
     "$repo_root" "$remote_endpoint"
 fi
 
+wait_for_watching() {
+  local attempt session_state
+  for ((attempt = 0; attempt < 60; attempt++)); do
+    session_state="$(mutagen sync list "$session_name" --template '{{range .}}{{.Status}}|{{.Alpha.Connected}}|{{.Beta.Connected}}|{{len .Conflicts}}{{end}}')"
+    if [[ "$session_state" == 'Watching|true|true|0' ]]; then
+      return 0
+    fi
+    sleep 2
+  done
+  echo "Mutagen の同期状態が正常ではありません: $session_state" >&2
+  mutagen sync list "$session_name" --long >&2
+  return 1
+}
+
 echo 'Mac 側への接続と同期完了を待ちます。'
+# A newly started daemon reconnects asynchronously; flush needs a connected session.
+wait_for_watching
 if ! mutagen sync flush "$session_name"; then
   mutagen sync list "$session_name" --long >&2
   exit 1
 fi
-
-for ((attempt = 0; attempt < 60; attempt++)); do
-  session_state="$(mutagen sync list "$session_name" --template '{{range .}}{{.Status}}|{{.Alpha.Connected}}|{{.Beta.Connected}}|{{len .Conflicts}}{{end}}')"
-  if [[ "$session_state" == 'Watching|true|true|0' ]]; then
-    break
-  fi
-  sleep 2
-done
-if [[ "$session_state" != 'Watching|true|true|0' ]]; then
-  echo "Mutagen の同期状態が正常ではありません: $session_state" >&2
-  mutagen sync list "$session_name" --long >&2
-  exit 1
-fi
+wait_for_watching
 
 ssh -o BatchMode=yes "$remote_host" '
   set -eu

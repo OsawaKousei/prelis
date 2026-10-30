@@ -1,6 +1,6 @@
-# iOS Simulator 開発
+# iOS 開発（Simulator・iPhone 実機）
 
-コマンドはリポジトリのルートで実行します。通常の動作確認は、Mac で Metro を起動し、Debug アプリを iOS Simulator で実行します。Linux で編集したソースを Mac へ同期する構成です。実機用 IPA や App Store 配布物は作成しません。
+コマンドはリポジトリのルートで実行します。通常の動作確認は、Mac で Metro を起動し、Debug アプリを iOS Simulator または iPhone 実機で実行します。Linux で編集したソースを Mac へ同期する構成です。実機用 IPA や App Store 配布物は作成しません。
 
 ## 初回だけ必要な準備
 
@@ -18,7 +18,7 @@
 
 `kousei@192.168.10.22:prelis-ios-remote` に Mutagen の `one-way-safe` セッション `prelis-ios` で同期します。macOS 版とは同期先ディレクトリとセッションを分け、Mutagen のデータは Git 管理対象外の `.mutagen-ios/` に保存します。既存セッションの同期先が異なる場合は停止し、自動的な移行や削除は行いません。
 
-同期対象はルートの npm 定義と `.nvmrc`、`apps/mobile` の共通コードと `ios/`、`packages/core`、`packages/icons`、`scripts/ios/build-on-mac.sh` です。Android・デスクトップ・ウェブ、他 OS のスクリプト、ドキュメント、依存、ビルド生成物、認証ファイルは除外します。Mac 側の `node_modules`、`Pods`、生成された CocoaPods workspace、`DerivedData` は Mac 側で生成・再利用します。
+同期対象はルートの npm 定義と `.nvmrc`、`apps/mobile` の共通コードと `ios/`、`packages/core`、`packages/icons`、iOS の Mac 側ビルド・署名セットアップスクリプトです。Android・デスクトップ・ウェブ、他 OS のスクリプト、ドキュメント、依存、ビルド生成物、認証ファイルは除外します。Mac 側の `node_modules`、`Pods`、生成された CocoaPods workspace、`DerivedData` は Mac 側で生成・再利用します。
 
 スクリプトは同期完了・競合なし・必要ファイルの存在と不要ディレクトリの不在を確認します。同期だけでは依存インストール、ビルド、Simulator の起動は行いません。
 
@@ -67,9 +67,67 @@ Metro 設定を変更した場合は、Mac の Metro を `Ctrl+C` で停止し�
 
 共有アイコンはプロジェクトルート外にあります。Metro 設定はその画像 URL を `/assets/` と `unstable_path` クエリへ変換し、URL の正規化によって画像配信に失敗する問題を回避します。
 
-2026-10-30 にユーザーが Metro を使った Simulator 起動を確認しました。調査でも Metro とアプリの接続、Watchman の監視、Fast Refresh の有効設定を確認しています。Ubuntu での編集から画面更新までの一連の操作と、下記の各機能操作は未確認です。
+2026-10-30 にユーザーが Metro を使った Simulator 起動を確認しました。調査でも Metro とアプリの接続、Watchman の監視、Fast Refresh の有効設定を確認しています。実機での編集反映は次節に記録し、下記の各機能操作とは区別します。
 
 同日に画像 URL の変換設定を追加し、Ubuntu と Mac の一時 Metro サーバーで、共有 PNG 全11枚を iOS・Android 向けの生 URL と正規化済み URL の両方から取得できることを回帰テストで確認しました。両 OS の Release バンドル生成と画像11枚の同梱も Ubuntu で確認しています。起動中の Metro は設定変更後に再起動が必要で、変更後の Simulator 画面上の表示は未確認です。
+
+## iPhone 実機で Metro を使う
+
+### 初回の開発署名セットアップ
+
+Mac のホームに次の2ファイルを用意します。プロファイルは iOS App Development、Team `GLQCJ8YF9S`、App ID `jp.co.kupac.prelis` 用で、使用する iPhone の UDID と `.p12` に対応する証明書を含めます。
+
+- `~/KUPACLLC-Apple-Development.p12`
+- `~/kupacprelismobileiosdevelopment.mobileprovision`
+
+Ubuntu のリポジトリルートで実行します。
+
+```sh
+./scripts/ios/setup-device-signing.sh
+```
+
+スクリプトは `scripts/macos/.env` の `PRELIS_APPSTORE_P12_PASSWORD` を既存の読み取り処理で取得し、SSH の標準入力で Mac に渡します。`.env` をシェルとして実行したり、パスワードをログへ表示したりしません。Mac の開発専用キーチェーン `~/Library/Keychains/prelis-ios-development.keychain-db` に証明書と秘密鍵を読み込み、`codesign` のアクセスを許可します。キーチェーンのパスワードも `.p12` と同じです。証明書とプロファイルの対応、Team・App ID・有効期限を検証し、プロファイルを Xcode の保存先へ登録します。配布用の署名設定と既定のキーチェーンは変更しません。
+
+Mac で直接セットアップする場合は、同期後に `bash scripts/ios/setup-device-signing.sh` を実行してパスワードを入力します。Ubuntu からセットアップした場合も、日常の起動に使う Mac のログインセッションで、一度キーチェーンを解除してください。
+
+```sh
+security unlock-keychain ~/Library/Keychains/prelis-ios-development.keychain-db
+```
+
+解除時は `.p12` と同じパスワードを入力します。キーチェーンが再度ロックされた場合もこのコマンドで解除します。自動ロックの間隔は6時間です。プロファイルを更新した場合は、同じ名前でホームへ保存してセットアップスクリプトを再実行します。
+
+### 毎回の実機起動
+
+1. iPhone を Mac に接続して信頼・ペアリングを完了し、デベロッパモードを有効にします。インストール・起動の間はロックを解除します。
+2. iPhone と Mac を相互通信できる LAN に接続します。Mac のポート8081へ接続できる必要があります。iPhone のローカルネットワーク許可は許可してください。
+3. Mac の2つのターミナルで、リポジトリルートから次を実行します。必要なら両ターミナルで `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` を設定します。
+
+```sh
+# Mac ターミナル1
+npm run start:mobile
+```
+
+```sh
+# Mac ターミナル2（実際の端末名に置き換える）
+npm run ios -w apps/mobile -- --mode Debug --device "iPhoneの名前" --no-packager
+```
+
+Debug / iphoneos は Xcode プロジェクトに記録した開発用署名とプロファイルを使います。Debug は `SKIP_BUNDLING=YES` のため JavaScript を同梱せず、Metro から読み込みます。ビルド時に生成する `ip.txt` の Mac アドレスを使うので、Mac のネットワークを変更した場合は再ビルドしてください。
+
+`No script URL provided` が初回に出た場合は、ローカルネットワーク許可と Metro の稼働を確認して Reload またはアプリの再起動を行います。接続先の確認には、iPhone の Safari で `http://MacのIPアドレス:8081/status` を開き、`packager-status:running` が返ることを確認します。
+
+Ubuntu の UI・共有 core の編集は、Mutagen の継続同期後に Fast Refresh で取り込みます。Swift・Objective-C・Xcode 設定の変更時はターミナル2のコマンドで再ビルドします。
+
+Watchman が `MustScanSubDirs UserDropped` を報告して変更が反映されない場合は、Metro を停止し、この同期先だけ監視を作り直して再起動します。再起動後はアプリも Reload または再起動してください。
+
+```sh
+# Mac
+watchman watch-del "$HOME/prelis-ios-remote/apps/mobile"
+watchman watch-del "$HOME/prelis-ios-remote"
+npm run start:mobile -- --reset-cache
+```
+
+2026-10-30 に iPhone SE（第3世代）/ iOS 27.0.1 で、上記の通常の `run-ios` による開発署名・インストール・起動、Metro からの JavaScript 読み込み、共有アイコンの表示を確認しました。Watchman の監視を作り直した後、Ubuntu の見出しを一時変更し、再ビルドや手動 Reload をせず実機の描画済みテキストとスクリーンショットへ反映されることを確認しています。文言を元に戻した際の Fast Refresh も確認済みです。同じ設定による iPhone 18 Pro Simulator の Debug ビルド・起動と、署名セットアップの再実行も確認しました。日記・音声など各機能の実機操作確認は別途行います。
 
 ## Metro を使わない Release ビルド
 
@@ -100,10 +158,10 @@ xcrun simctl boot "iPhone 18 Pro"                  # 停止中のみ
 xcrun simctl bootstatus "iPhone 18 Pro" -b
 xcrun simctl install "iPhone 18 Pro" apps/mobile/ios/DerivedData/Build/Products/Release-iphonesimulator/PrelisMobile.app
 open /Applications/Xcode.app/Contents/Applications/DeviceHub.app
-xcrun simctl launch "iPhone 18 Pro" org.reactjs.native.example.PrelisMobile
+xcrun simctl launch "iPhone 18 Pro" jp.co.kupac.prelis
 ```
 
-画面が見えない場合は、`xcrun simctl io "iPhone 18 Pro" screenshot /tmp/prelis-ios.png` でスクリーンショットを保存できます。現在の Bundle ID は Xcode テンプレート値です。変更したら `simctl launch` の引数も合わせてください。
+画面が見えない場合は、`xcrun simctl io "iPhone 18 Pro" screenshot /tmp/prelis-ios.png` でスクリーンショットを保存できます。Bundle ID は実機と同じ `jp.co.kupac.prelis` です。
 
 ## 画面上の機能操作
 

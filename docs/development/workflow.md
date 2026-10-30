@@ -72,6 +72,7 @@ git diff --check
 | `./scripts/macos/build-github.sh` | Mac への同期、Universal `.app` の Developer ID 署名、署名済み DMG と App ZIP の生成・回収、SHA-256 の検証（[手順](macos.md)） |
 | `./scripts/macos/notarize-github.sh` | 既存の GitHub 向け App ZIP と DMG を別々に公証し、チケット付き成果物を回収（[手順](macos.md)） |
 | `./scripts/ios/build-ios-simulator.sh` | Mac への同期、署名なしの iOS Simulator `.app` ビルド、ZIP の回収と SHA-256 照合（[手順](ios.md)） |
+| `./scripts/ios/setup-device-signing.sh` | Mac の開発用キーチェーンと iOS 開発用プロファイルを初回設定。日常の実機起動は Metro と `run-ios --mode Debug --device` を使用（[手順](ios.md)） |
 | `npm run build:android` | Android debug APK のビルド |
 | `npm run build:android:standalone` | JavaScript と画像を同梱した Android 動作確認用 APK のビルド |
 | `npm run build:android:play` | アップロード鍵で署名した Google Play 用 AAB の作成と検証 |
@@ -94,7 +95,7 @@ git diff --check
 | core exports・Vite・Metro・React の依存 | 型チェック、両バンドラーでの解決、依存ツリー | 両アプリの起動と core の変更反映を確認 |
 | Rust・Tauri 設定 | デスクトップの debug ビルドと起動 | 配布設定変更は対象 OS の配布ビルドも確認 |
 | Gradle・Android native 設定 | APK ビルドと Android 起動 | release 固有の変更は release の検証を別途実施 |
-| Xcode・iOS native 設定 | Simulator 向けビルドと起動（[手順](ios.md)） | 変更した機能は Simulator の画面で操作を確認 |
+| Xcode・iOS native 設定 | Simulator 向けビルドと起動（[手順](ios.md)） | 実機開発の変更は開発署名・実機起動・Metro 接続・Fast Refresh も確認。変更した機能は画面で操作を確認 |
 
 Android 向け JS バンドルのコマンドは [Android 開発手順](android.md) に記載しています。
 環境制約で実行できない項目は、静的確認の結果と実行未確認の範囲を分けて記録します。
