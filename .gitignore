@@ -12,5 +12,6 @@ dist/android/
 *.p12
 *.p8
 *.keystore
-docs/specs/account-storage-sync.md
+
 docs-old/
+docs/environment
