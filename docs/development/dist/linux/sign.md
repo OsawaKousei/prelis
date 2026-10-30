@@ -16,7 +16,7 @@ AppImage 作成ツールの取得にはネットワーク接続を使います�
 
 ビルドを担当するのは `scripts/linux/build-ubuntu.sh` です。
 作成した deb は直接頒布するほか、同じファイルを APT リポジトリに登録したり、Snap の作成元に使ったりできます。AppImage は直接頒布します。
-この文書は deb・AppImage の作成と直接頒布までを扱います。APT リポジトリへの登録・公開と Snap の作成・Store 公開は、別途整理する範囲です。
+この文書は deb・AppImage の作成と直接頒布までを扱います。作成した deb の登録・公開は [APT での頒布](apt.md)、Snap の作成・Store 公開は [Snap での頒布](snap.md)を参照してください。
 
 ## 署名の準備
 
