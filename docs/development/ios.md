@@ -5,10 +5,10 @@
 ## 初回だけ必要な準備
 
 - Mac に Xcode 本体をインストールし、初回起動時のライセンスと追加コンポーネントの設定を完了します。Xcode で利用する iOS Simulator ランタイムも導入します。
-- Mac に Node.js（ルートの [`.nvmrc`](../../.nvmrc) と [エンジン条件](../../package.json)を満たす版）、npm、CocoaPods をインストールします。このワークスペースの Mac は fnm と Homebrew でこれらを利用できます。
+- Mac に Node.js（ルートの [`.nvmrc`](../../.nvmrc) と [エンジン条件](../../package.json)を満たす版）、npm、Ruby 3.2 以降、Bundler 4.0.20 を用意します。このワークスペースの Mac は fnm と Homebrew を使用し、Ruby 4.0.7 で確認しています。CocoaPods 1.17.0 と xcodeproj 1.28.1 および間接依存は `apps/mobile/Gemfile.lock` に固定します。
 - Linux 側から macOS 版と同じ `kousei@192.168.10.22` へ SSH 鍵認証で接続できるようにし、Mutagen、OpenSSH クライアント、`sha256sum`、`unzip` を用意します。Mac で「リモートログイン」を有効にします。
 
-初回は下記の開発起動手順で `npm ci` と `pod install` による依存取得、CocoaPods workspace の生成を行います。CocoaPods の依存は [Podfile.lock](../../apps/mobile/ios/Podfile.lock) に固定します。依存のダウンロードに時間とネットワーク接続が必要です。Simulator での実行に署名証明書と Apple Developer Team の設定は不要です。
+初回は下記の開発起動手順で `npm ci` と `prepare-pods-on-mac.sh` による依存取得、CocoaPods workspace の生成を行います。Pod の依存は [Podfile.lock](../../apps/mobile/ios/Podfile.lock)、Ruby ツールは [Gemfile.lock](../../apps/mobile/Gemfile.lock) に固定します。依存のダウンロードに時間とネットワーク接続が必要です。Simulator での実行に署名証明書と Apple Developer Team の設定は不要です。
 
 ## 同期のみ実行する場合
 
@@ -26,6 +26,22 @@
 
 2026-10-30 に新しい同期設定で初回同期と既存セッションの再利用を確認しました。両側とも 57 ファイル・約 729 KB、競合 0 件で、必要ファイルの存在と依存・ビルド生成物の除外を確認しています。この確認では依存インストール、ビルド、Simulator の起動は行っていません。
 
+### Xcode 設定の並び替えによる競合を防ぐ
+
+`project.pbxproj` の正本は Ubuntu 側で管理し、固定版 xcodeproj の保存形式に揃えます。Ubuntu で Xcode 設定を編集したら、次を実行して差分を確認し、同期します。初回は同期先に Bundler 用スクリプトと Gemfile.lock が必要です。
+
+```sh
+./scripts/ios/normalize-xcode-project.sh
+git diff -- apps/mobile/ios/PrelisMobile.xcodeproj/project.pbxproj
+./scripts/ios/create-ios-sync.sh
+```
+
+正規化は Ubuntu のファイルを Mac の一時ディレクトリへ渡して行い、設定値が同じことを検証して Ubuntu の書式だけ更新します。Mac の同期先プロジェクトは書き換えません。Mac で直接実行する場合はその Mac のプロジェクトを正規化するため、Ubuntu の正本を編集するときは Ubuntu から実行してください。
+
+依存準備は必ず `bash scripts/ios/prepare-pods-on-mac.sh` を使います。内部の `bundle-on-mac.sh` は `Gemfile.lock` を frozen モードで使用し、必要な gem を `apps/mobile/vendor/bundle` に導入します。マシン固有の `.bundle/config` は参照しません。`bundle exec pod install --deployment` の前に書式を検証し、前後で `project.pbxproj` と `Podfile.lock` が変わった場合は停止します。実質的な変更は差分をレビューして Ubuntu 側へ反映し、競合を自動で上書きしません。同期中の競合も待ち続けず、その時点で報告します。
+
+`npm ci` で大量のファイルを置き換えた後に Watchman の索引が古いままになることがあるため、依存準備の最後にはこの同期先だけ監視を作り直します。他プロジェクトの監視は変更しません。依存準備中は Metro を停止してください。
+
 ## Metro を使った開発起動
 
 [React Native の Simulator 起動手順](https://reactnative.dev/docs/running-on-simulator-ios)に沿って、Metro と Simulator の両方を Mac 上で実行します。Metro は Mac のポート 8081 を使います。
@@ -34,11 +50,11 @@
 2. 初回、または依存を変更したときは、Metro を停止した状態で Mac 上の依存を準備します。
 
 ```sh
-# Mac: 初回セットアップ（Node.js と CocoaPods が PATH に入ったターミナル）
+# Mac: 初回セットアップ（Node.js・Ruby・Bundler が PATH に入ったターミナル）
 export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
 cd ~/prelis-ios-remote
 npm ci
-(cd apps/mobile/ios && pod install --deployment)
+bash scripts/ios/prepare-pods-on-mac.sh
 ```
 
 3. Mac の2つのターミナルで Metro と Debug アプリを起動します。`--udid` には一覧に表示された対象デバイスの UDID を指定します。
@@ -67,9 +83,11 @@ Metro 設定を変更した場合は、Mac の Metro を `Ctrl+C` で停止し�
 
 共有アイコンはプロジェクトルート外にあります。Metro 設定はその画像 URL を `/assets/` と `unstable_path` クエリへ変換し、URL の正規化によって画像配信に失敗する問題を回避します。
 
+2026-10-30 に固定版 CocoaPods で依存準備を2回実行し、Xcode 設定と Podfile.lock に差分がなく、その後の同期も競合0件で正常終了することを確認しました。iPhone 18 Pro Simulator の Debug アプリで、Ubuntu の見出し変更とその復元が、同期の強制実行・再ビルド・手動 Reload なしで描画済みテキストへ反映されることも確認しています。検証前に Watchman の `UserDropped` 警告があったため、この iOS 同期先だけ監視を作り直しました。JavaScript / TypeScript は Fast Refresh の対象ですが、Swift・Objective-C・Xcode 設定の変更には再ビルドが必要です。検証用の Metro は確認後に停止します。
+
 2026-10-30 にユーザーが Metro を使った Simulator 起動を確認しました。調査でも Metro とアプリの接続、Watchman の監視、Fast Refresh の有効設定を確認しています。実機での編集反映は次節に記録し、下記の各機能操作とは区別します。
 
-同日に画像 URL の変換設定を追加し、Ubuntu と Mac の一時 Metro サーバーで、共有 PNG 全11枚を iOS・Android 向けの生 URL と正規化済み URL の両方から取得できることを回帰テストで確認しました。両 OS の Release バンドル生成と画像11枚の同梱も Ubuntu で確認しています。起動中の Metro は設定変更後に再起動が必要で、変更後の Simulator 画面上の表示は未確認です。
+同日に画像 URL の変換設定を追加し、Ubuntu と Mac の一時 Metro サーバーで、共有 PNG 全11枚を iOS・Android 向けの生 URL と正規化済み URL の両方から取得できることを回帰テストで確認しました。両 OS の Release バンドル生成と画像11枚の同梱も Ubuntu で確認しています。起動中の Metro は設定変更後に再起動が必要です。今回の Simulator 検証では画面上の共有アイコンの表示も確認しました。
 
 ## iPhone 実機で Metro を使う
 
@@ -142,6 +160,7 @@ Mac の Metro を停止してから、Ubuntu で実行します。
 Mac のホームに `KUPACLLC-Apple-Distribution.p12` と `kupacprelismobileiosappstore.mobileprovision` を配置します。後者は Team `GLQCJ8YF9S`、App ID `jp.co.kupac.prelis`、名前 `kupac-prelis-mobile-ios-appstore` の App Store Connect 用プロファイルです。パスワードは macOS 版と共通の `scripts/macos/.env` の `PRELIS_APPSTORE_P12_PASSWORD` を読み、SSH の標準入力で渡します。
 
 共通の同期・`npm ci`・`pod install --deployment` の後に、Release / Simulator と Release / iphoneos Archive を別々にビルドします。Simulator は arm64・x86_64、実機用は arm64 です。バージョンとビルド番号は Xcode の Release 設定の `MARKETING_VERSION`・`CURRENT_PROJECT_VERSION` を両方で使います。再提出時はビルド番号を更新してください。
+Pod の導入には上記の `prepare-pods-on-mac.sh` を使用し、ツールの固定と設定ファイルの前後検証も共通で行います。
 
 実機用は一時キーチェーンへ配布証明書を読み込み、Archive を作成して `xcodebuild -exportArchive` の `app-store-connect` / `destination=export` で IPA を生成します。キーチェーンの既定値と検索対象は終了時に復元し、一時キーチェーンは削除します。開発用署名は既存の Debug 設定を使います。
 

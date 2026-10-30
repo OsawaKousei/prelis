@@ -27,7 +27,7 @@ fi
 if [[ -z "${DEVELOPER_DIR:-}" && -d /Applications/Xcode.app/Contents/Developer ]]; then
   export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
 fi
-for command_name in node npm pod xcodebuild ditto unzip shasum python3 lipo security codesign openssl curl; do
+for command_name in node npm ruby bundle xcodebuild ditto unzip shasum python3 lipo security codesign openssl curl; do
   if ! command -v "$command_name" >/dev/null 2>&1; then
     echo "$command_name が必要です。" >&2
     exit 1
@@ -154,7 +154,7 @@ PY
 fi
 
 run_logged npm-ci npm ci
-run_logged pod-install /bin/bash -c 'cd "$1" && pod install --deployment' bash "$ios_root"
+run_logged pod-install bash "$repo_root/scripts/ios/prepare-pods-on-mac.sh"
 
 run_logged simulator-build xcodebuild \
   -quiet \

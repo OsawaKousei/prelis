@@ -266,9 +266,9 @@
 			baseConfigurationReference = 3B4392A12AC88292D35C810B /* Pods-PrelisMobile.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Development";
 				"CODE_SIGN_STYLE[sdk=iphoneos*]" = Manual;
-				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = GLQCJ8YF9S;
 				ENABLE_BITCODE = NO;
@@ -319,9 +319,9 @@
 					"-ObjC",
 					"-lc++",
 				);
+				PRELIS_IOS_DISTRIBUTION_IDENTITY = "Apple Distribution";
 				PRODUCT_BUNDLE_IDENTIFIER = jp.co.kupac.prelis;
 				PRODUCT_NAME = PrelisMobile;
-				PRELIS_IOS_DISTRIBUTION_IDENTITY = "Apple Distribution";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "kupac-prelis-mobile-ios-appstore";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_VERSION = 5.0;
