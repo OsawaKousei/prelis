@@ -7,6 +7,7 @@
 - [構成と責務の境界](../../docs/architecture.md)
 - [デザインガイドライン](../../docs/design/guidelines.md)
 - [デスクトップの環境・起動・ビルド手順](../../docs/development/desktop.md)
+- [Linux 配布物のビルド・署名・検証](../../docs/development/dist/linux/sign.md)
 - [変更内容に応じた検証](../../docs/development/workflow.md)
 - [機能仕様の索引](../../docs/specs/README.md)
 

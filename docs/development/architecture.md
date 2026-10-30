@@ -22,6 +22,8 @@
 
 デスクトップとウェブの `src/` は、`shell/` が画面切り替え、`apps/<機能名>/` が各機能、`shared/` がアプリ内の共通 UI を担当します。
 
+デスクトップの環境準備・起動・バージョン更新は [desktop.md](desktop.md)、Linux 配布物のビルド・署名・検証は [sign.md](dist/linux/sign.md) を参照してください。
+
 ## 依存関係と実装の境界
 
 ```mermaid
