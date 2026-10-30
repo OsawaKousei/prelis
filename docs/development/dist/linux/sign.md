@@ -132,6 +132,8 @@ FUSE を使えない環境では `"./${appimage}" --appimage-extract-and-run` �
 2. GitHub Releases などに deb、対応する `.deb.asc`、AppImage、対応する `.AppImage.asc`、`sha256sum` の結果を添付します。
 3. リリースノートに確認した Ubuntu のバージョン・amd64、インストール手順、既知の問題を記載します。
 
+GitHub Releases の公開資料は [`dist/github-release/v<version>/`](../../../../dist/github-release/README.md) に版ごとに保存します。リリース本文は同ディレクトリの `release-notes.md` を使用し、対応する公開鍵 `prelis-release-signing-key.asc` とチェックサム一覧 `sha256sums.txt` も Assets に添付します。ビルド成果物本体と分離署名の保存先は `dist/linux/v<version>/` です。
+
 公開するファイルは、動作確認したファイルと同じものを使います。同じバージョン番号で内容だけ変えて再頒布せず、修正時はバージョンを上げて作り直します。
 
 ## トラブルシュート
