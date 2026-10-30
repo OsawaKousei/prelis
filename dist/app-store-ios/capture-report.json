@@ -1,0 +1,40 @@
+{
+  "version": "1.0",
+  "build": "1",
+  "configuration": "Debug",
+  "sampleDiary": "今日は、作業をひとつずつ進めた。\n短い休憩を取りながら、明日の予定を整理した。",
+  "images": [
+    {
+      "device": "Prelis Store iPhone",
+      "file": "iphone/04-home.png"
+    },
+    {
+      "device": "Prelis Store iPhone",
+      "file": "iphone/02-timer.png"
+    },
+    {
+      "device": "Prelis Store iPhone",
+      "file": "iphone/01-diary.png"
+    },
+    {
+      "device": "Prelis Store iPhone",
+      "file": "iphone/03-password.png"
+    },
+    {
+      "device": "Prelis Store iPad",
+      "file": "ipad/04-home.png"
+    },
+    {
+      "device": "Prelis Store iPad",
+      "file": "ipad/02-timer.png"
+    },
+    {
+      "device": "Prelis Store iPad",
+      "file": "ipad/01-diary.png"
+    },
+    {
+      "device": "Prelis Store iPad",
+      "file": "ipad/03-password.png"
+    }
+  ]
+}
