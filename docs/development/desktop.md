@@ -1,7 +1,7 @@
 # デスクトップ開発
 
 コマンドは、特記がない限り開発・ビルドする OS 上のリポジトリのルートで実行します。Windows 側では、後述の手順で同期した `$env:USERPROFILE\prelis-remote` が実行場所です。環境条件と成果物の例は Ubuntu（amd64）と Windows 11（x64）向けです。
-Windows の PowerShell では、以下の `npm` を `npm.cmd` に読み替えます（例：`npm.cmd run dev:desktop`）。共通セットアップの `npm ci`・`npm run check` も同様です。
+Windows の PowerShell では、以下の `npm` を `npm.cmd` に読み替えます（例：`npm.cmd run dev:desktop`）。共通セットアップの `npm ci` も同様です。
 
 ## 環境準備
 
@@ -16,12 +16,20 @@ Node.js・npm の準備と依存管理は [共通セットアップ](architectur
 
 ### Windows
 
-- 同期元の Ubuntu に Mutagen と OpenSSH クライアントを用意し、同期先の Windows に鍵認証で SSH 接続できるようにします。現行の同期スクリプトの接続先は `builduser@192.168.1.10` です。
+- 同期元の Ubuntu に Mutagen と OpenSSH クライアントを用意し、同期先の Windows に鍵認証で SSH 接続できるようにします。
 - Microsoft C++ Build Tools の「Desktop development with C++」と、Microsoft Edge WebView2 Runtime を用意します。
 - Rust は MSVC toolchain（`stable-x86_64-pc-windows-msvc`）を使用します。`rustup show active-toolchain` で確認できます。
 - MSI を作成する場合は Windows のオプション機能「VBSCRIPT」を有効にします。開発起動と `--no-bundle` の debug ビルドには不要です。
 
 インストール方法は [Tauri の Windows 前提条件](https://v2.tauri.app/start/prerequisites/#windows)を参照してください。
+
+Ubuntu 側の `scripts/windows/.env` に SSH 接続先を設定します。ファイルがない場合は [.env.example](../../scripts/windows/.env.example) をコピーして作成します。
+
+```dotenv
+PRELIS_WINDOWS_SSH_HOST=builduser@192.168.10.20
+```
+
+同期・配布ビルドは同じ設定を読み込みます。環境変数が `.env` より優先され、`.env` はシェルコードとして実行しません。接続先は `user@host` 形式で指定します。
 
 ## 開発起動と動作確認用ビルド
 
@@ -42,6 +50,7 @@ Tauri CLI が Vite と Rust アプリを起動します。
 ```
 
 Mutagen セッション `prelis-windows` を作成または再利用し、Windows のユーザーディレクトリ直下の `prelis-remote` に同期します。スクリプトが同期完了を確認して正常終了してから、次に進みます。
+Ubuntu 側の Mutagen データは `.mutagen-windows/` に保存します。旧 `.mutagen/` に同じ同期元・想定内の同期先パスを持つ `prelis-windows` がある場合は、そのセッションを終了して新しいデータディレクトリで作成します。SSH 接続先や除外設定が変わった既存セッションも作り直します。同期元や同期先パスが想定外の場合は停止します。
 
 Windows 実機を直接操作するか、RustDesk で Windows のリモートデスクトップを操作します。同期先のユーザー（現行設定では `builduser`）のデスクトップ上で PowerShell を開き、同期先フォルダに移動して起動します。
 
@@ -53,6 +62,8 @@ npm.cmd run dev:desktop
 
 `npm.cmd ci` は初回と依存変更時に、開発サーバーを停止した状態で実行します。Tauri CLI が Windows 上で Vite と Rust アプリを起動します。
 同期は Ubuntu から Windows への `one-way-safe` です。ソースは Ubuntu 側で編集し、`node_modules` と Rust の `target` は同期せず Windows 側で生成します。
+同期対象はデスクトップ・共有パッケージ・Windows 側のビルド／署名スクリプトです。モバイル・Web・LP・ドキュメント・インフラ・他 OS のスクリプト・各 OS の Mutagen データ・認証情報・生成物は除外します。`.nvmrc` とルートの `package.json`・`package-lock.json` は同期します。
+除外設定を変更しても、以前に Windows 側へ同期した不要なファイルは自動削除されません。必要に応じて同期先に残ったファイルを確認・整理してください。
 
 ### フロントエンドだけを確認する
 
@@ -97,7 +108,7 @@ Linux の配布スクリプトはデスクトップの `package.json` の値を�
 
 ## 検証
 
-[共通チェック](architecture.md#共通セットアップ)とフロントエンドのビルドを実行し、変更箇所を Tauri アプリで確認します。配布時の署名検証・インストール確認は [Linux 配布物のビルド・署名手順](dist/linux/sign.md#2-成果物と署名を確認する)を参照してください。
+[共通チェック](architecture.md#共通セットアップ)は全 workspace がある Ubuntu 側で実行します。各 OS でデスクトップのフロントエンドをビルドし、変更箇所を Tauri アプリで確認します。Windows では同期先で実行します。配布時の署名検証・インストール確認は [Linux 配布物のビルド・署名手順](dist/linux/sign.md#2-成果物と署名を確認する)を参照してください。
 
 Windows では `npm.cmd run build:desktop:debug` で生成した `desktop.exe` も起動し、変更箇所に加えて保存内容の再読込とタイマー完了時の音声を確認します。
 NSIS・MSI を作成した場合は両方のインストーラーでインストール・起動・アンインストールと、インストーラー・アプリのアイコンを確認します。MSI はユーザー単位の構成なので、管理者権限のないアカウントでも確認します。

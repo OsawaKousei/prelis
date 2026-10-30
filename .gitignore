@@ -1,6 +1,6 @@
 node_modules/
 ref/
-.mutagen/
+.mutagen-windows/
 .mutagen-macos/
 .mutagen-ios/
 .env

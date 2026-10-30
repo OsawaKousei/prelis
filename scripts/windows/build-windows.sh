@@ -7,7 +7,7 @@ if [[ $# -ne 0 ]]; then
 fi
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-remote_host=builduser@192.168.1.10
+source "${repo_root}/scripts/windows/read-windows-env.sh"
 remote_bundle=prelis-remote/apps/desktop/src-tauri/target/release/bundle
 local_bundle="${repo_root}/apps/desktop/src-tauri/target/release/bundle"
 local_release="${repo_root}/apps/desktop/src-tauri/target/release"
@@ -73,32 +73,12 @@ for command_name in ssh scp flock python3; do
   fi
 done
 
-# Read only supported assignments. Never execute .env as shell code.
-signing_env_file="${PRELIS_SIGNING_ENV_FILE:-${repo_root}/scripts/windows/.env}"
-if [[ -f "$signing_env_file" ]]; then
-  while IFS= read -r line || [[ -n "$line" ]]; do
-    line="${line%$'\r'}"
-    [[ "$line" =~ ^[[:space:]]*(#|$) ]] && continue
-    if [[ "$line" =~ ^[[:space:]]*(export[[:space:]]+)?(AZURE_TENANT_ID|AZURE_CLIENT_ID|AZURE_CLIENT_SECRET|AZURE_ARTIFACT_SIGNING_ENDPOINT|AZURE_ARTIFACT_SIGNING_ACCOUNT_NAME|AZURE_ARTIFACT_SIGNING_CERTIFICATE_PROFILE_NAME)[[:space:]]*=(.*)$ ]]; then
-      key="${BASH_REMATCH[2]}"
-      value="${BASH_REMATCH[3]}"
-      value="${value#"${value%%[![:space:]]*}"}"
-      value="${value%"${value##*[![:space:]]}"}"
-      if [[ "$value" == \"*\" || "$value" == \'*\' ]]; then
-        value="${value:1:${#value}-2}"
-      fi
-      if [[ -z "${!key:-}" ]]; then
-        printf -v "$key" '%s' "$value"
-      fi
-    fi
-  done < "$signing_env_file"
-fi
-
 signing_keys=(AZURE_TENANT_ID AZURE_CLIENT_ID AZURE_CLIENT_SECRET AZURE_ARTIFACT_SIGNING_ENDPOINT AZURE_ARTIFACT_SIGNING_ACCOUNT_NAME AZURE_ARTIFACT_SIGNING_CERTIFICATE_PROFILE_NAME)
+read_windows_env "${signing_keys[@]}"
 for key in "${signing_keys[@]}"; do
   if [[ -z "${!key:-}" || "${!key}" == *$'\n'* || "${!key}" == *$'\r'* ||
         "${!key}" == \<*\> || "${!key}" == *'<region>'* ]]; then
-    echo "$key が未設定、サンプル値のまま、または改行を含んでいます。環境変数か $signing_env_file に設定してください。" >&2
+    echo "$key が未設定、サンプル値のまま、または改行を含んでいます。環境変数か $windows_env_file に設定してください。" >&2
     exit 1
   fi
 done
@@ -155,7 +135,7 @@ fi
     "$remote_host"
 )
 
-"${repo_root}/scripts/windows/create-windows-sync.sh"
+PRELIS_WINDOWS_SSH_HOST="$remote_host" "${repo_root}/scripts/windows/create-windows-sync.sh"
 
 echo '署名認証情報を Windows のユーザーディレクトリへ一時転送します。'
 ssh -o BatchMode=yes "$remote_host" \

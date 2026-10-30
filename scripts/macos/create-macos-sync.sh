@@ -29,7 +29,14 @@ if grep -Fxq "$session_name" <<< "$sessions"; then
     echo "Mutagen セッション $session_name の同期先が想定と異なります: $session_endpoints" >&2
     exit 1
   fi
-else
+  session_ignores="$(mutagen sync list "$session_name" --template '{{range .}}{{range .Ignore.Paths}}{{println .}}{{end}}{{end}}')"
+  if ! grep -Fxq '.mutagen*' <<< "$session_ignores"; then
+    echo '各 OS の Mutagen データを除外するため、macOS セッションを作り直します。'
+    mutagen sync terminate "$session_name"
+    sessions=
+  fi
+fi
+if ! grep -Fxq "$session_name" <<< "$sessions"; then
   echo "Mutagen セッション $session_name を作成します。"
   # macOS のデスクトップビルドに必要な workspace と Mac 側スクリプトだけを同期する。
   mutagen sync create \
@@ -71,8 +78,7 @@ else
     --ignore=.gradle \
     --ignore=.terraform \
     --ignore=.next \
-    --ignore=.mutagen \
-    --ignore=.mutagen-macos \
+    --ignore='.mutagen*' \
     --ignore=.env \
     --ignore='.env.*' \
     --ignore=.xcode.env.local \
