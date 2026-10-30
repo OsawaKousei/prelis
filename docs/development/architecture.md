@@ -1,7 +1,7 @@
 # 全体構成
 
 このリポジトリは、デスクトップ・モバイル・ウェブのアプリと共有パッケージを、TypeScript を中心としたモノレポで管理します。
-開発方針と命名規則は [AGENTS.md](../../AGENTS.md)、視覚・操作デザインは [guidelines.md](guidelines.md) を参照してください。
+開発方針と命名規則は [AGENTS.md](../../AGENTS.md)、視覚・操作デザインは [design-guidelines.md](design-guidelines.md) を参照してください。
 
 ## 配置と責務
 
