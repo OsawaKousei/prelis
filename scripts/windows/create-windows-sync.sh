@@ -119,11 +119,12 @@ if [[ "$session_endpoints" != "${repo_root}|${remote_endpoint}" ]]; then
 fi
 
 wait_for_watching() {
-  local last_state= session_state status alpha_connected beta_connected conflicts attempt
+  local last_state= session_state status alpha_connected beta_connected shown_conflicts excluded_conflicts conflicts attempt
   for attempt in {1..150}; do
-    session_state="$(mutagen sync list "$session_name" --template '{{range .}}{{.Status}}|{{.Alpha.Connected}}|{{.Beta.Connected}}|{{len .Conflicts}}{{end}}')"
+    session_state="$(mutagen sync list "$session_name" --template '{{range .}}{{.Status}}|{{.Alpha.Connected}}|{{.Beta.Connected}}|{{len .Conflicts}}|{{.ExcludedConflicts}}{{end}}')"
+    IFS='|' read -r status alpha_connected beta_connected shown_conflicts excluded_conflicts <<< "$session_state"
+    conflicts=$((shown_conflicts + excluded_conflicts))
     if [[ "$session_state" != "$last_state" ]]; then
-      IFS='|' read -r status alpha_connected beta_connected conflicts <<< "$session_state"
       echo "Mutagen 状態: $status / Linux 接続: $alpha_connected / Windows 接続: $beta_connected / 競合: $conflicts"
       last_state="$session_state"
     fi
@@ -132,7 +133,7 @@ wait_for_watching() {
       mutagen sync list "$session_name" --long >&2
       return 1
     fi
-    if [[ "$session_state" == 'Watching|true|true|0' ]]; then
+    if [[ "$session_state" == 'Watching|true|true|0|0' ]]; then
       return 0
     fi
     sleep 2
@@ -156,7 +157,9 @@ echo '同期後のセッション状態:'
 wait_for_watching
 mutagen sync list "$session_name" --long
 
-conflict_count="$(mutagen sync list "$session_name" --template '{{range .}}{{len .Conflicts}}{{end}}')"
+conflict_counts="$(mutagen sync list "$session_name" --template '{{range .}}{{len .Conflicts}}|{{.ExcludedConflicts}}{{end}}')"
+IFS='|' read -r shown_conflicts excluded_conflicts <<< "$conflict_counts"
+conflict_count=$((shown_conflicts + excluded_conflicts))
 if [[ "$conflict_count" != 0 ]]; then
   echo "Mutagen に $conflict_count 件の競合があります。上のセッション状態を確認してください。" >&2
   exit 1
