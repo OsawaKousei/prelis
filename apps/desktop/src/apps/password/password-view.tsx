@@ -1,4 +1,5 @@
 import type { CharacterType, PasswordLength } from './password';
+import { Icon } from '../../shared/icon';
 
 const types: ReadonlyArray<{
   key: CharacterType;
@@ -16,10 +17,12 @@ const lengths: readonly PasswordLength[] = [4, 8, 12, 16];
 type Props = {
   readonly selectedTypes: readonly CharacterType[];
   readonly length: PasswordLength;
+  readonly excludeAmbiguous: boolean;
   readonly password: string;
   readonly message: string;
   readonly onToggleType: (type: CharacterType) => void;
   readonly onLength: (length: PasswordLength) => void;
+  readonly onExcludeAmbiguous: (exclude: boolean) => void;
   readonly onGenerate: () => void;
   readonly onCopy: () => void;
 };
@@ -27,17 +30,24 @@ type Props = {
 export const PasswordView = ({
   selectedTypes,
   length,
+  excludeAmbiguous,
   password,
   message,
   onToggleType,
   onLength,
+  onExcludeAmbiguous,
   onGenerate,
   onCopy,
 }: Props) => (
   <div className="password-workspace">
     <header className="password-intro">
-      <h1>パスワード生成</h1>
-      <p>条件を選んで、新しいパスワードを作成します。</p>
+      <div>
+        <h1>パスワード生成</h1>
+        <p>条件を選んで、新しいパスワードを作成します。</p>
+      </div>
+      <span className="app-emblem" aria-hidden="true">
+        <Icon name="password" size={32} />
+      </span>
     </header>
 
     <div className="password-layout">
@@ -80,6 +90,21 @@ export const PasswordView = ({
               ))}
             </div>
           </fieldset>
+        </div>
+
+        <div className="password-exclusion">
+          <label>
+            <input
+              type="checkbox"
+              checked={excludeAmbiguous}
+              onChange={(event) => onExcludeAmbiguous(event.target.checked)}
+              aria-describedby="password-exclusion-description"
+            />
+            <span>間違えやすい文字を除く</span>
+          </label>
+          <p id="password-exclusion-description" className="password-hint">
+            英大文字の I・O、英小文字の l、数字の 0・1 を除外します。
+          </p>
         </div>
 
         {length <= 8 && (

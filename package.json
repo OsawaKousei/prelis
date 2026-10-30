@@ -24,8 +24,9 @@
     "typecheck": "npm run typecheck --workspaces",
     "lint": "npm run lint -w apps/mobile",
     "test": "npm run test -w apps/mobile -- --runInBand",
+    "test:core": "npm run test -w packages/core",
     "test:web": "npm test -w apps/web",
-    "check": "npm run typecheck && npm run lint && npm test -- --no-watchman && npm run test:web"
+    "check": "npm run typecheck && npm run lint && npm test -- --no-watchman && npm run test:core && npm run test:web"
   },
   "engines": {
     "node": "^22.13.0 || ^24.3.0 || >=26.0.0",

@@ -12,6 +12,7 @@ export const PasswordApp = () => {
     'symbols',
   ]);
   const [length, setLength] = useState<PasswordLength>(16);
+  const [excludeAmbiguous, setExcludeAmbiguous] = useState(false);
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const generation = useRef(0);
@@ -26,6 +27,7 @@ export const PasswordApp = () => {
     <PasswordView
       selectedTypes={selectedTypes}
       length={length}
+      excludeAmbiguous={excludeAmbiguous}
       password={password}
       message={message}
       onToggleType={(type) => {
@@ -40,10 +42,14 @@ export const PasswordApp = () => {
         setLength(next);
         clearResult();
       }}
+      onExcludeAmbiguous={(next) => {
+        setExcludeAmbiguous(next);
+        clearResult();
+      }}
       onGenerate={async () => {
         const current = ++generation.current;
         try {
-          const result = await generatePassword(length, selectedTypes);
+          const result = await generatePassword(length, selectedTypes, excludeAmbiguous);
           if (current !== generation.current) return;
           setPassword(result);
           setMessage('');
@@ -54,10 +60,13 @@ export const PasswordApp = () => {
         }
       }}
       onCopy={async () => {
+        const current = generation.current;
         try {
           await navigator.clipboard.writeText(password);
+          if (current !== generation.current) return;
           setMessage('コピーしました。');
         } catch {
+          if (current !== generation.current) return;
           setMessage(
             'コピーできませんでした。パスワードを選択してコピーしてください。',
           );

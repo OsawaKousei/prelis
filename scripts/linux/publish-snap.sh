@@ -23,6 +23,31 @@ require_command() {
   command -v "$1" >/dev/null 2>&1 || die "必要なコマンドが見つかりません: $1"
 }
 
+validate_snap() {
+  python3 - "$1" "$2" <<'PY'
+import subprocess
+import sys
+import yaml
+
+path, version = sys.argv[1:]
+try:
+    result = subprocess.run(
+        ["unsquashfs", "-cat", path, "meta/snap.yaml"],
+        check=True, capture_output=True, text=True,
+    )
+    metadata = yaml.safe_load(result.stdout)
+except (OSError, subprocess.CalledProcessError, yaml.YAMLError):
+    raise SystemExit(f"Snap の内部情報を読み取れません: {path}")
+
+if not isinstance(metadata, dict) or (
+    metadata.get("name") != "prelis"
+    or metadata.get("version") != version
+    or metadata.get("architectures") != ["amd64"]
+):
+    raise SystemExit(f"Snap の内部情報が prelis / {version} / amd64 と一致しません: {path}")
+PY
+}
+
 if [[ $# -lt 2 ]]; then
   usage
   exit 2
@@ -56,17 +81,23 @@ if [[ "$mode" == --promote ]]; then
   exit 0
 fi
 
+for command_name in python3 unsquashfs; do
+  require_command "$command_name"
+done
+python3 -c 'import yaml' >/dev/null 2>&1 || die 'Python の YAML モジュールが必要です。python3-yaml をインストールしてください。'
+
 if [[ "$mode" == --upload-edge ]]; then
   [[ -f "$argument" ]] || die "Snap が見つかりません: $argument"
-  [[ "$(basename -- "$argument")" =~ ^prelis_[0-9][0-9A-Za-z.+~-]*_amd64\.snap$ ]] || \
+  [[ "$(basename -- "$argument")" =~ ^prelis_([0-9][0-9A-Za-z.+~-]*)_amd64\.snap$ ]] || \
     die "想定外の Snap ファイル名です: $argument"
+  validate_snap "$argument" "${BASH_REMATCH[1]}"
   snapcraft upload "$argument" --release=edge
   echo 'latest/edge へのアップロードが完了しました。Store のレビューと公開状態を確認してください。'
   echo '確認: snapcraft status prelis; snapcraft revisions prelis'
   exit 0
 fi
 
-for command_name in dpkg-deb python3 mktemp cp lxc; do
+for command_name in dpkg-deb mktemp cp ln lxc; do
   require_command "$command_name"
 done
 
@@ -124,7 +155,9 @@ dpkg-deb -x "$argument" "$work_dir/payload"
 )
 created_snap="$work_dir/prelis_${version}_amd64.snap"
 [[ -f "$created_snap" ]] || die "Snapcraft の成果物が見つかりません: $created_snap"
-mv -- "$created_snap" "$snap_file"
+validate_snap "$created_snap" "$version"
+# The build directory is on the same filesystem; linking fails if the destination exists.
+ln -T -- "$created_snap" "$snap_file" || die "Snap を配置できません。既存ファイルは上書きしません: $snap_file"
 echo "Snap を作成しました: $snap_file"
 
 if [[ "$build_only" == true ]]; then

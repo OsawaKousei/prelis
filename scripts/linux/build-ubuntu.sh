@@ -6,7 +6,7 @@ if [[ $# -ne 0 ]]; then
   exit 2
 fi
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 export RELEASE_KEY_FPR="${RELEASE_KEY_FPR:-5985489712B7621E3FD07DEC77B8FD8948B3E363}"
 
 if [[ ! "$RELEASE_KEY_FPR" =~ ^[[:xdigit:]]{40}$ ]]; then
@@ -23,6 +23,13 @@ export LDAI_SIGN=1
 export LDAI_SIGN_KEY="$RELEASE_KEY_FPR"
 
 cd "$repo_root/apps/desktop"
+target_dir="$(cd src-tauri && cargo metadata --no-deps --format-version 1 |
+  node -e 'let input = ""; process.stdin.on("data", chunk => input += chunk); process.stdin.on("end", () => console.log(JSON.parse(input).target_directory));')"
+if [[ "$target_dir" != "$repo_root/apps/desktop/src-tauri/target" ]]; then
+  echo 'Cargo の出力先が既定値と異なります。CARGO_TARGET_DIR と build.target-dir の設定を解除してください。' >&2
+  exit 1
+fi
+
 version="$(node -p 'require("./package.json").version')"
 npm run tauri build -- --bundles deb,appimage
 
@@ -33,7 +40,6 @@ if [[ ! -f "$deb" ]]; then
 fi
 
 deb_signature="${deb}.asc"
-rm -f -- "$deb_signature"
 signature_tmp="$(mktemp "${deb_signature}.tmp.XXXXXX")"
 trap 'rm -f -- "$signature_tmp"' EXIT
 gpg --yes --armor --detach-sign --local-user "$RELEASE_KEY_FPR" --output "$signature_tmp" "$deb"
@@ -41,18 +47,21 @@ gpg --verify "$signature_tmp" "$deb"
 mv -- "$signature_tmp" "$deb_signature"
 
 appimage="$repo_root/apps/desktop/src-tauri/target/release/bundle/appimage/PrelisDesktop_${version}_amd64.AppImage"
-if [[ ! -f "$appimage" ]] || [[ "$("$appimage" --appimage-signature)" != *'BEGIN PGP SIGNATURE'* ]]; then
+if [[ ! -f "$appimage" ]] ||
+  ! embedded_signature="$("$appimage" --appimage-signature)" ||
+  [[ "$embedded_signature" != *'BEGIN PGP SIGNATURE'* ]]; then
   echo "AppImage の埋め込み署名を確認できませんでした: $appimage" >&2
   exit 1
 fi
 
 appimage_signature="${appimage}.asc"
-rm -f -- "$appimage_signature"
 signature_tmp="$(mktemp "${appimage_signature}.tmp.XXXXXX")"
 gpg --yes --armor --detach-sign --local-user "$RELEASE_KEY_FPR" --output "$signature_tmp" "$appimage"
 gpg --verify "$signature_tmp" "$appimage"
 mv -- "$signature_tmp" "$appimage_signature"
 
-echo "署名付き AppImage を作成しました: $appimage"
-echo "deb の署名を作成しました: $deb_signature"
-echo "AppImage の分離署名を作成しました: $appimage_signature"
+release_dir="$repo_root/dist/linux/v${version}"
+mkdir -p -- "$release_dir"
+cp -p -- "$deb" "$deb_signature" "$appimage" "$appimage_signature" "$release_dir/"
+
+echo "署名付き成果物を集約しました: $release_dir"

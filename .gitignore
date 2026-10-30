@@ -6,10 +6,11 @@ ref/
 .env
 .env.*
 !.env.example
-dist/apt-repo-backup.*/
-dist/android/
 *.jks
 *.p12
 *.p8
 *.keystore
-docs/specs/account-storage-sync.md
+
+docs-old/
+docs/environment
+docs/plan
