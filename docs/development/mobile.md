@@ -109,23 +109,6 @@ npm run android -- --no-bundler
 
 Metro に接続できない場合は、起動状態を確認して `adb reverse tcp:8081 tcp:8081` を実行します。複数端末がある場合は `adb -s <serial> reverse tcp:8081 tcp:8081` で対象を指定します。
 
-### Android の動作確認用 APK を作る
-
-端末なしで Debug APK をビルドする場合は、次を実行します。
-
-```sh
-npm run build:android
-```
-
-出力は `apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk` です。通常の Debug APK の起動には Metro が必要です。
-
-Metro を使わず端末で確認する場合は、JavaScript と画像を同梱した APK を作ります。
-
-```sh
-npm run build:android:standalone
-```
-
-出力は `apps/mobile/android/app/build/outputs/apk/standalone/app-standalone.apk` です。`standalone` は開発用 debug key で署名する動作確認用です。追加の Gradle オプションは `npm run build:android -- --no-daemon` のように渡せます。
 
 ### iOS で開発起動する
 
