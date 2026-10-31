@@ -2,14 +2,14 @@
   "expo": {
     "name": "PrelisMobile",
     "slug": "prelis",
-    "version": "0.1.3",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "jp.co.kupac.prelis",
-      "buildNumber": "1"
+      "buildNumber": "2"
     },
     "android": {
       "adaptiveIcon": {
@@ -18,7 +18,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "jp.co.kupacllc.prelis",
-      "versionCode": 1,
+      "versionCode": 2,
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO"
       ]

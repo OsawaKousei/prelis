@@ -354,7 +354,7 @@
 				CODE_SIGN_ENTITLEMENTS = PrelisMobile/PrelisMobile.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Development";
 				"CODE_SIGN_STYLE[sdk=iphoneos*]" = Manual;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = GLQCJ8YF9S;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -368,7 +368,7 @@
 					"@executable_path/Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.4;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.1;
 				"OTHER_CODE_SIGN_FLAGS[sdk=iphoneos*]" = "--keychain $(HOME)/Library/Keychains/prelis-ios-development.keychain-db";
 				OTHER_LDFLAGS = (
 					"$(inherited)",
@@ -396,7 +396,7 @@
 				CODE_SIGN_ENTITLEMENTS = PrelisMobile/PrelisMobile.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "$(PRELIS_IOS_DISTRIBUTION_IDENTITY)";
 				"CODE_SIGN_STYLE[sdk=iphoneos*]" = Manual;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = GLQCJ8YF9S;
 				INFOPLIST_FILE = PrelisMobile/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
@@ -405,7 +405,7 @@
 					"@executable_path/Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.4;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.1;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
