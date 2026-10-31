@@ -66,6 +66,8 @@ Tauri CLI が Vite と Rust アプリを起動します。
 Mutagen セッション `prelis-windows` を作成または再利用し、Windows のユーザーディレクトリ直下の `prelis-remote` に同期します。スクリプトが同期完了を確認して正常終了してから、次に進みます。
 Ubuntu 側の Mutagen データは `.mutagen-windows/` に保存します。旧 `.mutagen/` に同じ同期元・想定内の同期先パスを持つ `prelis-windows` がある場合は、そのセッションを終了して新しいデータディレクトリで作成します。SSH 接続先や除外設定が変わった既存セッションも作り直します。同期元や同期先パスが想定外の場合は停止します。
 
+初回接続と同期完了待ちは、それぞれ最大300秒です。SSH の接続タイムアウトは10秒とし、Mutagen の作成・同期完了待ちの制限には Ubuntu の `timeout`（coreutils）を使います。省略分を含む競合と一時停止を検出した場合は即時停止し、一時停止中のセッションは移行・再作成しません。競合を解消する際は、同期先の変更を退避してから Ubuntu 側と内容を揃えます。
+
 Windows 実機を直接操作するか、RustDesk で Windows のリモートデスクトップを操作します。同期先のユーザー（現行設定では `builduser`）のデスクトップ上で PowerShell を開き、同期先フォルダに移動して起動します。
 
 ```powershell
@@ -87,7 +89,9 @@ npm.cmd run dev:desktop
 ./scripts/macos/create-macos-sync.sh
 ```
 
-Mutagen セッション `prelis-macos` を作成または再利用し、Ubuntu から Mac へ `one-way-safe` で同期します。スクリプトが同期完了・接続状態・競合なし・必要ファイルの存在・不要ディレクトリの不在を確認して正常終了してから、次に進みます。Mutagen データは、Windows 用の SSH ラッパーの影響を避けるため `.mutagen-macos/` に分けています。
+Mutagen セッション `prelis-macos` を作成または再利用し、Ubuntu から Mac へ `one-way-safe` で同期します。除外設定が変わった場合は、同期先のファイルを保持してセッションを作り直します。スクリプトが同期完了・接続状態・競合なし・必要ファイルの存在・不要ディレクトリの不在を確認して正常終了してから、次に進みます。Mutagen データは、Windows 用の SSH ラッパーの影響を避けるため `.mutagen-macos/` に分け、`MUTAGEN_SSH_PATH` は解除します。待機時間の制限には Ubuntu の `timeout`（coreutils）を使います。
+
+初回接続と同期完了待ちは、それぞれ最大120秒です。表示件数から省略されたものを含む競合や一時停止を検出した場合は、待ち続けず停止します。`one-way-safe` は Mac 側の異なる内容を上書きしないため、以前のソースが残った同期先でセッションを作り直すと競合することがあります。Mac 側の変更を同期先の外へ退避し、Ubuntu 側を正として該当ファイルの内容を揃えてから再実行します。`node_modules` や Rust の `target` を含む同期先全体の削除は不要です。
 
 Mac のデスクトップ上でターミナルを開き、同期先で起動します。`xcode-select` が Command Line Tools を指している環境でも Xcode 本体を使うため、次の例では `DEVELOPER_DIR` を指定しています。
 

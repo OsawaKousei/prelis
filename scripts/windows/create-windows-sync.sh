@@ -24,6 +24,7 @@ ignore_paths=(
   scripts/windows/create-windows-sync.sh scripts/windows/build-windows.sh
   scripts/windows/read-windows-env.sh scripts/windows/verify-artifact-report.py
   scripts/windows/build-windows.test.py
+  scripts/sync.test.py
   scripts/windows/desktop-version.py scripts/windows/verify-artifact-report.test.py
   packages/icons/scripts apps/desktop/src-tauri/gen apps/desktop/src-tauri/signing
   '*.md' .gitignore .vscode .DS_Store
@@ -39,12 +40,23 @@ for ignore_path in "${ignore_paths[@]}"; do
 done
 expected_ignores="$(printf '%s\n' "${ignore_paths[@]}")"
 endpoint_template='{{range .}}{{.Alpha.Path}}|{{.Beta.User}}@{{.Beta.Host}}:{{.Beta.Path}}{{end}}'
+ssh_options=(-o BatchMode=yes -o ConnectTimeout=10 -o ServerAliveInterval=15 -o ServerAliveCountMax=2)
 
 # Host changes in .env recreate this repository's session at the new address.
 # A different source or destination path is still rejected.
 is_windows_session_endpoint() {
   [[ "${1%%|*}" == "$repo_root" &&
      "${1#*|}" =~ ^[a-zA-Z0-9_][a-zA-Z0-9_.-]*@[a-zA-Z0-9][a-zA-Z0-9_.-]*:(Dev/)?prelis-remote$ ]]
+}
+
+require_active_session() {
+  local session_paused
+  session_paused="$(mutagen sync list "$session_name" --template '{{range .}}{{.Paused}}{{end}}')"
+  if [[ "$session_paused" == true ]]; then
+    echo '同期セッションが一時停止されています。停止理由を確認してから再開してください。' >&2
+    mutagen sync list "$session_name" --long >&2
+    return 1
+  fi
 }
 
 if ! command -v mutagen >/dev/null 2>&1; then
@@ -54,6 +66,11 @@ fi
 
 if ! command -v ssh >/dev/null 2>&1; then
   echo 'ssh が必要です。' >&2
+  exit 1
+fi
+
+if ! command -v timeout >/dev/null 2>&1; then
+  echo 'timeout（coreutils）が必要です。' >&2
   exit 1
 fi
 
@@ -71,13 +88,11 @@ if [[ -d "$legacy_data_directory" ]]; then
       echo "旧 Mutagen セッション $session_name の同期先が想定と異なります: $legacy_endpoints" >&2
       exit 1
     fi
+    MUTAGEN_DATA_DIRECTORY="$legacy_data_directory" require_active_session
     echo "旧 .mutagen の $session_name を終了し、.mutagen-windows に移行します。"
     MUTAGEN_DATA_DIRECTORY="$legacy_data_directory" mutagen sync terminate "$session_name"
   fi
 fi
-
-echo 'Windows 側の同期先ディレクトリを準備します。'
-ssh -o BatchMode=yes "$remote_host" 'if not exist "%USERPROFILE%\prelis-remote" mkdir "%USERPROFILE%\prelis-remote"'
 
 sessions="$(mutagen sync list --template '{{range .}}{{.Name}}{{"\n"}}{{end}}')"
 if grep -Fxq "$session_name" <<< "$sessions"; then
@@ -85,7 +100,9 @@ if grep -Fxq "$session_name" <<< "$sessions"; then
   if ! is_windows_session_endpoint "$session_endpoints"; then
     echo "Mutagen セッション $session_name の同期先が想定と異なります: $session_endpoints" >&2
     exit 1
-  elif [[ "$session_endpoints" != "${repo_root}|${remote_endpoint}" ]]; then
+  fi
+  require_active_session
+  if [[ "$session_endpoints" != "${repo_root}|${remote_endpoint}" ]]; then
     echo "Mutagen セッション $session_name を新しい同期先へ移行します。"
     mutagen sync terminate "$session_name"
     sessions=
@@ -100,9 +117,12 @@ if grep -Fxq "$session_name" <<< "$sessions"; then
   fi
 fi
 
+echo 'Windows 側の同期先ディレクトリを準備します。'
+ssh "${ssh_options[@]}" "$remote_host" 'if not exist "%USERPROFILE%\prelis-remote" mkdir "%USERPROFILE%\prelis-remote"'
+
 if ! grep -Fxq "$session_name" <<< "$sessions"; then
   echo "Mutagen セッション $session_name を作成します。"
-  mutagen sync create \
+  timeout --kill-after=5s 300s mutagen sync create \
     --name="$session_name" \
     --no-global-configuration \
     --mode=one-way-safe \
@@ -121,10 +141,10 @@ if [[ "$session_endpoints" != "${repo_root}|${remote_endpoint}" ]]; then
 fi
 
 wait_for_watching() {
-  local last_state= session_state status alpha_connected beta_connected shown_conflicts excluded_conflicts conflicts attempt
+  local last_state= session_state status alpha_connected beta_connected shown_conflicts excluded_conflicts paused conflicts attempt
   for attempt in {1..150}; do
-    session_state="$(mutagen sync list "$session_name" --template '{{range .}}{{.Status}}|{{.Alpha.Connected}}|{{.Beta.Connected}}|{{len .Conflicts}}|{{.ExcludedConflicts}}{{end}}')"
-    IFS='|' read -r status alpha_connected beta_connected shown_conflicts excluded_conflicts <<< "$session_state"
+    session_state="$(mutagen sync list "$session_name" --template '{{range .}}{{.Status}}|{{.Alpha.Connected}}|{{.Beta.Connected}}|{{len .Conflicts}}|{{.ExcludedConflicts}}|{{.Paused}}{{end}}')"
+    IFS='|' read -r status alpha_connected beta_connected shown_conflicts excluded_conflicts paused <<< "$session_state"
     conflicts=$((shown_conflicts + excluded_conflicts))
     if [[ "$session_state" != "$last_state" ]]; then
       echo "Mutagen 状態: $status / Linux 接続: $alpha_connected / Windows 接続: $beta_connected / 競合: $conflicts"
@@ -135,12 +155,17 @@ wait_for_watching() {
       mutagen sync list "$session_name" --long >&2
       return 1
     fi
-    if [[ "$session_state" == 'Watching|true|true|0|0' ]]; then
+    if [[ "$paused" == true ]]; then
+      echo '同期セッションが一時停止されています。停止理由を確認してから再開してください。' >&2
+      mutagen sync list "$session_name" --long >&2
+      return 1
+    fi
+    if [[ "$session_state" == 'Watching|true|true|0|0|false' ]]; then
       return 0
     fi
     sleep 2
   done
-  echo 'Mutagen が待機状態になりませんでした。現在のセッション状態:' >&2
+  echo '300 秒以内に Mutagen が待機状態になりませんでした。現在のセッション状態:' >&2
   mutagen sync list "$session_name" --long >&2
   return 1
 }
@@ -148,9 +173,12 @@ wait_for_watching() {
 echo 'Windows 側への接続と初回同期を待ちます。'
 wait_for_watching
 
-echo '同期完了を待ちます。'
-if ! mutagen sync flush "$session_name"; then
-  echo '同期に失敗しました。現在のセッション状態:' >&2
+echo '同期完了を待ちます（最大 300 秒）。'
+if timeout --kill-after=5s 300s mutagen sync flush "$session_name"; then
+  :
+else
+  flush_status=$?
+  echo "同期完了待ちに失敗しました（終了コード: $flush_status。124 はタイムアウト）。" >&2
   mutagen sync list "$session_name" --long >&2
   exit 1
 fi
@@ -168,4 +196,4 @@ if [[ "$conflict_count" != 0 ]]; then
 fi
 
 echo 'Windows 側のファイルを確認します。'
-ssh -o BatchMode=yes "$remote_host" 'cd /d "%USERPROFILE%\prelis-remote" && if exist package.json (echo package.json: OK) else (echo package.json: MISSING & exit /b 1)'
+ssh "${ssh_options[@]}" "$remote_host" 'cd /d "%USERPROFILE%\prelis-remote" && if exist package.json (echo package.json: OK) else (echo package.json: MISSING & exit /b 1)'

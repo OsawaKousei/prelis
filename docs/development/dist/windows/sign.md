@@ -83,12 +83,17 @@ powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$env:US
 次は実機への接続、同期、タスク登録、署名付きビルドを行いません。
 
 ```sh
-bash -n scripts/windows/build-windows.sh scripts/windows/create-windows-sync.sh scripts/windows/read-windows-env.sh
+bash -n scripts/windows/build-windows.sh
+bash -n scripts/windows/create-windows-sync.sh
+bash -n scripts/windows/read-windows-env.sh
+python3 scripts/sync.test.py
 python3 scripts/windows/build-windows.test.py
 python3 scripts/windows/verify-artifact-report.test.py
 pwsh -NoProfile -File scripts/windows/build-task.test.ps1
 ```
 
 Python テストは一時リポジトリで SSH・SCP・同期をモックに置き換え、成功・ビルド失敗・別実行 ID・改変された成果物・中断・停止失敗・バージョン不整合と、フラット集約・復元を確認します。PowerShell テストは共有関数と停止処理の対象照合に加え、表形式ログと日本語を含む UTF-8 JSON をローカルで確認し、COM オブジェクトを作成しません。
+
+`scripts/sync.test.py` は Windows・iOS の同期スクリプトを対象に、セッションの作成・再利用・除外設定変更、接続待ち・作成・同期完了待ちの時間制限、省略分を含む競合、一時停止、接続失敗を確認します。Windows 専用 SSH ラッパーと旧セッションの移行も検証し、一時停止中や想定外の同期元を持つセッションは変更しません。
 
 実機実行を承認した後は、Windows PowerShell 5.1 の構文確認、本体の署名付き NSIS・MSI 作成と回収、GUI 未ログオン時の待機、失敗ログの回収、Ctrl+C 時の子プロセス終了、通信断後の停止、旧成果物の保持を確認します。
