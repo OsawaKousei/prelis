@@ -8,7 +8,7 @@
 | 配置先 | 役割・主な技術 |
 | --- | --- |
 | `apps/desktop/` | デスクトップアプリ。`src/` は React + Vite の UI、`src-tauri/` は Tauri + Rust のネイティブ処理・権限・配布設定 |
-| `apps/mobile/` | モバイルアプリ。`App.tsx`・`src/` は React Native の UI、`android/` は Kotlin・Gradle、`ios/` は Swift・Objective-C・Xcode のネイティブ処理・設定 |
+| `apps/mobile/` | モバイルアプリ。`App.tsx` はアプリ全体の設定、`src/` は React Native の画面・状態管理、`android/` は Kotlin・Gradle、`ios/` は Swift・Objective-C・Xcode のネイティブ処理・設定 |
 | `apps/web/` | ウェブアプリ。React + Vite の UI とブラウザー API に依存する処理 |
 | `packages/core/` | UI・OS に依存しない TypeScript の共有ロジック |
 | `packages/icons/` | 共通アイコン・ブランド画像。`assets/` の PNG を正本として各アプリで使用 |
@@ -20,7 +20,13 @@
 | `docs-old/` | 整理前の資料。過去の仕様・手順・検証記録の参考用で、現行実装との一致は保証しない |
 | `ref/` | Git 管理対象外の参考資料。通常の実装・検証の対象外 |
 
-デスクトップとウェブの `src/` は、`shell/` が画面切り替え、`apps/<機能名>/` が各機能、`shared/` がアプリ内の共通 UI を担当します。
+各アプリの `src/` は、`shell/` が画面切り替え、`apps/<機能名>/` が各機能、`shared/` がアプリ内の共通 UI を担当します。
+各機能の `app.tsx` は状態管理と操作処理、`*-view.tsx` は表示を担当します。
+
+モバイルの `App.tsx` は React Native のエントリーから利用するルートとして維持し、Safe Area とステータスバーを設定します。
+`src/shell/` はホーム・下部タブ・未保存確認・Android の戻る操作を担当し、タイマーは画面を切り替えてもマウントを維持します。
+`src/shared/native.ts` が独自ネイティブモジュール `PrelisNative` の型と呼び出し口を提供し、Android・iOS の既存 API に直接接続します。
+UI は React Native のコンポーネントと `StyleSheet` で実装し、デスクトップの DOM・CSS・Tauri API に合わせる互換レイヤーは設けません。
 
 ## 依存関係と実装の境界
 
