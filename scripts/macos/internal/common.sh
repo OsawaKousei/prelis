@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Shared by Ubuntu controllers and Mac-side commands (including Bash 3.2).
 macos_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-macos_repo_root="$(cd "$macos_script_dir/../.." && pwd)"
+macos_repo_root="$(cd "$macos_script_dir/../../.." && pwd)"
 ssh_options=(-o BatchMode=yes -o ConnectTimeout=10 -o ServerAliveInterval=15 -o ServerAliveCountMax=2)
 
 macos_load_config() {

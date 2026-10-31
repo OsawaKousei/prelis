@@ -60,7 +60,7 @@ chmod 600 scripts/macos/.env
 | `PRELIS_APPSTORE_API_KEY_ID` | 公証・App Store Connect アップロード用の Key ID |
 | `PRELIS_APPSTORE_API_ISSUER_ID` | 同じ API キーの Issuer ID |
 
-実行する工程で必要な値を設定します。[読み込み処理](../../../../scripts/macos/read-config.py)は環境変数を優先し、`.env` をシェルコードとして実行せず、許可したキーだけを読み込みます。`.env` が存在する場合は権限 `0600` が必要です。設定とパスワードは、実行するスクリプトとともに SSH の標準入力で Mac へ渡し、Mac の一時 `.env` から読み込みます。一時ファイルはその処理の終了時に削除します。設定値をリモートコマンドの引数に埋め込みません。
+実行する工程で必要な値を設定します。[読み込み処理](../../../../scripts/macos/internal/read-config.py)は環境変数を優先し、`.env` をシェルコードとして実行せず、許可したキーだけを読み込みます。`.env` が存在する場合は権限 `0600` が必要です。設定とパスワードは、実行するスクリプトとともに SSH の標準入力で Mac へ渡し、Mac の一時 `.env` から読み込みます。一時ファイルはその処理の終了時に削除します。設定値をリモートコマンドの引数に埋め込みません。
 
 公証にはチーム用の App Store Connect API キーを用意します。現行スクリプトは Key ID・Issuer ID と、Mac 上の `~/.appstoreconnect/private_keys/AuthKey_<KEY_ID>.p8` を使います。秘密鍵の内容を `.env` に複製したり Ubuntu にコピーしたりする必要はありません。
 `.p12`・`.p8`・`.env` は Git 管理とソース同期から除外します。
@@ -162,22 +162,12 @@ open "$app"
 | 公証が拒否された | 公証ログの指摘を修正し、新しい成果物をビルドする |
 | SSH 経由で DMG 作成が止まる | Tauri に DMG を直接作らせず、`build-github.sh` の `hdiutil` による生成を使う |
 
-## 同時実行とローカル検証
+## 同時実行とビルド前の確認
 
 Ubuntu 側はリポジトリ内の `.mutagen-macos/build.lock`、Mac 側はユーザーの `~/.prelis-macos-build.lock` を使い、ビルド・公証・アップロードの重複起動を拒否します。通常終了・エラー・中断ではロックと一時ファイルを片付けます。強制終了などでロックが残った場合は、関連する処理が終了していることを確認してから空のロックディレクトリを `rmdir` で削除します。
 
 ビルド前に Cargo の実際の出力先が既定の `src-tauri/target` と一致すること、Node.js が同期した `.nvmrc` の版であることを確認します。ビルド後は App 内のバージョンも照合します。fnm を使う場合は、事前に `.nvmrc` の版をインストールしてください。
 
-以下のテストは SSH・署名・Apple への送信を代替し、実機のビルドや公証を行いません。
-
-```sh
-python3 scripts/macos/build-workflow.test.py
-python3 scripts/macos/create-macos-sync.test.py
-```
-
-設定の安全な読み込み、二重起動の拒否、Cargo 出力先と App の版の不整合、公証後の集約、改変された成果物の拒否、配置失敗時の復元、PKG の検証・送信に使うコピーの一致を確認します。
-
 ## 確認状況
 
 旧資料の 2026-10-30 の記録では、`0.1.1` の Universal App ZIP・DMG の生成、Developer ID 署名、Hardened Runtime・タイムスタンプ、両 CPU の収録、Profile の不在、DMG の整合性、回収後の SHA-256 を確認しています。公証申請と別の Mac での起動は未確認です。
-今回の変更は上記のローカルテストで確認しています。署名付きビルド・公証・実機操作は再実行していません。

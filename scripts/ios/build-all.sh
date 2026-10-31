@@ -12,7 +12,7 @@ local_build="$repo_root/apps/mobile/ios/build"
 for command_name in node ssh scp sha256sum unzip; do
   command -v "$command_name" >/dev/null 2>&1 || { echo "$command_name が必要です。" >&2; exit 1; }
 done
-certificate_password="$(node "$repo_root/scripts/macos/read-appstore-env.mjs")"
+certificate_password="$(node "$repo_root/scripts/macos/internal/read-appstore-env.mjs")"
 "$repo_root/scripts/ios/create-ios-sync.sh"
 printf '%s\n' "$certificate_password" | ssh -T -o BatchMode=yes "$remote_host" 'bash "$HOME/prelis-ios-remote/scripts/ios/build-on-mac.sh" --all --password-stdin'
 unset certificate_password

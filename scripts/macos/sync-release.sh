@@ -5,7 +5,7 @@ if [[ $# -gt 1 ]]; then
   echo '使い方: sync-release.sh [version]' >&2
   exit 2
 fi
-source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.sh"
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/internal/common.sh"
 macos_local_init
 version="${1:-$version}"
 macos_check_version

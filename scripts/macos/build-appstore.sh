@@ -5,7 +5,7 @@ if [[ $# -ne 0 ]]; then
   echo '引数なしで実行してください。' >&2
   exit 2
 fi
-source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.sh"
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/internal/common.sh"
 macos_local_init
 
 macos_require PRELIS_MACOS_APPSTORE_CERTIFICATE PRELIS_MACOS_APPSTORE_SIGNING_IDENTITY PRELIS_MACOS_INSTALLER_CERTIFICATE PRELIS_MACOS_INSTALLER_SIGNING_IDENTITY PRELIS_MACOS_APPSTORE_PROFILE PRELIS_MACOS_TEAM_ID PRELIS_APPSTORE_P12_PASSWORD

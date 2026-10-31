@@ -32,8 +32,8 @@ if [[ ! "$expected_hash" =~ ^[0-9a-f]{64}$ || "$actual_hash" != "$expected_hash"
 fi
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-api_key="$(node "$script_dir/../macos/read-appstore-env.mjs" --api-key-id)"
-api_issuer="$(node "$script_dir/../macos/read-appstore-env.mjs" --api-issuer-id)"
+api_key="$(node "$script_dir/../macos/internal/read-appstore-env.mjs" --api-key-id)"
+api_issuer="$(node "$script_dir/../macos/internal/read-appstore-env.mjs" --api-issuer-id)"
 echo "提出対象: $ipa"
 # Every interpolated argument is a fixed name, hex digest, or validated ID.
 ssh -T -o BatchMode=yes kousei@192.168.10.22 \

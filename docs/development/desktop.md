@@ -44,6 +44,8 @@ Ubuntu 側の `scripts/windows/.env` に SSH 接続先を設定します。フ�
 
 macOS の同期・ビルドの接続先と作業パスは `scripts/macos/.env` の `PRELIS_MACOS_SSH_HOST`・`PRELIS_MACOS_REMOTE_ROOT` に設定します。[.env.example](../../scripts/macos/.env.example) を初回だけコピーして権限を `0600` にし、使用する環境の値を記入してください。署名に関するキーは配布ビルド時に設定します。
 
+Ubuntu 側から実行するスクリプトは `scripts/macos/` 直下に置き、共通処理・Mac 側で実行するスクリプトは `scripts/macos/internal/` にまとめています。
+
 `.nvmrc` も Mac へ同期します。Mac のビルドスクリプトはその Node.js の版を使い、fnm の `default` には依存しません。fnm を使う場合は事前にその版をインストールします。
 
 ## 開発起動と動作確認用ビルド

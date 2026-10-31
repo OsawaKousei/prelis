@@ -19,7 +19,7 @@ KEYS = (
 
 
 def read_config():
-    path = Path(os.environ.get('PRELIS_MACOS_ENV_FILE', Path(__file__).with_name('.env')))
+    path = Path(os.environ.get('PRELIS_MACOS_ENV_FILE', Path(__file__).resolve().parent.parent / '.env'))
     values = {}
     if path.exists():
         if path.stat().st_mode & 0o077:

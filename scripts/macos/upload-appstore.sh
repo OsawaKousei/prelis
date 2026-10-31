@@ -6,7 +6,7 @@ case "$#:${1:-}" in
   2:--validate-only) mode=validate-only; pkg="$2" ;;
   *) echo '使い方: upload-appstore.sh [--validate-only] <PKG>' >&2; exit 2 ;;
 esac
-source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.sh"
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/internal/common.sh"
 macos_local_init
 macos_require PRELIS_APPSTORE_API_KEY_ID PRELIS_APPSTORE_API_ISSUER_ID PRELIS_MACOS_INSTALLER_SIGNING_IDENTITY
 filename="$(basename "$pkg")"

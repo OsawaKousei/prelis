@@ -8,7 +8,7 @@ fi
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 session_name=prelis-macos
-source "$repo_root/scripts/macos/common.sh"
+source "$repo_root/scripts/macos/internal/common.sh"
 macos_load_config
 macos_connection
 remote_endpoint="${remote_host}:${remote_root}"
@@ -23,10 +23,10 @@ unset MUTAGEN_SSH_PATH
 ignore_paths=(
   apps/mobile apps/web docs docs-old infra lp
   scripts/android scripts/ios scripts/linux scripts/mutagen-ssh scripts/windows
-  scripts/macos/build-appstore.sh scripts/macos/build-macos.sh
-  scripts/macos/create-macos-sync.sh scripts/macos/create-macos-sync.test.py
-  scripts/macos/read-appstore-env.mjs scripts/macos/build-workflow.test.py
-  scripts/sync.test.py
+  scripts/macos/build-appstore.sh scripts/macos/build-github.sh scripts/macos/build-macos.sh
+  scripts/macos/create-macos-sync.sh scripts/macos/notarize-github.sh
+  scripts/macos/sync-release.sh scripts/macos/upload-appstore.sh
+  scripts/macos/internal/read-appstore-env.mjs
   packages/icons/scripts apps/desktop/public apps/desktop/src/assets/react.svg
   apps/desktop/src-tauri/gen apps/desktop/src-tauri/signing
   '*.md' .gitignore LICENSE .DS_Store
@@ -145,7 +145,15 @@ remote_check='
   set -eu
   remote="$1"
   case "$remote" in /*) ;; *) remote="$HOME/$remote" ;; esac
-  for file in .nvmrc scripts/macos/common.sh scripts/macos/read-config.py package.json package-lock.json apps/desktop/package.json apps/desktop/src-tauri/tauri.conf.json apps/desktop/src-tauri/tauri.github.conf.json packages/core/package.json packages/icons/package.json scripts/macos/build-on-mac.sh scripts/macos/build-appstore-on-mac.sh scripts/macos/build-github-on-mac.sh; do
+  for file in \
+    .nvmrc package.json package-lock.json apps/desktop/package.json \
+    apps/desktop/src-tauri/tauri.conf.json apps/desktop/src-tauri/tauri.github.conf.json \
+    apps/desktop/src-tauri/tauri.appstore.conf.json packages/core/package.json packages/icons/package.json \
+    scripts/macos/internal/common.sh scripts/macos/internal/read-config.py \
+    scripts/macos/internal/verify-artifacts.py scripts/macos/internal/build-on-mac.sh \
+    scripts/macos/internal/build-appstore-on-mac.sh scripts/macos/internal/build-github-on-mac.sh \
+    scripts/macos/internal/notarize-github-on-mac.sh scripts/macos/internal/sync-release-on-mac.sh \
+    scripts/macos/internal/upload-appstore-on-mac.sh; do
     test -f "$remote/$file" || { echo "必要な同期対象がありません: $file" >&2; exit 1; }
   done
   for path in .git apps/mobile apps/web docs docs-old infra lp scripts/android scripts/ios scripts/linux scripts/windows scripts/mutagen-ssh scripts/macos/.env; do

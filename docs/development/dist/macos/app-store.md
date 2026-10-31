@@ -53,7 +53,7 @@ App ZIP と PKG、およびそれぞれの SHA-256 を Ubuntu へ回収し、ハ
 | SHA-256 | App ZIP・PKG と同名のファイルに `.sha256` を付けたもの |
 
 `<version>` は共通の `tauri.conf.json` の値、`<arch>` は Apple Silicon で `aarch64`、Intel Mac で `x64` です。Mac 側にも同じ相対パスの ZIP・PKG・SHA-256 が残ります。
-同期済みの Mac で直接ビルドする場合は、Mac 側のリポジトリルートで `bash scripts/macos/build-appstore-on-mac.sh` を実行します。この場合も、Mac 側の `scripts/macos/.env` または環境変数に証明書・Profile・署名 ID・パスワードを設定します。
+同期済みの Mac で直接ビルドする場合は、Mac 側のリポジトリルートで `bash scripts/macos/internal/build-appstore-on-mac.sh` を実行します。この場合も、Mac 側の `scripts/macos/.env` または環境変数に証明書・Profile・署名 ID・パスワードを設定します。
 
 ## 2. 提出する成果物を確認する
 
@@ -115,4 +115,4 @@ PKG の署名、展開後の App の署名・Bundle ID・最低対応 macOS・�
 ## 確認状況
 
 旧資料の 2026-10-29〜30 の記録では、`0.1.1` の署名済み App ZIP・PKG の生成、App Sandbox・署名・Profile・識別情報・読み取り権限・最低対応 macOS・回収後の SHA-256 を確認しています。読み取り権限と arm64 専用 App の最低対応 macOS の指摘を修正後、`altool --validate-app` はエラー 0 件でした。
-同記録では Sandbox 内の機能操作とアップロード・審査は未確認です。今回の変更では設定の読み込みと PKG の一時コピーを使う検証・送信をローカルテストで確認しており、ビルド・Apple 側の検証・アップロードは再実行していません。
+同記録では Sandbox 内の機能操作とアップロード・審査は未確認です。

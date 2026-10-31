@@ -8,7 +8,7 @@ if [[ "$(uname -s)" != Darwin ]]; then
     exit 2
   fi
   "$repo_root/scripts/ios/create-ios-sync.sh"
-  node "$repo_root/scripts/macos/read-appstore-env.mjs" |
+  node "$repo_root/scripts/macos/internal/read-appstore-env.mjs" |
     ssh -T -o BatchMode=yes kousei@192.168.10.22 'bash "$HOME/prelis-ios-remote/scripts/ios/setup-device-signing.sh" --password-stdin'
   exit
 fi
