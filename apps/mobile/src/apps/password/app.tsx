@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {generatePassword, type CharacterType, type PasswordLength} from '@prelis/core';
-import {native} from '../../shared/native';
+import NativePassword from './native/NativePassword';
 import {PasswordView} from './password-view';
 
 export function PasswordApp() {
@@ -19,12 +19,12 @@ export function PasswordApp() {
     onLength={value => {setLength(value); clear();}}
     onGenerate={async () => {
       setBusy(true);
-      try {setPassword(await generatePassword(length, selected, native.randomBytes)); setMessage('');}
+      try {setPassword(await generatePassword(length, selected, NativePassword.randomBytes)); setMessage('');}
       catch {setPassword(''); setMessage('パスワードを生成できませんでした。');}
       finally {setBusy(false);}
     }}
     onCopy={async () => {
-      try {await native.copyText(password); setMessage('コピーしました。');}
+      try {await NativePassword.copyText(password); setMessage('コピーしました。');}
       catch {setMessage('コピーできませんでした。パスワードを選択してコピーしてください。');}
     }}
   />;

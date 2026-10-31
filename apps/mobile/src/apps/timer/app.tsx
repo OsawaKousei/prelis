@@ -1,5 +1,6 @@
 import React, {useCallback, useEffect, useState} from 'react';
-import {native, parseSounds, type SoundLibrary} from '../../shared/native';
+import NativeTimerSound from './native/NativeTimerSound';
+import {addSound, deleteSound, loadSoundLibrary, selectSound, type SoundLibrary} from './sound-storage';
 import {TimerView} from './timer-view';
 
 export function TimerApp() {
@@ -15,12 +16,12 @@ export function TimerApp() {
   const completed = remaining === 0;
   useEffect(() => {
     let active = true;
-    native.loadSounds().then(value => {if (active) {setLibrary(parseSounds(value)); setError('');}})
+    loadSoundLibrary().then(value => {if (active) {setLibrary(value); setError('');}})
       .catch(() => {if (active) setError('保存済みの音声を読み込めませんでした。');});
     return () => {active = false;};
   }, [retry]);
   const playCompletion = useCallback(() => {
-    if (library?.selectedId) native.playSound(library.selectedId, true).catch(() => setError('終了音を再生できませんでした。'));
+    if (library?.selectedId) NativeTimerSound.playSound(library.selectedId, true).catch(() => setError('終了音を再生できませんでした。'));
   }, [library]);
   useEffect(() => {
     if (deadline === null) return;
@@ -35,10 +36,10 @@ export function TimerApp() {
     }, 100);
     return () => clearInterval(id);
   }, [deadline, playCompletion]);
-  const changeSounds = async (action: () => Promise<string | null>) => {
+  const changeSounds = async (action: (library: SoundLibrary) => Promise<SoundLibrary | null>) => {
     if (busy || !library || deadline !== null || completed) return;
     setBusy(true); setError('');
-    try {const value = await action(); if (value) setLibrary(parseSounds(value));}
+    try {const value = await action(library); if (value) setLibrary(value);}
     catch (reason) {setError(reason instanceof Error ? reason.message : '音声を変更できませんでした。');}
     finally {setBusy(false);}
   };
@@ -58,17 +59,17 @@ export function TimerApp() {
       } else setDeadline(Date.now() + remaining);
     }}
     onReset={() => {
-      native.stopSound().catch(() => setError('終了音を停止できませんでした。'));
+      NativeTimerSound.stopSound().catch(() => setError('終了音を停止できませんでした。'));
       setDeadline(null);
       if (!valid) setMinutes('25');
       setRemaining((valid ? duration : 25) * 60 * 1000);
     }}
     onRetry={() => setRetry(value => value + 1)}
-    onSelectSound={id => changeSounds(() => native.selectSound(id))}
-    onAddSound={() => changeSounds(native.pickSound)}
+    onSelectSound={id => changeSounds(current => selectSound(current, id))}
+    onAddSound={() => changeSounds(addSound)}
     onPreviewSound={id => {
-      native.playSound(id, false).catch(() => setError('音声を再生できませんでした。'));
+      NativeTimerSound.playSound(id, false).catch(() => setError('音声を再生できませんでした。'));
     }}
-    onDeleteSound={id => changeSounds(() => native.deleteSound(id))}
+    onDeleteSound={id => changeSounds(current => deleteSound(current, id))}
   />;
 }

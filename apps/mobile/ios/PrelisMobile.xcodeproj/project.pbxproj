@@ -7,28 +7,51 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		01A45B660E3413F94240DE60 /* timer-sound-module.mm in Sources */ = {isa = PBXBuildFile; fileRef = D90500B9449AF8A318D593F8 /* timer-sound-module.mm */; };
 		0C80B921A6F3F58F76C31292 /* libPods-PrelisMobile.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DCACB8F33CDC322A6C60F78 /* libPods-PrelisMobile.a */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		31544CE0A90F5B3B7BAE549D /* FileStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80CF9DA8FC01D4412F23790B /* FileStorage.swift */; };
+		406427AAE578B8616C5C2E65 /* SoundStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C452FECE45CB2C0D72E0EB /* SoundStorage.swift */; };
+		409C18DF95C6953D4338E252 /* PasswordService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4ADDD636EC765809260C12C /* PasswordService.swift */; };
+		50DE3EC4E514C50BBCD92747 /* DiaryStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31F0DB246861F50D16D0E866 /* DiaryStorage.swift */; };
+		5C2C6CDA96DE404E6C2EDC72 /* DiaryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30A62CC0793EF950C8EA5EA /* DiaryService.swift */; };
+		5D752F725689691C410F0A35 /* diary-module.mm in Sources */ = {isa = PBXBuildFile; fileRef = A1CF362D75DD89A904C34C20 /* diary-module.mm */; };
+		6EBEE086F59AB8970CBC31E6 /* SoundPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E3D3942EFD7C783A2C2693D /* SoundPlayer.swift */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		917C54913A10A4AD7E80DD8A /* SoundPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06524C89ACEB6A0CEA7D0780 /* SoundPicker.swift */; };
 		9F478AF138DF4BC6A4E32101 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F478AF138DF4BC6A4E32102 /* SceneDelegate.swift */; };
-		A6A3BDE12D0F4C5D9B7E2101 /* PrelisNative.m in Sources */ = {isa = PBXBuildFile; fileRef = A6A3BDE12D0F4C5D9B7E2102 /* PrelisNative.m */; };
+		A22B57B8BC7BB4AFA44D68FF /* password-module.mm in Sources */ = {isa = PBXBuildFile; fileRef = 8ABE9389B57EFD231A2CA543 /* password-module.mm */; };
+		D6072D6CEE456297D7A51DAC /* TimerSoundService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E901FE1F5388EB75B34E150A /* TimerSoundService.swift */; };
 		DDFED9107E3BCF8D38ADF716 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		06524C89ACEB6A0CEA7D0780 /* SoundPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundPicker.swift; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* PrelisMobile.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PrelisMobile.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = PrelisMobile/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = PrelisMobile/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = PrelisMobile/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		2D4FEF481AA2FB94BB1A95D6 /* password-module.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "password-module.h"; sourceTree = "<group>"; };
+		31F0DB246861F50D16D0E866 /* DiaryStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryStorage.swift; sourceTree = "<group>"; };
 		3B4392A12AC88292D35C810B /* Pods-PrelisMobile.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PrelisMobile.debug.xcconfig"; path = "Target Support Files/Pods-PrelisMobile/Pods-PrelisMobile.debug.xcconfig"; sourceTree = "<group>"; };
+		3E3D3942EFD7C783A2C2693D /* SoundPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundPlayer.swift; sourceTree = "<group>"; };
+		47C452FECE45CB2C0D72E0EB /* SoundStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundStorage.swift; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-PrelisMobile.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PrelisMobile.release.xcconfig"; path = "Target Support Files/Pods-PrelisMobile/Pods-PrelisMobile.release.xcconfig"; sourceTree = "<group>"; };
 		5DCACB8F33CDC322A6C60F78 /* libPods-PrelisMobile.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-PrelisMobile.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = PrelisMobile/AppDelegate.swift; sourceTree = "<group>"; };
+		80CF9DA8FC01D4412F23790B /* FileStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileStorage.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = PrelisMobile/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		87C79187672492F25F998BEC /* timer-sound-module.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "timer-sound-module.h"; sourceTree = "<group>"; };
+		8ABE9389B57EFD231A2CA543 /* password-module.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = "password-module.mm"; sourceTree = "<group>"; };
 		9F478AF138DF4BC6A4E32102 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SceneDelegate.swift; path = PrelisMobile/SceneDelegate.swift; sourceTree = "<group>"; };
-		A6A3BDE12D0F4C5D9B7E2102 /* PrelisNative.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = PrelisNative.m; path = PrelisMobile/PrelisNative.m; sourceTree = "<group>"; };
+		A1CF362D75DD89A904C34C20 /* diary-module.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = "diary-module.mm"; sourceTree = "<group>"; };
+		A30A62CC0793EF950C8EA5EA /* DiaryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryService.swift; sourceTree = "<group>"; };
+		C47959EB5A310CC234425A08 /* diary-module.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "diary-module.h"; sourceTree = "<group>"; };
+		D90500B9449AF8A318D593F8 /* timer-sound-module.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = "timer-sound-module.mm"; sourceTree = "<group>"; };
+		E901FE1F5388EB75B34E150A /* TimerSoundService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerSoundService.swift; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		F4ADDD636EC765809260C12C /* PasswordService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -49,7 +72,8 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				761780EC2CA45674006654EE /* AppDelegate.swift */,
 				9F478AF138DF4BC6A4E32102 /* SceneDelegate.swift */,
-				A6A3BDE12D0F4C5D9B7E2102 /* PrelisNative.m */,
+				9CC51D2405C8783EA53C8D35 /* apps */,
+				DA05D1FEA8BE03658F5BF013 /* shared */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
@@ -64,6 +88,17 @@
 				5DCACB8F33CDC322A6C60F78 /* libPods-PrelisMobile.a */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		704A869D4C76B32F7B12521D /* diary */ = {
+			isa = PBXGroup;
+			children = (
+				31F0DB246861F50D16D0E866 /* DiaryStorage.swift */,
+				A30A62CC0793EF950C8EA5EA /* DiaryService.swift */,
+				C47959EB5A310CC234425A08 /* diary-module.h */,
+				A1CF362D75DD89A904C34C20 /* diary-module.mm */,
+			);
+			path = diary;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -95,6 +130,34 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		881DF46AC83826A4929A9C19 /* storage */ = {
+			isa = PBXGroup;
+			children = (
+				80CF9DA8FC01D4412F23790B /* FileStorage.swift */,
+			);
+			path = storage;
+			sourceTree = "<group>";
+		};
+		92408447B587F43199B0C44C /* password */ = {
+			isa = PBXGroup;
+			children = (
+				F4ADDD636EC765809260C12C /* PasswordService.swift */,
+				2D4FEF481AA2FB94BB1A95D6 /* password-module.h */,
+				8ABE9389B57EFD231A2CA543 /* password-module.mm */,
+			);
+			path = password;
+			sourceTree = "<group>";
+		};
+		9CC51D2405C8783EA53C8D35 /* apps */ = {
+			isa = PBXGroup;
+			children = (
+				704A869D4C76B32F7B12521D /* diary */,
+				92408447B587F43199B0C44C /* password */,
+				C5681363C4C9E2F10AAF6C68 /* timer */,
+			);
+			path = PrelisMobile/apps;
+			sourceTree = "<group>";
+		};
 		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
 			isa = PBXGroup;
 			children = (
@@ -102,6 +165,27 @@
 				5709B34CF0A7D63546082F79 /* Pods-PrelisMobile.release.xcconfig */,
 			);
 			path = Pods;
+			sourceTree = "<group>";
+		};
+		C5681363C4C9E2F10AAF6C68 /* timer */ = {
+			isa = PBXGroup;
+			children = (
+				E901FE1F5388EB75B34E150A /* TimerSoundService.swift */,
+				47C452FECE45CB2C0D72E0EB /* SoundStorage.swift */,
+				3E3D3942EFD7C783A2C2693D /* SoundPlayer.swift */,
+				06524C89ACEB6A0CEA7D0780 /* SoundPicker.swift */,
+				87C79187672492F25F998BEC /* timer-sound-module.h */,
+				D90500B9449AF8A318D593F8 /* timer-sound-module.mm */,
+			);
+			path = timer;
+			sourceTree = "<group>";
+		};
+		DA05D1FEA8BE03658F5BF013 /* shared */ = {
+			isa = PBXGroup;
+			children = (
+				881DF46AC83826A4929A9C19 /* storage */,
+			);
+			path = PrelisMobile/shared;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -254,7 +338,17 @@
 			files = (
 				761780ED2CA45674006654EE /* AppDelegate.swift in Sources */,
 				9F478AF138DF4BC6A4E32101 /* SceneDelegate.swift in Sources */,
-				A6A3BDE12D0F4C5D9B7E2101 /* PrelisNative.m in Sources */,
+				31544CE0A90F5B3B7BAE549D /* FileStorage.swift in Sources */,
+				D6072D6CEE456297D7A51DAC /* TimerSoundService.swift in Sources */,
+				406427AAE578B8616C5C2E65 /* SoundStorage.swift in Sources */,
+				6EBEE086F59AB8970CBC31E6 /* SoundPlayer.swift in Sources */,
+				917C54913A10A4AD7E80DD8A /* SoundPicker.swift in Sources */,
+				409C18DF95C6953D4338E252 /* PasswordService.swift in Sources */,
+				50DE3EC4E514C50BBCD92747 /* DiaryStorage.swift in Sources */,
+				5C2C6CDA96DE404E6C2EDC72 /* DiaryService.swift in Sources */,
+				5D752F725689691C410F0A35 /* diary-module.mm in Sources */,
+				A22B57B8BC7BB4AFA44D68FF /* password-module.mm in Sources */,
+				01A45B660E3413F94240DE60 /* timer-sound-module.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

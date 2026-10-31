@@ -1,7 +1,7 @@
 import React, {useCallback, useEffect, useState} from 'react';
 import {Alert} from 'react-native';
 import {isDiaryDate, localDate} from '@prelis/core';
-import {native} from '../../shared/native';
+import {readDiary, saveDiary} from './storage';
 import {DiaryView} from './diary-view';
 
 type Props = {onState: (dirty: boolean, saving: boolean) => void};
@@ -21,7 +21,7 @@ export function DiaryApp({onState}: Props) {
   useEffect(() => {
     let active = true;
     setLoading(true); setError('');
-    native.readDiary(date).then(text => {
+    readDiary(date).then(text => {
       if (active) {setContent(text); setSaved(text); setEverSaved(text.length > 0); setLoading(false);}
     }).catch(() => {if (active) {setError('日記を開けませんでした。保存先にアクセスできません。'); setLoading(false);}});
     return () => {active = false;};
@@ -47,7 +47,7 @@ export function DiaryApp({onState}: Props) {
     onSave={async () => {
       const text = content;
       setSaving(true); setError('');
-      try {await native.saveDiary(date, text); setSaved(text); setEverSaved(true);}
+      try {await saveDiary(date, text); setSaved(text); setEverSaved(true);}
       catch {setError('保存できませんでした。入力内容は保持されています。再試行してください。');}
       finally {setSaving(false);}
     }}

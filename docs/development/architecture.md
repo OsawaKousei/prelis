@@ -8,7 +8,7 @@
 | 配置先 | 役割・主な技術 |
 | --- | --- |
 | `apps/desktop/` | デスクトップアプリ。`src/` は React + Vite の UI、`src-tauri/` は Tauri + Rust のネイティブ処理・権限・配布設定 |
-| `apps/mobile/` | モバイルアプリ。`App.tsx` はアプリ全体の設定、`src/` は React Native の画面・状態管理、`android/` は Kotlin・Gradle、`ios/` は Swift・Objective-C・Xcode のネイティブ処理・設定 |
+| `apps/mobile/` | モバイルアプリ。`App.tsx` はアプリ全体の設定、`src/` は React Native の画面・状態管理、`android/` は Kotlin・Gradle、`ios/` は Swift・Objective-C++・Xcode のネイティブ処理・設定 |
 | `apps/web/` | ウェブアプリ。React + Vite の UI とブラウザー API に依存する処理 |
 | `packages/core/` | UI・OS に依存しない TypeScript の共有ロジック |
 | `packages/icons/` | 共通アイコン・ブランド画像。`assets/` の PNG を正本として各アプリで使用 |
@@ -25,7 +25,9 @@
 
 モバイルの `App.tsx` は React Native のエントリーから利用するルートとして維持し、Safe Area とステータスバーを設定します。
 `src/shell/` はホーム・下部タブ・未保存確認・Android の戻る操作を担当し、タイマーは画面を切り替えてもマウントを維持します。
-`src/shared/native.ts` が独自ネイティブモジュール `PrelisNative` の型と呼び出し口を提供し、Android・iOS の既存 API に直接接続します。
+ネイティブ API は `src/apps/<機能名>/native/Native*.ts` に機能別の TurboModule 仕様として定義し、React Native の Codegen で Android・iOS のインターフェースを生成します。
+両 OS の実装も `apps/diary/`・`apps/timer/`・`apps/password/` に分け、保存の共通処理を `shared/storage/` に置きます。アプリ全体の起動・登録は既存のエントリークラスが担当し、シェルは React Native の API を使います。
+音声一覧の形式・選択状態・追加削除の手順は TypeScript の `apps/timer/sound-storage.ts` が管理し、ネイティブ側はファイル操作・取込み・再生を担当します。詳細は [モバイルのネイティブ実装](mobile-native.md)を参照してください。
 UI は React Native のコンポーネントと `StyleSheet` で実装し、デスクトップの DOM・CSS・Tauri API に合わせる互換レイヤーは設けません。
 
 ## 依存関係と実装の境界

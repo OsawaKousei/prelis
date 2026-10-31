@@ -6,14 +6,24 @@ import {Button} from '../src/shared/ui';
 import App from '../App';
 
 jest.mock('react-native-safe-area-context', () => require('react-native-safe-area-context/jest/mock').default);
-jest.mock('../src/shared/native', () => ({
-  native: {
-    readDiary: jest.fn(async () => ''), saveDiary: jest.fn(async () => true),
-    loadSounds: jest.fn(async () => '{"version":1,"sounds":[],"selectedId":null}'),
+jest.mock('../src/apps/diary/native/NativeDiary', () => ({
+  __esModule: true,
+  default: {readDiary: jest.fn(async () => ''), saveDiary: jest.fn(async () => true)},
+}));
+jest.mock('../src/apps/password/native/NativePassword', () => ({
+  __esModule: true,
+  default: {
     randomBytes: jest.fn(async (count: number) => [...require('crypto').randomBytes(count)]),
-    copyText: jest.fn(async () => true), stopSound: jest.fn(async () => true),
+    copyText: jest.fn(async () => true),
   },
-  parseSounds: (value: string) => JSON.parse(value),
+}));
+jest.mock('../src/apps/timer/native/NativeTimerSound', () => ({
+  __esModule: true,
+  default: {
+    readLibrary: jest.fn(async () => null), writeLibrary: jest.fn(async () => true),
+    stopSound: jest.fn(async () => true), playSound: jest.fn(async () => true),
+    pickSound: jest.fn(async () => null), deleteSoundFile: jest.fn(async () => true),
+  },
 }));
 
 const press = (root: ReactTestRenderer.ReactTestInstance, label: string) => {
@@ -27,7 +37,7 @@ test('opens Diary, edits and saves an entry', async () => {
   const editor = renderer!.root.findByProps({testID: 'diary-content'});
   await ReactTestRenderer.act(async () => {editor.props.onChangeText('今日の日記');});
   await ReactTestRenderer.act(async () => {press(renderer!.root, '保存');});
-  const {native} = require('../src/shared/native');
+  const {default: native} = require('../src/apps/diary/native/NativeDiary');
   expect(native.saveDiary).toHaveBeenCalledWith(expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/), '今日の日記');
   await ReactTestRenderer.act(async () => {renderer!.unmount();});
 });
@@ -70,8 +80,8 @@ test('generates a password containing every selected character type', async () =
 
 test('timer keeps running across page changes and starts its selected sound at completion', async () => {
   jest.useFakeTimers();
-  const {native} = require('../src/shared/native');
-  native.loadSounds.mockResolvedValueOnce(JSON.stringify({version: 1, sounds: [{id: 'sound-1', name: 'test.wav', mimeType: 'audio/wav'}], selectedId: 'sound-1'}));
+  const {default: native} = require('../src/apps/timer/native/NativeTimerSound');
+  native.readLibrary.mockResolvedValueOnce(JSON.stringify({version: 1, sounds: [{id: '12345678-1234-4234-8234-123456789abc', name: 'test.wav', mimeType: 'audio/wav'}], selectedId: '12345678-1234-4234-8234-123456789abc'}));
   native.playSound = jest.fn(async () => true);
   let renderer: ReactTestRenderer.ReactTestRenderer;
   await ReactTestRenderer.act(async () => {renderer = ReactTestRenderer.create(<App />);});
@@ -87,7 +97,7 @@ test('timer keeps running across page changes and starts its selected sound at c
   await ReactTestRenderer.act(async () => {jest.advanceTimersByTime(30_000);});
   await ReactTestRenderer.act(async () => {press(renderer!.root, 'Timer');});
   expect(renderer!.root.findByProps({testID: 'timer-clock'}).props.children.join('')).toBe('00:00');
-  expect(native.playSound).toHaveBeenCalledWith('sound-1', true);
+  expect(native.playSound).toHaveBeenCalledWith('12345678-1234-4234-8234-123456789abc', true);
   await ReactTestRenderer.act(async () => {renderer!.unmount();});
   jest.useRealTimers();
 });

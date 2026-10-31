@@ -40,5 +40,26 @@
   },
   "engines": {
     "node": "^22.13.0 || ^24.3.0 || >=26.0.0"
+  },
+  "codegenConfig": {
+    "name": "PrelisMobileSpec",
+    "type": "modules",
+    "jsSrcsDir": "src/apps",
+    "android": {
+      "javaPackageName": "com.prelismobile.specs"
+    },
+    "ios": {
+      "modules": {
+        "NativeDiary": {
+          "className": "DiaryModule"
+        },
+        "NativePassword": {
+          "className": "PasswordModule"
+        },
+        "NativeTimerSound": {
+          "className": "TimerSoundModule"
+        }
+      }
+    }
   }
 }

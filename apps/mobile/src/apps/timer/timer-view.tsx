@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
-import type {SoundLibrary} from '../../shared/native';
+import type {SoundLibrary} from './sound-storage';
 import {Button, colors, Section, styles} from '../../shared/ui';
 import {Icon} from '../../shared/icon';
 
