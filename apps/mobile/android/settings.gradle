@@ -23,11 +23,18 @@ plugins {
 }
 
 extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
+  // Native dependency locations can change when the workspace lockfile changes.
+  def autolinkingLockFiles = files(
+    "../../../package-lock.json",
+    "../package.json",
+    "../react-native.config.js"
+  )
+  def autolinkingCommand = expoAutolinking.rnConfigCommand
   if (System.getenv('EXPO_USE_COMMUNITY_AUTOLINKING') == '1') {
-    ex.autolinkLibrariesFromCommand()
-  } else {
-    ex.autolinkLibrariesFromCommand(expoAutolinking.rnConfigCommand)
+    def npxCommand = System.getProperty('os.name').toLowerCase().contains('windows') ? 'npx.cmd' : 'npx'
+    autolinkingCommand = [npxCommand, '@react-native-community/cli', 'config']
   }
+  ex.autolinkLibrariesFromCommand(autolinkingCommand, file(".."), autolinkingLockFiles)
 }
 expoAutolinking.useExpoModules()
 

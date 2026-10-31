@@ -9,6 +9,7 @@ Node.js・npm の準備と依存管理は [共通セットアップ](architectur
 Metro は `apps/mobile/metro.config.js` で Watchman の使用を明示し、Linux で Node.js のディレクトリ監視を大量に追加して inotify の上限に達することを避けます。
 
 Expo CLI の型付きルート生成は Node.js から Expo Router を読み込みます。ルート側のツールから参照できるよう、Expo Router と関連依存はルートの `node_modules` から解決できる配置を `package-lock.json` に記録しています。依存の取得にはリポジトリルートで `npm ci` を使用します。
+Android の自動リンク設定もルートの `package-lock.json` を監視し、依存の配置変更時にネイティブライブラリの参照先を再生成します。
 
 ### Android
 
