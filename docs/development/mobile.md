@@ -33,6 +33,7 @@ Android の自動リンク設定もルートの `package-lock.json` を監視し
 
 ### Android
 
+- このホストの JDK・SDK の導入先と署名鍵・設定ファイルは [Android の環境設定](../environment/android/signing-key.md)を参照してください。
 - JDK 17、Android Studio、Android SDK を用意します。
 - Android Studio の SDK Manager で、次の SDK・ツールをインストールします。SDK Tools の **Show Package Details** で個別バージョンを選択できます。
 

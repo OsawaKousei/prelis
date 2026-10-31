@@ -44,6 +44,7 @@ JDK 17 の `java`・`jar`・`keytool`・`jarsigner`、Android SDK Build-Tools 37
 | 直接頒布用アプリ署名鍵 | `~/keys/app-signing.jks` | `app-signing` | `PRELIS_APP_STORE_PASSWORD`・`PRELIS_APP_KEY_PASSWORD` |
 
 既存アプリに対応する鍵を用意します。更新のたびに新しい鍵を生成しません。鍵とパスワードはバックアップして保管し、リポジトリや頒布物へ含めません。
+このホストで確認した証明書の SHA-256、有効期限、保存先・権限、JDK・SDK と `.env` の設定は [Android の環境設定](../../../environment/android/signing-key.md)にまとめています。
 Play Console のアップロード証明書・アプリ署名証明書と照合するため、公開済み APK と各キーストアの証明書 SHA-256 を記録しておきます。
 
 ```sh
