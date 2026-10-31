@@ -8,7 +8,7 @@ fi
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 session_name=prelis-windows
-source "${repo_root}/scripts/windows/read-windows-env.sh"
+source "${repo_root}/scripts/windows/internal/read-windows-env.sh"
 remote_root=prelis-remote
 remote_endpoint="${remote_host}:${remote_root}"
 
@@ -22,9 +22,9 @@ ignore_paths=(
   apps/mobile apps/web docs docs-old infra lp
   scripts/android scripts/ios scripts/linux scripts/macos scripts/mutagen-ssh
   scripts/windows/create-windows-sync.sh scripts/windows/build-windows.sh
-  scripts/windows/read-windows-env.sh scripts/windows/verify-artifact-report.py
+  scripts/windows/internal/read-windows-env.sh scripts/windows/verify-artifact-report.py
   scripts/sync.test.py
-  scripts/windows/desktop-version.py
+  scripts/windows/internal/desktop-version.py
   packages/icons/scripts apps/desktop/src-tauri/gen apps/desktop/src-tauri/signing
   '*.md' .gitignore .vscode .DS_Store
   node_modules target dist build coverage '*.tsbuildinfo' windows-artifacts

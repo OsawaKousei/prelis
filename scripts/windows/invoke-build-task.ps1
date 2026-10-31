@@ -16,13 +16,13 @@ param(
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
-. (Join-Path $PSScriptRoot 'build-task-common.ps1')
+. (Join-Path $PSScriptRoot 'internal/build-task-common.ps1')
 $paths = Get-PrelisBuildPaths $BuildId
 $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
 $scheduler = New-Object -ComObject 'Schedule.Service'
 $scheduler.Connect()
 $folder = $scheduler.GetFolder('\')
-$runnerPath = Join-Path $PSScriptRoot 'run-build-task.ps1'
+$runnerPath = Join-Path $PSScriptRoot 'internal/run-build-task.ps1'
 $powerShellPath = Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe'
 
 function Get-BuildTask {

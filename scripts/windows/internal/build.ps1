@@ -13,7 +13,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'build-task-common.ps1')
-$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '../../..')).Path
 $credentialPath = Join-Path $env:USERPROFILE $CredentialFile
 $completionPath = Join-Path $env:USERPROFILE $CompletionFile
 $metadataPath = Join-Path $env:TEMP ("prelis-signing-metadata-{0}.json" -f [guid]::NewGuid().ToString('N'))

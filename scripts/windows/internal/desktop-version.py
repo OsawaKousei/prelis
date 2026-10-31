@@ -33,6 +33,6 @@ def desktop_version(root: Path) -> str:
 
 if __name__ == '__main__':
     try:
-        print(desktop_version(Path(__file__).resolve().parents[2]))
+        print(desktop_version(Path(__file__).resolve().parents[3]))
     except (ValueError, KeyError, OSError, StopIteration) as error:
         sys.exit(f'Desktop version check failed: {error}')

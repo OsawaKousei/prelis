@@ -7,7 +7,7 @@ if [[ $# -ne 0 ]]; then
 fi
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-source "${repo_root}/scripts/windows/read-windows-env.sh"
+source "${repo_root}/scripts/windows/internal/read-windows-env.sh"
 remote_bundle=prelis-remote/apps/desktop/src-tauri/target/release/bundle
 local_bundle="${repo_root}/apps/desktop/src-tauri/target/release/bundle"
 local_release="${repo_root}/apps/desktop/src-tauri/target/release"
@@ -83,7 +83,7 @@ for command_name in ssh scp flock python3 timeout; do
     exit 1
   fi
 done
-version="$(python3 "$repo_root/scripts/windows/desktop-version.py")"
+version="$(python3 "$repo_root/scripts/windows/internal/desktop-version.py")"
 release_directory="$repo_root/dist/windows/v$version"
 
 signing_keys=(AZURE_TENANT_ID AZURE_CLIENT_ID AZURE_CLIENT_SECRET AZURE_ARTIFACT_SIGNING_ENDPOINT AZURE_ARTIFACT_SIGNING_ACCOUNT_NAME AZURE_ARTIFACT_SIGNING_CERTIFICATE_PROFILE_NAME)
@@ -148,7 +148,7 @@ PRELIS_WINDOWS_SSH_HOST="$remote_host" "${repo_root}/scripts/windows/create-wind
 
 echo '署名認証情報を Windows のユーザーディレクトリへ一時転送します。'
 ssh -o BatchMode=yes "$remote_host" \
-  "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"%USERPROFILE%\\prelis-remote\\scripts\\windows\\receive-credentials.ps1\" -CredentialFile \"$remote_credential\"" \
+  "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"%USERPROFILE%\\prelis-remote\\scripts\\windows\\internal\\receive-credentials.ps1\" -CredentialFile \"$remote_credential\"" \
   < "$credential_stage"
 ssh -o BatchMode=yes "$remote_host" \
   "if not exist \"%USERPROFILE%\\$remote_credential\" exit /b 1"

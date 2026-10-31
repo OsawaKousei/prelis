@@ -20,13 +20,22 @@ VNC トンネルはスクリプト終了時に閉じます。回収後の UI 確
 
 ## 構成と公式仕様
 
+操作の入口は `scripts/windows/` 直下に置き、内部処理は `scripts/windows/internal/` にまとめます。
+
 | ファイル | 責務 |
 | --- | --- |
+| `scripts/windows/create-windows-sync.sh` | Windows 側へのソース同期 |
 | `scripts/windows/build-windows.sh` | トンネル、同期、認証情報の転送、制御スクリプトの呼び出し、ログ・成果物の回収 |
 | `scripts/windows/invoke-build-task.ps1` | GUI ログオン待機、COM API によるタスク登録・起動、完了監視、停止・後片付け |
-| `scripts/windows/run-build-task.ps1` | GUI セッション内での実行ユーザー確認、ビルド呼び出し、秘密値を伏せたログと結果の保存 |
-| `scripts/windows/build-task-common.ps1` | 実行 ID ごとのパス、結果 JSON の書き込み、一時署名ファイルの削除 |
-| `scripts/windows/build.ps1` | npm 依存の導入、Tauri の署名付き NSIS・MSI 生成、署名検証 |
+| `scripts/windows/verify-artifact-report.py` | 回収した成果物のレポート・SHA-256・バージョン照合と集約 |
+| `scripts/windows/internal/run-build-task.ps1` | GUI セッション内での実行ユーザー確認、ビルド呼び出し、秘密値を伏せたログと結果の保存 |
+| `scripts/windows/internal/build-task-common.ps1` | 実行 ID ごとのパス、結果 JSON の書き込み、一時署名ファイルの削除 |
+| `scripts/windows/internal/build.ps1` | npm 依存の導入、Tauri の署名付き NSIS・MSI 生成、署名検証 |
+| `scripts/windows/internal/receive-credentials.ps1` | SSH の標準入力から一時署名認証情報を受信 |
+| `scripts/windows/internal/sign-artifact.ps1` | Tauri の署名フックとアプリ本体の署名 |
+| `scripts/windows/internal/verify-signatures.ps1` | Windows 上の署名・ファイルバージョン検証とレポート生成 |
+| `scripts/windows/internal/desktop-version.py` | ビルド前のデスクトップ版バージョン照合 |
+| `scripts/windows/internal/read-windows-env.sh` | Ubuntu 側での接続・署名設定の読み込み |
 
 タスクのログオン方式は `TASK_LOGON_INTERACTIVE_TOKEN`（3）、実行権限は `TASK_RUNLEVEL_LUA`（0）です。Microsoft は、この方式を「既にログオンしたユーザーの既存の対話セッションで実行する」と定義しています。[TASK_LOGON_TYPE](https://learn.microsoft.com/en-us/windows/win32/api/taskschd/ne-taskschd-task_logon_type)
 

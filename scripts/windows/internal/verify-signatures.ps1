@@ -11,7 +11,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'build-task-common.ps1')
-$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '../../..')).Path
 $version = Get-PrelisDesktopVersion $repoRoot
 $applicationVersion = Get-PrelisExeVersion $ApplicationPath $version
 $appSignature = Get-AuthenticodeSignature -LiteralPath $ApplicationPath
