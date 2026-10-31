@@ -23,9 +23,8 @@ ignore_paths=(
   scripts/android scripts/ios scripts/linux scripts/macos scripts/mutagen-ssh
   scripts/windows/create-windows-sync.sh scripts/windows/build-windows.sh
   scripts/windows/read-windows-env.sh scripts/windows/verify-artifact-report.py
-  scripts/windows/build-windows.test.py
   scripts/sync.test.py
-  scripts/windows/desktop-version.py scripts/windows/verify-artifact-report.test.py
+  scripts/windows/desktop-version.py
   packages/icons/scripts apps/desktop/src-tauri/gen apps/desktop/src-tauri/signing
   '*.md' .gitignore .vscode .DS_Store
   node_modules target dist build coverage '*.tsbuildinfo' windows-artifacts
