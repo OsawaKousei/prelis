@@ -4,9 +4,7 @@ import {isDiaryDate, localDate} from '@prelis/core';
 import {readDiary, saveDiary} from './storage';
 import {DiaryView} from './diary-view';
 
-type Props = {onState: (dirty: boolean, saving: boolean) => void};
-
-export function DiaryApp({onState}: Props) {
+export function DiaryApp() {
   const [date, setDate] = useState(localDate);
   const [month, setMonth] = useState(date.slice(0, 7));
   const [content, setContent] = useState('');
@@ -17,10 +15,8 @@ export function DiaryApp({onState}: Props) {
   const [error, setError] = useState('');
   const [retry, setRetry] = useState(0);
   const dirty = content !== saved;
-  useEffect(() => onState(dirty, saving), [dirty, saving, onState]);
   useEffect(() => {
     let active = true;
-    setLoading(true); setError('');
     readDiary(date).then(text => {
       if (active) {setContent(text); setSaved(text); setEverSaved(text.length > 0); setLoading(false);}
     }).catch(() => {if (active) {setError('日記を開けませんでした。保存先にアクセスできません。'); setLoading(false);}});
@@ -28,7 +24,10 @@ export function DiaryApp({onState}: Props) {
   }, [date, retry]);
   const move = useCallback((next: string) => {
     if (saving || !isDiaryDate(next) || next === date) return;
-    const change = () => {setDate(next); setMonth(next.slice(0, 7));};
+    const change = () => {
+      setLoading(true); setError(''); setContent(''); setSaved(''); setEverSaved(false);
+      setDate(next); setMonth(next.slice(0, 7));
+    };
     if (dirty) Alert.alert('未保存の変更があります', '変更を破棄しますか？入力内容は保存されません。', [
       {text: 'キャンセル', style: 'cancel'}, {text: '変更を破棄', style: 'destructive', onPress: change},
     ]); else change();
@@ -43,7 +42,7 @@ export function DiaryApp({onState}: Props) {
     date={date} month={month} content={content} dirty={dirty}
     everSaved={everSaved} loading={loading} saving={saving} error={error}
     onContent={setContent} onDate={move} onMonth={shiftMonth}
-    onRetry={() => setRetry(value => value + 1)}
+    onRetry={() => {setLoading(true); setError(''); setRetry(value => value + 1);}}
     onSave={async () => {
       const text = content;
       setSaving(true); setError('');

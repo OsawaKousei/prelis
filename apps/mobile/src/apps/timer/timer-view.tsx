@@ -43,7 +43,7 @@ export function TimerView({minutes, valid, remaining, running, library, error, b
         <Button label={running ? '一時停止' : '開始'} variant="primary" icon={!running ? 'arrow' : undefined} disabled={completed || !running && (!valid || !library || busy)} onPress={onToggle} />
         <Button label="リセット" onPress={onReset} />
       </View>
-      <Text style={styles.muted}>アプリを切り替えてもタイマーは動作します。Prelis の終了時にリセットされます。</Text>
+      <Text style={styles.muted}>タブを切り替えてもタイマーは動作します。バックグラウンド中の終了音は保証されません。Prelis の終了時にリセットされます。</Text>
     </Section>
     <Section title="終了音">
       <Text style={styles.muted}>選択中: {selected?.name ?? 'なし'}</Text>

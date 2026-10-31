@@ -155,6 +155,11 @@ try {
     ANDROID_SIGNING_KEY_PASSWORD: config.keyPassword,
   };
 
+  // Gradle may clean dependency Codegen output before Ninja cleans the app.
+  // Drop the generated app CMake state first so clean cannot reconfigure it
+  // against JNI sources that have just been removed.
+  rmSync(join(androidDir, 'app', '.cxx'), { recursive: true, force: true });
+  rmSync(join(androidDir, 'app', 'build', 'intermediates', 'cxx'), { recursive: true, force: true });
   run('./gradlew', ['clean', config.task, '--no-daemon'], { env, inherit: true });
   const source = join(androidDir, config.source);
   if (!existsSync(source)) fail(`ビルド成果物が見つかりません: ${source}`);

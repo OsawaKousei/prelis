@@ -8,7 +8,8 @@
 | 配置先 | 役割・主な技術 |
 | --- | --- |
 | `apps/desktop/` | デスクトップアプリ。`src/` は React + Vite の UI、`src-tauri/` は Tauri + Rust のネイティブ処理・権限・配布設定 |
-| `apps/mobile/` | モバイルアプリ。`App.tsx` はアプリ全体の設定、`src/` は React Native の画面・状態管理、`android/` は Kotlin・Gradle、`ios/` は Swift・Objective-C++・Xcode のネイティブ処理・設定 |
+| `apps/mobile/` | Expo のモバイルアプリ。`src/app/` は Expo Router、`src/apps/` は画面・状態管理、`android/`・`ios/` は起動・ビルド・署名設定 |
+| `apps/mobile-old/` | Expo 移植前の実装。workspace・ビルド・Mac 同期の対象外 |
 | `apps/web/` | ウェブアプリ。React + Vite の UI とブラウザー API に依存する処理 |
 | `packages/core/` | UI・OS に依存しない TypeScript の共有ロジック |
 | `packages/icons/` | 共通アイコン・ブランド画像。`assets/` の PNG を正本として各アプリで使用 |
@@ -20,14 +21,12 @@
 | `docs-old/` | 整理前の資料。過去の仕様・手順・検証記録の参考用で、現行実装との一致は保証しない |
 | `ref/` | Git 管理対象外の参考資料。通常の実装・検証の対象外 |
 
-各アプリの `src/` は、`shell/` が画面切り替え、`apps/<機能名>/` が各機能、`shared/` がアプリ内の共通 UI を担当します。
+デスクトップ・ウェブの `src/` は、`shell/` が画面切り替え、`apps/<機能名>/` が各機能、`shared/` がアプリ内の共通 UI を担当します。モバイルの画面切り替えは Expo Router の `src/app/` が担当します。
 各機能の `app.tsx` は状態管理と操作処理、`*-view.tsx` は表示を担当します。
 
-モバイルの `App.tsx` は React Native のエントリーから利用するルートとして維持し、Safe Area とステータスバーを設定します。
-`src/shell/` はホーム・下部タブ・未保存確認・Android の戻る操作を担当し、タイマーは画面を切り替えてもマウントを維持します。
-ネイティブ API は `src/apps/<機能名>/native/Native*.ts` に機能別の TurboModule 仕様として定義し、React Native の Codegen で Android・iOS のインターフェースを生成します。
-両 OS の実装も `apps/diary/`・`apps/timer/`・`apps/password/` に分け、保存の共通処理を `shared/storage/` に置きます。アプリ全体の起動・登録は既存のエントリークラスが担当し、シェルは React Native の API を使います。
-音声一覧の形式・選択状態・追加削除の手順は TypeScript の `apps/timer/sound-storage.ts` が管理し、ネイティブ側はファイル操作・取込み・再生を担当します。詳細は [モバイルのネイティブ実装](mobile-native.md)を参照してください。
+モバイルは `expo-router/entry` から起動し、`src/app/_layout.tsx` でタブ・Safe Area・ステータスバーと TimerProvider を構成します。
+保存・ファイル選択・音声再生・乱数・コピーには Expo 公式モジュールを使用し、自作 TurboModule や Codegen Spec は持ちません。
+音声一覧の検証・選択状態・追加削除の手順は `apps/timer/sound-storage.ts`、画面をまたぐ計時と音声の寿命は TimerProvider が管理します。詳細は [モバイルの Expo 構成](mobile-native.md)を参照してください。
 UI は React Native のコンポーネントと `StyleSheet` で実装し、デスクトップの DOM・CSS・Tauri API に合わせる互換レイヤーは設けません。
 
 ## 依存関係と実装の境界
@@ -41,7 +40,7 @@ flowchart LR
   Mobile --> Icons
   Web --> Icons
   Desktop --> Tauri[Tauri / OS API]
-  Mobile --> Native[Android / iOS ネイティブ処理]
+  Mobile --> Native[Expo 公式モジュール / Android・iOS]
   Web --> Browser[ブラウザー API]
 ```
 
@@ -51,8 +50,8 @@ flowchart LR
 
 ## 依存管理
 
-- アプリと共有パッケージは、ルートの [package.json](../../package.json) が定義する npm workspaces（`apps/*`・`packages/*`）で管理し、依存解決はルートの [package-lock.json](../../package-lock.json) で固定します。
-- Node.js の基準は [.nvmrc](../../.nvmrc) の 24.19.0、許容範囲と npm の要件はルートの `package.json` の `engines` に定義します。React 関連の共通バージョン指定はルートの `overrides` にあります。
+- アプリと共有パッケージは、ルートの [package.json](../../package.json) に列挙した npm workspaces で管理し、依存解決は [package-lock.json](../../package-lock.json) で固定します。旧モバイルは含めません。
+- Node.js の基準は [.nvmrc](../../.nvmrc) の 24.19.0、許容範囲と npm の要件はルートの `engines` に定義します。React は各アプリが固定し、共通のテスト・ネイティブツール用 React Native はルートでも SDK 58 対応版を明示します。
 - [core の exports](../../packages/core/package.json) は、型・ブラウザー・React Native 向けに TypeScript ソースを、通常の Node.js 向けに `dist/` の JavaScript を公開します。
 - Rust の依存は `apps/desktop/src-tauri/` の `Cargo.toml`・`Cargo.lock`、LP の npm 依存は `lp/frontend/app/` の `package.json`・`package-lock.json` で別に管理します。
 
@@ -86,12 +85,13 @@ npm run check
 
 ```sh
 npm install <package> -w apps/desktop
-npm install <package> -w apps/mobile
 npm install <package> -w apps/web
 npm install -D <package> -w packages/core
 ```
 
-React 関連の変更時は宣言・ルートの `overrides`・lockfile を揃え、解決結果を確認します。
+モバイルへの追加は `apps/mobile/` で `npx expo install <package>` を実行し、SDK 対応版を選択します。
+
+React 関連の変更時は各アプリの宣言・ルートの開発依存・lockfile を揃え、解決結果を確認します。
 
 ```sh
 npm ls react react-dom react-test-renderer --all

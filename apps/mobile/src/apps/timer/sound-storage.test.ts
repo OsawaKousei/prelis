@@ -1,111 +1,119 @@
-import NativeTimerSound from './native/NativeTimerSound';
-import {addSound, deleteSound, loadSoundLibrary, parseSounds, selectSound, type SoundLibrary} from './sound-storage';
+import Storage from 'expo-sqlite/kv-store';
+import * as DocumentPicker from 'expo-document-picker';
+import {addSound, deleteSound, loadSoundLibrary, parseSounds, selectSound, soundFile, type Sound, type SoundLibrary} from './sound-storage';
 
-jest.mock('./native/NativeTimerSound', () => ({
-  __esModule: true,
-  default: {
-    readLibrary: jest.fn(), writeLibrary: jest.fn(), pickSound: jest.fn(),
-    deleteSoundFile: jest.fn(), stopSound: jest.fn(),
-  },
+jest.mock('expo-sqlite/kv-store', () => ({
+  __esModule: true, default: {getItem: jest.fn(), setItem: jest.fn()},
 }));
-
-const native = jest.mocked(NativeTimerSound);
-const sound = {id: '12345678-1234-4234-8234-123456789abc', name: 'alarm.wav', mimeType: 'audio/wav'};
-const other = {...sound, id: '12345678-1234-4234-8234-123456789abd', name: 'other.wav'};
-const empty = (): SoundLibrary => ({version: 1, sounds: [], selectedId: null});
-const selected = (): SoundLibrary => ({version: 1, sounds: [sound], selectedId: sound.id});
-
-beforeEach(() => {
-  jest.resetAllMocks();
-  native.writeLibrary.mockResolvedValue(true);
-  native.deleteSoundFile.mockResolvedValue(true);
-  native.stopSound.mockResolvedValue(true);
+jest.mock('expo-document-picker', () => ({getDocumentAsync: jest.fn()}));
+jest.mock('expo-crypto', () => ({randomUUID: () => '12345678-1234-4234-8234-123456789abc'}));
+jest.mock('expo-file-system', () => {
+  const files = new Map<string, number>();
+  class Directory {
+    uri: string;
+    constructor(...parts: (string | {uri: string})[]) {this.uri = parts.map(p => typeof p === 'string' ? p : p.uri).join('/');}
+    create() {}
+  }
+  class File extends Directory {
+    get exists() {return files.has(this.uri);}
+    get size() {return files.get(this.uri) ?? 0;}
+    async copy(target: File) {files.set(target.uri, this.size);}
+    delete() {files.delete(this.uri);}
+  }
+  return {File, Directory, Paths: {document: 'file:///document'}, __files: files};
 });
 
-test('loads the existing version 1 format and initializes only a missing index', async () => {
-  native.readLibrary.mockResolvedValueOnce(JSON.stringify(selected())).mockResolvedValueOnce(null);
-  expect(await loadSoundLibrary()).toEqual(selected());
-  expect(await loadSoundLibrary()).toEqual(empty());
-  expect(native.writeLibrary).not.toHaveBeenCalled();
+const files: Map<string, number> = jest.requireMock('expo-file-system').__files;
+const sound: Sound = {id: '12345678-1234-4234-8234-123456789abc', name: 'sound.wav', mimeType: 'audio/wav'};
+const empty: SoundLibrary = {sounds: [], selectedId: null};
+const populated: SoundLibrary = {sounds: [sound], selectedId: sound.id};
+const source = 'file:///cache/picked.wav';
+
+function picked(size: number, name = 'sound.wav') {
+  files.set(source, size);
+  jest.mocked(DocumentPicker.getDocumentAsync).mockResolvedValue({
+    canceled: false, assets: [{uri: source, name, size: 1, lastModified: 0}],
+  });
+}
+
+beforeEach(() => {
+  jest.resetAllMocks(); files.clear();
+  jest.mocked(Storage.getItem).mockResolvedValue(null);
+  jest.mocked(Storage.setItem).mockResolvedValue(undefined);
+});
+
+test('starts with an empty library and rejects damaged saved data', async () => {
+  expect(await loadSoundLibrary()).toEqual(empty);
+  jest.mocked(Storage.getItem).mockResolvedValue('{broken');
+  await expect(loadSoundLibrary()).rejects.toThrow();
+  expect(Storage.setItem).not.toHaveBeenCalled();
 });
 
 test.each([
-  'null', '{}', '{"version":2,"sounds":[],"selectedId":null}',
-  JSON.stringify({...selected(), selectedId: other.id}),
-  JSON.stringify({...selected(), sounds: [sound, sound]}),
-  JSON.stringify({...selected(), sounds: [{...sound, id: '../outside'}]}),
-  JSON.stringify({...selected(), sounds: [{...sound, mimeType: 'text/plain'}]}),
-])('rejects an invalid index without overwriting it: %s', async value => {
-  expect(() => parseSounds(value)).toThrow();
-  native.readLibrary.mockResolvedValue(value);
-  await expect(loadSoundLibrary()).rejects.toThrow();
-  expect(native.writeLibrary).not.toHaveBeenCalled();
+  {sounds: [sound, sound], selectedId: sound.id},
+  {sounds: [sound], selectedId: 'missing'},
+  {sounds: [{...sound, id: '../outside'}], selectedId: null},
+  {sounds: [{...sound, mimeType: 'text/plain'}], selectedId: null},
+])('rejects an invalid library without touching storage', value => {
+  expect(() => parseSounds(JSON.stringify(value))).toThrow();
 });
 
-test('selecting no sound stops playback and persists the selection', async () => {
-  const current = selected();
-  expect(await selectSound(current, null)).toEqual({...current, selectedId: null});
-  expect(current.selectedId).toBe(sound.id);
-  expect(native.stopSound.mock.invocationCallOrder[0]).toBeLessThan(native.writeLibrary.mock.invocationCallOrder[0]);
-  expect(JSON.parse(native.writeLibrary.mock.calls[0][0])).toEqual({...current, selectedId: null});
+test('canceling a picker preserves the library', async () => {
+  jest.mocked(DocumentPicker.getDocumentAsync).mockResolvedValue({canceled: true, assets: null});
+  expect(await addSound(populated)).toBeNull();
+  expect(Storage.setItem).not.toHaveBeenCalled();
 });
 
-test('cancelling the picker leaves the index and playback unchanged', async () => {
-  native.pickSound.mockResolvedValue(null);
-  expect(await addSound(selected())).toBeNull();
-  expect(native.writeLibrary).not.toHaveBeenCalled();
-  expect(native.stopSound).not.toHaveBeenCalled();
-  expect(native.deleteSoundFile).not.toHaveBeenCalled();
+test('imports a valid file, persists selection and removes its cached copy', async () => {
+  picked(1024, 'sound.WAV');
+  const next = await addSound(empty);
+  expect(next?.selectedId).toBe(sound.id);
+  expect(next?.sounds[0].mimeType).toBe('audio/wav');
+  expect(files.get(soundFile(sound).uri)).toBe(1024);
+  expect(files.has(source)).toBe(false);
+  expect(Storage.setItem).toHaveBeenCalledWith('timer:sounds', JSON.stringify(next));
 });
 
-test('an imported sound becomes selected only after its index is saved', async () => {
-  native.pickSound.mockResolvedValue(other);
-  const current = selected();
-  const next = await addSound(current);
-  expect(next).toEqual({version: 1, sounds: [sound, other], selectedId: other.id});
-  expect(current).toEqual(selected());
-  expect(JSON.parse(native.writeLibrary.mock.calls[0][0])).toEqual(next);
-  expect(native.deleteSoundFile).not.toHaveBeenCalled();
+test.each([0, 10 * 1024 * 1024 + 1])('rejects actual size %i even when provider metadata says 1 byte', async size => {
+  picked(size);
+  await expect(addSound(empty)).rejects.toThrow();
+  expect(Storage.setItem).not.toHaveBeenCalled();
+  expect(files.size).toBe(0);
 });
 
-test('a failed index write removes the newly imported file and retains the previous library', async () => {
-  native.pickSound.mockResolvedValue(other);
-  native.writeLibrary.mockRejectedValue(new Error('disk full'));
-  const current = selected();
-  await expect(addSound(current)).rejects.toThrow('disk full');
-  expect(current).toEqual(selected());
-  expect(native.deleteSoundFile).toHaveBeenCalledWith(other.id);
+test('accepts the 10 MiB boundary', async () => {
+  picked(10 * 1024 * 1024);
+  expect((await addSound(empty))?.sounds).toHaveLength(1);
 });
 
-test('duplicate imported metadata never deletes an existing sound', async () => {
-  native.pickSound.mockResolvedValue(sound);
-  await expect(addSound(selected())).rejects.toThrow('音声情報が不正です。');
-  expect(native.writeLibrary).not.toHaveBeenCalled();
-  expect(native.deleteSoundFile).not.toHaveBeenCalled();
+test('rejects unsupported extensions and cleans their cache', async () => {
+  picked(100, 'sound.txt');
+  await expect(addSound(empty)).rejects.toThrow('MP3 または WAV');
+  expect(files.size).toBe(0);
 });
 
-test('a failed removal write preserves the sound file and previous selection', async () => {
-  native.writeLibrary.mockRejectedValue(new Error('disk full'));
-  const current = selected();
-  await expect(deleteSound(current, sound.id)).rejects.toThrow('disk full');
-  expect(current).toEqual(selected());
-  expect(native.deleteSoundFile).not.toHaveBeenCalled();
+test('rolls back the file when persisting an import fails', async () => {
+  picked(100);
+  jest.mocked(Storage.setItem).mockRejectedValue(new Error('disk full'));
+  await expect(addSound(empty)).rejects.toThrow('disk full');
+  expect(files.size).toBe(0);
 });
 
-test('removing the selected sound stops playback and commits the index before deleting its file', async () => {
-  expect(await deleteSound(selected(), sound.id)).toEqual(empty());
-  expect(native.stopSound.mock.invocationCallOrder[0]).toBeLessThan(native.writeLibrary.mock.invocationCallOrder[0]);
-  expect(native.writeLibrary.mock.invocationCallOrder[0]).toBeLessThan(native.deleteSoundFile.mock.invocationCallOrder[0]);
+test('keeps the existing sound when saving its deletion fails', async () => {
+  files.set(soundFile(sound).uri, 100);
+  jest.mocked(Storage.setItem).mockRejectedValue(new Error('disk full'));
+  await expect(deleteSound(populated, sound.id)).rejects.toThrow('disk full');
+  expect(files.has(soundFile(sound).uri)).toBe(true);
 });
 
-test('removing another sound keeps the selected sound playing', async () => {
-  expect(await deleteSound({version: 1, sounds: [sound, other], selectedId: sound.id}, other.id)).toEqual(selected());
-  expect(native.stopSound).not.toHaveBeenCalled();
+test('deleting the selected sound persists an empty selection and removes the file', async () => {
+  files.set(soundFile(sound).uri, 100);
+  expect(await deleteSound(populated, sound.id)).toEqual(empty);
+  expect(files.size).toBe(0);
 });
 
-test('an unknown sound cannot change the index or remove any file', async () => {
-  await expect(selectSound(empty(), sound.id)).rejects.toThrow('音声が見つかりません。');
-  await expect(deleteSound(empty(), sound.id)).rejects.toThrow('音声が見つかりません。');
-  expect(native.writeLibrary).not.toHaveBeenCalled();
-  expect(native.deleteSoundFile).not.toHaveBeenCalled();
+test('rejects unknown selection and deletion without saving', async () => {
+  await expect(selectSound(populated, 'missing')).rejects.toThrow();
+  await expect(deleteSound(populated, 'missing')).rejects.toThrow();
+  expect(Storage.setItem).not.toHaveBeenCalled();
 });

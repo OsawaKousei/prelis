@@ -1,4 +1,6 @@
+__pycache__/
 node_modules/
+.expo/
 ref/
 .mutagen-windows/
 .mutagen-macos/
@@ -14,3 +16,4 @@ ref/
 docs-old/
 docs/environment
 docs/plan
+mobile-old/

@@ -1,67 +1,83 @@
-# モバイルのネイティブ実装
+# モバイルの Expo 構成
 
-React Native 標準 API と Android・iOS の OS 標準 API を利用します。
-ネイティブ機能のための追加ライブラリは導入していません。依存を追加する場合は、React Native 公式保守か、公式が案内する有力な基盤を優先して個別に判断します。コミュニティのディレクトリに掲載されていることだけを、公式保守の根拠にはしません。
+`apps/mobile/` は Expo SDK 58 / React Native 0.88 の Android・iOS アプリです。旧実装は `apps/mobile-old/` に隔離し、npm workspace、通常のチェックとビルド、Mac 同期の対象から外しています。
 
 ## 配置と責務
 
-| 対象 | TypeScript | Android / iOS |
-| --- | --- | --- |
-| アプリ全体 | `App.tsx` の Safe Area・ステータスバー | `MainApplication.kt`・`MainActivity.kt`、`AppDelegate.swift`・`SceneDelegate.swift` の起動処理、`PrelisPackage.kt` と Codegen のモジュール登録 |
-| シェル | `src/shell/` の画面切り替え・戻る操作・離脱確認 | 現時点で独自モジュールは不要 |
-| 日記 | `apps/diary/storage.ts` の日付検証・保存操作 | `apps/diary/` の `DiaryModule`・`DiaryStorage`。iOS の接続先は `DiaryService` |
-| タイマー | `apps/timer/sound-storage.ts` の音声一覧・選択状態・更新手順 | `apps/timer/` の `TimerSoundModule`・`SoundStorage`・`SoundPicker`・`SoundPlayer`。iOS の接続先は `TimerSoundService` |
-| パスワード | core の生成処理と `apps/password/` の画面状態 | `apps/password/` の `PasswordModule` が暗号学的乱数とコピーを提供。iOS の接続先は `PasswordService` |
-| 共通基盤 | `src/shared/` の共通 UI | `shared/storage/` の `FileStorage`。Android の Promise エラー処理は `shared/native-promise.kt` |
+| 対象 | 配置・利用する仕組み |
+| --- | --- |
+| 起動・画面遷移 | `src/app/_layout.tsx` の Expo Router Tabs・StatusBar・SafeAreaProvider |
+| ホーム | `src/app/index.tsx` |
+| 日記 | `src/apps/diary/` の画面・日付検証・Expo SQLite KV 保存 |
+| タイマー | `src/apps/timer/` の TimerProvider・画面・音声一覧の更新手順 |
+| パスワード | `src/apps/password/` の画面、core の生成処理、Expo Crypto・Clipboard |
+| 共通 UI | `src/shared/` の色・ボタン・共有 PNG |
+| ネイティブプロジェクト | Expo 標準の起動クラス・モジュール登録と、手動管理する署名設定 |
 
-TypeScript の機能別パスは `apps/mobile/src/` からの相対パスです。
-Android のネイティブ機能別パスは `apps/mobile/android/app/src/main/java/com/prelismobile/`、iOS は `apps/mobile/ios/PrelisMobile/` からの相対パスです。
+`src/app/` には経路とレイアウトだけを置き、個別機能の処理は `src/apps/` に置きます。タイマーの状態とプレイヤーはルートの Provider に置き、画面のマウント状態に依存させません。
 
-アプリ全体の起動クラスに個別機能の処理を置きません。各モジュールから OS 処理の担当クラスを呼び、複数機能で実際に使う処理だけを共通化します。乱数とコピーは現在 Password だけで使うため、Password に所属させています。Gradle モジュールや Xcode ターゲットは分割しません。
+## 公式モジュール
 
-## TurboModule と Codegen
+- `expo-router`：ホーム・Diary・Timer・Password のタブ遷移。
+- `expo-sqlite/kv-store`：日記本文と音声一覧・選択状態の永続化。
+- `expo-document-picker`：OS のファイル選択画面。
+- `expo-file-system`：選択した音声のサイズ確認、Documents へのコピー、削除。
+- `expo-audio`：試聴・終了音のループ再生・停止・音声セッション。
+- `expo-crypto`：パスワード用の暗号学的乱数と音声 UUID。
+- `expo-clipboard`：コピー。Android のパスワードは sensitive として設定。
+- `expo-status-bar`・`expo-system-ui`：OS の表示設定。
 
-- `src/apps/diary/native/NativeDiary.ts` → `NativeDiary` / `DiaryModule`
-- `src/apps/timer/native/NativeTimerSound.ts` → `NativeTimerSound` / `TimerSoundModule`
-- `src/apps/password/native/NativePassword.ts` → `NativePassword` / `PasswordModule`
+現在の機能に独自の Swift・Kotlin モジュール、Objective-C++ 接続、Codegen Spec は不要です。今後も Expo が提供する機能で実現できる場合は、多少の仕様変更を許容して公式モジュールを優先します。
 
-`package.json` の `codegenConfig` は `src/apps/` 配下を探索し、`PrelisMobileSpec` を生成します。`Native*.ts` のファイル名は Codegen が要求する規定名です。Android の実装は生成された Spec を継承し、iOS の実装は生成された protocol と JSI クラスを使用します。`NativeModules` の型アサーションや旧 `PrelisNative` を経由する互換窓口は設けません。
+## 保存と仕様変更
 
-iOS の保存・乱数・コピー・取込み・再生・実行キューの処理は Swift です。`DiaryService`・`PasswordService`・`TimerSoundService` が React Native の Promise と各処理を接続します。Objective-C++ の `*-module.mm` と対応するヘッダーは、Codegen の C++ インターフェースと Swift をつなぐ最小限の呼出し転送に限定しています。通常の Objective-C `.m` 実装はありません。
+日記は SQLite の `diary:YYYY-MM-DD`、音声一覧は `timer:sounds` に保存します。SQLite の単一キー更新を使い、自作のアトミックファイル置換は行いません。旧 TXT・JSON の読込みや自動移行は提供しません。
 
-この構成は [React Native 0.87 の Swift 導入手順](https://reactnative.dev/docs/0.87/the-new-architecture/turbo-modules-with-swift)に沿っています。フレームワークとの接続に必要な部分だけを Objective-C++ に残し、独自の互換 API は追加しません。Swift の起動処理も維持します。生成物は Git 管理せず、通常の Gradle ビルド・CocoaPods 準備で生成します。
+音声本体は `Paths.document/timer/sounds/<UUID>.mp3|wav` に保存します。DocumentPicker がキャッシュへコピーした後に実ファイルの存在・サイズ・拡張子を検証し、空ファイルと 10 MiB 超過を拒否します。取込み完了・失敗のいずれでも選択時のキャッシュを清掃します。選択画面内部でサイズ検証前に一時コピーされることは許容します。
 
-## 保存と実行スレッド
+取込みは音声をコピーしてから一覧を保存し、一覧保存の失敗時は追加ファイルを清掃します。削除は一覧保存の成功後に音声本体を削除します。壊れた一覧はエラーとし、自動的に上書きしません。
 
-- 保存先は従来どおり Android の `filesDir`、iOS の Application Support です。
-- 日記は `diary/YYYY-MM-DD.txt`、音声一覧は `timer/sounds.json`、音声本体は `timer/sounds/<UUID>` を維持します。
-- 音声一覧は `{version: 1, sounds: [{id, name, mimeType}], selectedId}` の JSON です。TypeScript で検証し、破損時はエラーにして上書きしません。
-- 日記と音声一覧は、一時ファイルからの置換または OS のアトミック書込みで保存します。
-- 音声は MP3・WAV を読み込み、実際の読込量を数えて 10 MiB 以下に制限します。空ファイル・失敗したコピーを削除します。
-- 取込み後の一覧保存に失敗した場合は、取り込んだ音声ファイルを削除します。削除操作では一覧の保存に成功してからファイルを削除し、保存失敗で既存音声を失わないようにします。
-- iOS のファイル処理は機能別のシリアルキューで実行します。Android の音声ファイル処理にも専用 executor を使います。選択画面・クリップボード・音声プレイヤーの操作はメインスレッドへ渡します。
-- iOS で音声一覧が未作成の場合とファイル選択をキャンセルした場合は `NSNull` を返します。React Native の Promise は Swift の `nil` を JavaScript の `undefined` として扱うため、Spec の `null` と区別します。
-- 乱数源は Android の `SecureRandom`、iOS の `arc4random_buf` です。計時は引き続き TypeScript が担当し、バックグラウンド通知や正確な時刻の音声再生は保証しません。
+日記の下書きはタブを切り替えても保持します。別の日付へ変更する時は未保存内容の破棄を確認します。計時は TypeScript が期限との差を計算し、バックグラウンド中の正確な終了音は保証しません。マイク・バックグラウンド録音・バックグラウンド再生の機能は追加しません。
+
+詳細は [モバイル v0.1.3](../specs/mobile/v0.1.3.md) を参照してください。
+
+## 依存関係とビルド
+
+`npm ci` はリポジトリのルートで実行します。デスクトップ・ウェブは React 19.2.3、モバイルは SDK 58 に合わせた React 19.3 を使用します。モバイル向け React・React Native はルートの開発依存にも SDK 対応版を明示し、Expo パッケージやテスト基盤が旧版を解決しないようにします。React 全体の override は設けません。ネイティブプロジェクトは直接管理するため、Expo Doctor の appConfigFieldsNotSyncedCheck だけを無効にし、設定変更を手動で同期します。
+
+開発はルートの `npm run start:mobile`・`npm run android`・`npm run ios` から Expo CLI を呼び出します。依存追加は `apps/mobile/` で `npx expo install` を使います。Android・iOS のみを対象とし、ウェブは既存の `apps/web/` で開発します。
+
+署名付き配布は既存の `scripts/android/`・`scripts/ios/` を維持します。Android は Play 用と直接配布用の別々の keystore、iOS は既存の Apple 証明書・Provisioning Profile を使います。Expo アカウント・EAS・鍵のクラウド登録は使いません。
+
+Android の署名スクリプトは Gradle の `clean` に先立ち、アプリの `.cxx` と `build/intermediates/cxx` を削除します。依存モジュールの Codegen 出力が清掃された後に、古いアプリの CMake 設定がその出力を参照して `clean` が失敗する問題を回避します。署名設定や配布形式は変更しません。
+
+`ios/`・`android/` を Git 管理し、Podfile.lock と Xcode 設定も管理します。通常のビルドでは `expo prebuild --clean` を実行しません。再生成が必要な場合は手動の署名設定も復元して差分を検証します。
+
+Mac 同期では、新しい依存・Router の経路・公式モジュールを送ります。Xcode で生成されるファイルやキャッシュは同期しません。既存同期先に競合がある場合は上書きせず、別の作業ディレクトリで検証します。
 
 ## 検証
 
-通常の型チェック・lint・Jest・共有ロジックの検証はルートで `npm run check` を実行します。
-音声一覧のテストでは旧保存形式の読込、破損データの拒否、取込みキャンセル、保存失敗時の取込みファイル削除、削除時の一覧保存失敗による既存ファイル保持、選択状態と再生停止を確認します。
+- `npm run check`：全 workspace の型チェック、Expo lint、モバイル Jest、core・ウェブのテスト。
+- `cd apps/mobile && npx expo install --check`：SDK と依存の整合性。
+- `cd apps/mobile && npx expo export --platform all`：Android・iOS の Hermes バンドルと共有画像。
+- `npm run build:android:standalone`：JS を同梱した検証用 APK。署名はデバッグ鍵。
+- `npm run build:android:all`：既存の別々の鍵で署名した AAB・APK。
+- `bash scripts/ios/build-ios-simulator.sh`：Mac 同期・CocoaPods・Simulator 向け Release ビルド・成果物取得。
+- `bash scripts/ios/build-all.sh`：既存の証明書による archive・IPA export と検証。
+- Mac で `bash scripts/ios/test-native-on-mac.sh`：製品アプリの XCTest 操作検証。専用 Simulator を作成し、終了時にその端末だけを削除。
 
-Android は `npm run build:android:standalone` で JS・画像を同梱した動作確認用 APK を作成できます。ネイティブ API の登録、日記の保存・再読込、乱数生成・コピー、音声取込み・再生・削除を端末またはエミュレーターでも確認します。
-iOS は `scripts/ios/build-ios-simulator.sh` が開発用 Mac へソースを同期してビルドします。Codegen の生成成功や Xcode 設定の正規化だけでは、iOS のネイティブコンパイル・操作確認の完了とは扱いません。
+Jest では、保存失敗時のデータ保持、日付変更で破棄した下書きが読込失敗時に残らないこと、音声サイズの境界・キャンセル・破損一覧・清掃、Router をまたぐ日記とタイマーの状態、音声準備中のリセット、乱数生成・コピーを検証します。XCTest の小さな補助アプリは Files に WAV を提供するための検証専用コードであり、製品の独自ネイティブモジュールではありません。
 
-Mac 上で Simulator 用 Release アプリをビルドした後、`bash scripts/ios/test-native-on-mac.sh` で Apple 標準の XCTest を実行できます。検証専用の Simulator と一時 Xcode プロジェクトを生成し、終了時にその Simulator だけを削除します。既存の Simulator や製品の Xcode ターゲットには変更を加えません。
-検証用の小さなアプリが WAV・空ファイルを Files に提供し、製品のファイル選択画面から取り込みます。テストのための分岐やダミー API を製品コードへ追加していません。ログ・`.xcresult`・要約は `apps/mobile/ios/build/native-smoke.*/` に保存します。
+### 今回の検証結果
 
-### この構成への移行時の確認結果
+- ルートの `npm ci` と `npm run check` が成功。全 workspace の型チェック、警告なしの Expo lint、モバイル Jest 23 件、core・ウェブの既存テストが通りました。
+- Expo Doctor は 19/19 項目が成功。React・React DOM 19.3.0 と React Native 0.88.1 は、ルートとモバイルで同じ実体を解決することを確認しました。`expo install --check` も対応版と判定しました。
+- 最終ソースの `expo export --platform all` が成功。Android・iOS の Hermes バンドルと共有画像を出力しました。ルートの依存変更後もデスクトップ・ウェブの Vite ビルドは成功しました。
+- Android の standalone APK と、既存の別々の鍵で署名した Play 用 AAB・直接配布用 APK を生成し、署名を検証しました。最終 APK の application ID は `jp.co.kupacllc.prelis`、versionName は `0.1.3`、versionCode は `1` です。
+- Android API 37 の専用エミュレーターで、最終署名付き APK を Metro なしで起動しました。日記の下書き保持・保存・再起動後の再読込、パスワード生成・コピー、WAV 取込み・試聴・選択保持、別タブでの実時間 1 分の計時・完了、リセット・削除・再起動後の削除保持を確認しました。
+- Xcode 27.1 で Universal Simulator Release（arm64・x86_64）、実機向け archive（arm64）、既存の Apple Distribution 証明書・App Store 用プロファイルによる IPA export が成功しました。ID・バージョン・署名・同梱 JS・共有画像 11 点とアプリアイコンを検証し、取得した成果物の SHA-256 も一致しました。
+- 最終 Simulator アプリを iOS 27.0 の専用 iPhone 18 Pro で XCTest 操作検証し、1 件の総合シナリオが成功しました。日記の再読込、パスワード生成・コピー、Picker のキャンセル・空 WAV 拒否・正常 WAV 取込み・試聴・選択保持、タブをまたぐ実時間 1 分の計時・完了、リセット・削除の永続化を確認しました。
 
-- 全 workspace の型チェック、モバイル lint、モバイル Jest 21 件、core・ウェブのテストを確認しました。
-- Android の x86_64 向け standalone APK のビルドと、API 37 エミュレーターでの Metro を使わない起動を確認しました。
-- Android で日記の保存・再読込、パスワード生成・コピー、WAV 取込み・試聴、プロセス再起動後の音声選択の保持を確認しました。
-- Android で別画面へ移動した状態で実時間の 1 分タイマーを完了させ、OS のプレイヤー状態でループ再生を確認しました。リセットによるプレイヤー解放、音声削除後のプロセス再起動で選択が解除されることも確認しました。エミュレーターの音声出力は無効にしており、実際の音の聞こえ方は未確認です。
-- iOS は Swift 移行後の Release ビルドが arm64・x86_64 の両方で成功しました。Codegen、共有 PNG 11 枚、AppIcon の同梱を確認し、取得したアプリ ZIP の整合性と SHA-256 も検証しました。
-- iPhone 18 Pro / iOS 27.0 Simulator で XCTest 3 件（保存処理 2 件、製品 UI 操作 1 件）が成功しました。日記の保存・再起動後の再読込、パスワード生成・コピー、ファイル選択のキャンセル、空 WAV の拒否、WAV 取込み・試聴・選択状態の永続化を確認しました。
-- iOS でも画面切り替えを含む実時間の 1 分タイマーを完了させ、終了音の再生エラーが出ないこと、リセットと音声削除、再起動後の選択解除を確認しました。保存処理では UTF-8、パスの検証、コピー内容、10 MiB 超過と空ファイルの拒否・失敗時の清掃も確認しました。無音 WAV を使ったため、実際の音の聞こえ方と実機での動作は未確認です。
-- ローカルの取得成果物は `apps/mobile/ios/build/swift-simulator/` のアプリ ZIP、`verification.json`、`ios-simulator-artifacts.sha256`、`summary.json`、`test.log`、`swift-compile.log` です。ビルド成果物として Git 管理から除外されます。
-- Mac の既存同期先には競合があったため、別の作業ディレクトリへ明示的に同期して検証しました。既存同期先の署名・配布用スクリプトなどは上書きしていません。
+Android 成果物は `dist/android/`、取得した iOS 成果物・検証レポート・ログは `apps/mobile/ios/build/expo/` に置きます（いずれも Git 管理対象外）。iOS は既存同期先に競合があったため、Mac の `/Users/kousei/prelis-expo-check.I7Dqxr9k` で検証し、既存の同期先は上書きしていません。専用 Simulator はテスト後に削除し、既存の Simulator は維持しました。
+
+実機での聴音、Bluetooth・着信による割込み、バックグラウンド中の音声動作、ストアへのアップロードは未確認です。操作検証には無音 WAV を使用し、再生要求とエラーがないことを確認しました。バックグラウンド中の正確な終了音は仕様として保証しません。

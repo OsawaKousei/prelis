@@ -19,8 +19,13 @@ assert info['CFBundleIcons']['CFBundlePrimaryIcon']['CFBundleIconName'] == 'AppI
 source = pathlib.Path(__file__).resolve().parents[2] / 'packages/icons/assets'
 assets = sorted(p.name for p in source.glob('*.png'))
 assert assets, 'Source PNGs missing'
+# Expo fingerprints asset filenames. Verify the actual PNG bytes rather than RN CLI names.
+bundled_png_hashes = {
+    hashlib.sha256(p.read_bytes()).hexdigest() for p in app.rglob('*.png') if p.is_file()
+}
 for name in assets:
-    assert any(p.is_file() for p in app.rglob(name)), f'Bundled PNG missing: {name}'
+    expected_hash = hashlib.sha256((source / name).read_bytes()).hexdigest()
+    assert expected_hash in bundled_png_hashes, f'Bundled PNG missing: {name}'
 architectures = subprocess.check_output(['lipo', '-archs', str(app / info['CFBundleExecutable'])], text=True).split()
 expected = {'arm64', 'x86_64'} if platform == 'iphonesimulator' else {'arm64'}
 assert set(architectures) == expected, f'Architectures mismatch: {architectures}'

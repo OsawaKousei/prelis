@@ -44,6 +44,7 @@ export function DiaryView({date, month, content, dirty, everSaved, loading, savi
       <Button label={saving ? '保存中…' : '保存'} disabled={saving || !dirty} variant="primary" icon="save" onPress={onSave} />
       {!!error && <Text style={styles.error}>{error}</Text>}
       <Text style={styles.muted}>保存先: このデバイス</Text>
+      <Text style={styles.muted}>未保存の内容はタブを切り替えても保持されます。アプリを終了する前に保存してください。</Text>
     </Section>}
     <Section title={`${Number(month.slice(0, 4))}年${Number(month.slice(5, 7))}月`}>
       <View style={styles.row}><Button label="前の月" icon="left" onPress={() => onMonth(-1)} /><Button label="次の月" icon="right" onPress={() => onMonth(1)} /></View>

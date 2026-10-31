@@ -7,7 +7,9 @@ final class NativeSmokeTests: XCTestCase {
 
   private func tap(_ label: String) {
     for _ in 0..<6 {
-      let matches = app.buttons.matching(identifier: label).allElementsBoundByIndex
+      let matches = app.buttons.matching(NSPredicate(
+        format: "label == %@ OR label BEGINSWITH %@", label, label + ", tab,"
+      )).allElementsBoundByIndex
       if let button = matches.first(where: { $0.isHittable }) { button.tap(); return }
       guard let scroll = app.scrollViews.allElementsBoundByIndex.first(where: {
         $0.frame.height > 300 && $0.frame.minY < 200
@@ -37,7 +39,7 @@ final class NativeSmokeTests: XCTestCase {
     file.tap()
   }
 
-  func testSwiftModulesThroughReactNativeUI() throws {
+  func testExpoFeaturesThroughUI() throws {
     let fixture = XCUIApplication(bundleIdentifier: "jp.co.kupac.prelis.native-smoke-fixture")
     fixture.launch()
     XCTAssertTrue(fixture.staticTexts["Native smoke fixtures ready"].waitForExistence(timeout: 10))

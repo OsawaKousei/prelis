@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "workspaces": [
-    "apps/*",
+    "apps/desktop",
+    "apps/mobile",
+    "apps/web",
     "packages/*"
   ],
   "scripts": {
@@ -32,8 +34,9 @@
     "node": "^22.13.0 || ^24.3.0 || >=26.0.0",
     "npm": ">=10"
   },
-  "overrides": {
-    "react": "19.2.3",
-    "react-dom": "19.2.3"
+  "devDependencies": {
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-native": "0.88.1"
   }
 }

@@ -65,10 +65,7 @@ tests.add_dependency(fixture)
 fixture.add_file_references([project.main_group.new_file(File.join(root, 'apps/mobile/ios/tests/NativeSmokeFixture.swift'))])
 fixture.resources_build_phase.add_file_reference(project.main_group.new_file(File.join(stage, 'swift-native-smoke.wav')))
 %w[
-  tests/NativeSmokeTests.swift tests/NativeStorageTests.swift
-  PrelisMobile/shared/storage/FileStorage.swift
-  PrelisMobile/apps/diary/DiaryStorage.swift
-  PrelisMobile/apps/timer/SoundStorage.swift
+  tests/NativeSmokeTests.swift
 ].each do |path|
   tests.add_file_references([project.main_group.new_file(File.join(root, 'apps/mobile/ios', path))])
 end
@@ -81,7 +78,7 @@ scheme.test_action.build_configuration = 'Release'
 scheme.save_as(project.path, 'NativeSmoke', true)
 RUBY
 runtime="$(xcrun simctl list runtimes --json | python3 -c 'import json,sys; values=[r for r in json.load(sys.stdin)["runtimes"] if r.get("isAvailable") and r["identifier"].startswith("com.apple.CoreSimulator.SimRuntime.iOS-")]; print(max(values,key=lambda r: tuple(map(int,r["version"].split("."))))["identifier"])')"
-simulator="$(xcrun simctl create 'Prelis Swift Native Smoke' com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro "$runtime")"
+simulator="$(xcrun simctl create 'Prelis Expo Smoke' com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro "$runtime")"
 echo "検証専用 Simulator: $simulator"
 echo "検証結果: $stage"
 xcrun simctl boot "$simulator"
