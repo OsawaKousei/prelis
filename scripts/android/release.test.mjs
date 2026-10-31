@@ -9,7 +9,8 @@ import { after, before, test } from 'node:test';
 import { publishRelease, readReleaseInfo } from './release-output.mjs';
 
 const source = dirname(fileURLToPath(import.meta.url));
-const version = '1.0.1';
+const version = '0.1.3';
+const storeVersion = '1.0.1';
 const filenames = { play: `PrelisMobile_${version}_play.aab`, github: `PrelisMobile_${version}_github.apk` };
 let temporary;
 let key;
@@ -76,8 +77,9 @@ function fixture() {
   for (const name of ['build-release.mjs', 'build-all.sh', 'release-output.mjs', 'verify-jar.java']) {
     fs.copyFileSync(join(source, name), join(scripts, name));
   }
-  fs.writeFileSync(join(root, 'apps/mobile/app.json'), JSON.stringify({ expo: { version, android: { versionCode: 2 } } }));
-  fs.writeFileSync(join(android, 'app/build.gradle'), `versionName "${version}"\nversionCode 2\n`);
+  fs.writeFileSync(join(root, 'apps/mobile/package.json'), JSON.stringify({ version }));
+  fs.writeFileSync(join(root, 'apps/mobile/app.json'), JSON.stringify({ expo: { version: storeVersion, android: { versionCode: 2 } } }));
+  fs.writeFileSync(join(android, 'app/build.gradle'), `versionName "${storeVersion}"\nversionCode 2\n`);
   fs.writeFileSync(join(android, 'gradlew'), `#!${process.execPath}
 const fs = require('node:fs');
 const path = require('node:path');
@@ -138,9 +140,14 @@ function previousIntact(value) {
   assert.equal(fs.readFileSync(join(value.output, 'SHA256SUMS'), 'utf8'), 'old sums');
 }
 
-test('uses the public version and rejects Expo/Gradle mismatches before building', () => {
+test('uses the package release version independently of the store version', () => {
   const value = fixture();
   assert.equal(readReleaseInfo(value.root).version, version);
+  assert.equal(readReleaseInfo(value.root).storeVersion, storeVersion);
+});
+
+test('rejects Expo/Gradle store-version mismatches before building', () => {
+  const value = fixture();
   fs.writeFileSync(join(value.android, 'app/build.gradle'), 'versionName "0.1.3"\nversionCode 2\n');
   const result = run(value, 'all');
   failedBeforeGradle(value, result);
@@ -211,7 +218,7 @@ test('an output root inside Gradle clean targets is rejected, including through 
 test('build-all publishes the verified versioned artifact set and its checksums', () => {
   const value = fixture();
   seedPrevious(value);
-  const oldVersion = join(value.root, 'dist/android/v0.9.0');
+  const oldVersion = join(value.root, 'dist/android/v0.1.2');
   fs.mkdirSync(oldVersion);
   fs.writeFileSync(join(oldVersion, 'keep.txt'), 'keep');
   const result = spawnSync('bash', [join(value.scripts, 'build-all.sh')], {
@@ -224,7 +231,7 @@ test('build-all publishes the verified versioned artifact set and its checksums'
     assert.equal(createHash('sha256').update(fs.readFileSync(join(value.output, filename))).digest('hex'), digest);
   }
   assert.equal(fs.readFileSync(join(oldVersion, 'keep.txt'), 'utf8'), 'keep');
-  assert.deepEqual(fs.readdirSync(dirname(value.output)).sort(), ['v0.9.0', `v${version}`]);
+  assert.deepEqual(fs.readdirSync(dirname(value.output)).sort(), ['v0.1.2', `v${version}`]);
 });
 
 test('a second build failure leaves both previous artifacts and checksums intact', () => {
@@ -258,7 +265,7 @@ test('a single-format build replaces the set without retaining a stale counterpa
   assert.deepEqual(fs.readdirSync(value.output).sort(), [filenames.play, 'SHA256SUMS'].sort());
 });
 
-test('a custom output root also contains a public-version directory', () => {
+test('a custom output root also contains a package-version directory', () => {
   const value = fixture();
   const custom = join(value.root, 'custom-output');
   succeeded(run(value, 'github', { PRELIS_ANDROID_OUTPUT_DIR: custom }));
@@ -269,7 +276,7 @@ test('a custom output root also contains a public-version directory', () => {
 test('a directory commit failure restores the whole previous set', t => {
   const root = fs.mkdtempSync(join(temporary, 'publish-'));
   const staged = join(root, 'transaction/new');
-  const destination = join(root, 'v1.0.1');
+  const destination = join(root, `v${version}`);
   fs.mkdirSync(staged, { recursive: true });
   fs.mkdirSync(destination);
   fs.writeFileSync(join(staged, 'artifact'), 'new');
@@ -288,7 +295,7 @@ test('a failed rollback keeps the previous set at the reported backup path', t =
   const root = fs.mkdtempSync(join(temporary, 'publish-'));
   const staged = join(root, 'transaction/new');
   const previous = join(root, 'transaction/previous');
-  const destination = join(root, 'v1.0.1');
+  const destination = join(root, `v${version}`);
   fs.mkdirSync(staged, { recursive: true });
   fs.mkdirSync(destination);
   fs.writeFileSync(join(destination, 'artifact'), 'old');

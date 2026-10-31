@@ -2,19 +2,21 @@ import fs from 'node:fs';
 import { dirname, join } from 'node:path';
 
 export function readReleaseInfo(repoRoot) {
+  const { version } = JSON.parse(fs.readFileSync(join(repoRoot, 'apps/mobile/package.json'), 'utf8'));
+  if (typeof version !== 'string' || !/^\d+(?:\.\d+){1,3}(?:[-+][A-Za-z0-9.-]+)?$/.test(version)) {
+    throw new Error('モバイルの package.json から頒布バージョンを読み取れません。');
+  }
   const { expo } = JSON.parse(fs.readFileSync(join(repoRoot, 'apps/mobile/app.json'), 'utf8'));
   const gradle = fs.readFileSync(join(repoRoot, 'apps/mobile/android/app/build.gradle'), 'utf8');
-  const version = gradle.match(/^\s*versionName\s+["']([^"']+)["']/m)?.[1];
+  const storeVersion = gradle.match(/^\s*versionName\s+["']([^"']+)["']/m)?.[1];
   const versionCode = Number(gradle.match(/^\s*versionCode\s+(\d+)\s*$/m)?.[1]);
-  if (!version || !/^\d+(?:\.\d+){1,3}(?:[-+][A-Za-z0-9.-]+)?$/.test(version)) {
-    throw new Error('Gradle の versionName を公開バージョンとして読み取れません。');
-  }
-  if (!Number.isSafeInteger(versionCode) || versionCode < 1 ||
-      expo.version !== version || expo.android?.versionCode !== versionCode) {
+  if (!storeVersion || !Number.isSafeInteger(versionCode) || versionCode < 1 ||
+      expo.version !== storeVersion || expo.android?.versionCode !== versionCode) {
     throw new Error('app.json と Gradle の公開バージョン・versionCode を揃えてください。');
   }
   return {
     version,
+    storeVersion,
     versionCode,
     filenames: {
       play: `PrelisMobile_${version}_play.aab`,

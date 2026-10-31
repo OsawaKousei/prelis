@@ -26,13 +26,13 @@ JDK 17 の `java`・`jar`・`keytool`・`jarsigner`、Android SDK Build-Tools 37
 | 内容 | 設定元・現行値 |
 | --- | --- |
 | パッケージ名 | `apps/mobile/android/app/build.gradle` の `applicationId`：`jp.co.kupacllc.prelis` |
-| 公開バージョン | 同ファイルの `versionName`：`1.0.1`。`apps/mobile/app.json` の `expo.version` と一致させる |
+| ストア向けバージョン | 同ファイルの `versionName`：`1.0.1`。`apps/mobile/app.json` の `expo.version` と一致させる |
 | Android ビルド番号 | 同ファイルの `versionCode`：`2`。app.json の `android.versionCode` と一致させる |
-| 内部管理用バージョン | `apps/mobile/package.json`・ホーム画面・仕様書の `0.1.3`。公開バージョンとは別に管理する |
+| 頒布バージョン | `apps/mobile/package.json` の `version`：`0.1.3`。ホーム画面・仕様書と揃え、出力ディレクトリ・ファイル名にも使用する |
 | SDK・対象 CPU | `apps/mobile/android/build.gradle`・`settings.gradle`・`gradle.properties`。SDK の現行値は [モバイル開発](../../mobile.md#android)を参照 |
 
-[v0.1.3 のビルド・署名仕様](../../../specs/v0.1.3.md#ビルド署名)に従い、公開バージョンは旧版 `1.0` に続く `1.0.1`、`versionCode` は `2` としています。Play Console や既存 APK の履歴を確認し、それより新しい提出・公開がある場合は続く番号に更新します。内部管理用の `0.1.3` をそのまま公開バージョンや成果物の版として扱わないでください。
-以降の更新では `versionCode` を増やします。同じ版の AAB と APK を作る間は、ソース・`versionName`・`versionCode` を変更しません。スクリプトは Gradle の `versionName` を出力の版として使い、app.json と公開バージョン・ビルド番号が一致しなければビルド前に停止します。
+[v0.1.3 のビルド・署名仕様](../../../specs/v0.1.3.md#ビルド署名)に従い、今回の頒布版は `v0.1.3` です。出力の版は `apps/mobile/package.json` の `version` を使います。ストア向けのバージョンは旧版 `1.0` に続く `1.0.1`、`versionCode` は `2` として別に管理します。Play Console や既存 APK の履歴を確認し、それより新しい提出・公開がある場合はストア向けの番号を更新します。
+以降の更新では `versionCode` を増やします。同じ版の AAB と APK を作る間は、ソース・頒布バージョン・`versionName`・`versionCode` を変更しません。スクリプトは app.json と Gradle のストア向けバージョン・ビルド番号が一致しなければビルド前に停止します。
 
 `android/` を保守する構成のため、app.json だけ変更しても既存の Gradle 設定は更新されません。設定は両方で確認し、通常の頒布作業で `expo prebuild --clean` は実行しません。
 
@@ -111,14 +111,14 @@ AAB は `jarsigner -verify -strict` にキーストアと期待する別名を�
 | APK | `apps/mobile/android/app/build/outputs/apk/release/app-release.apk` | `dist/android/v<version>/PrelisMobile_<version>_github.apk` |
 | SHA-256 一覧 | 検証した成果物から生成 | `dist/android/v<version>/SHA256SUMS` |
 
-現行設定なら `dist/android/v1.0.1/` に出力します。別バージョンのディレクトリは保持し、同じ版で再実行した場合はその版の一式を置き換えます。検証記録も版ごとに保存してください。出力先に管理対象外のファイルがある場合は、誤削除を避けるためビルド前に停止します。
+表の `<version>` は `apps/mobile/package.json` の `version` です。現行設定なら `dist/android/v0.1.3/` に出力します。別バージョンのディレクトリは保持し、同じ版で再実行した場合はその版の一式を置き換えます。検証記録も版ごとに保存してください。出力先に管理対象外のファイルがある場合は、誤削除を避けるためビルド前に停止します。
 環境変数 `PRELIS_ANDROID_OUTPUT_DIR` を設定すると、単独・一括ビルドとも、そのディレクトリの下の `v<version>/` を出力先にします。これは出力ルートの指定であり、以前の単独ビルドのような最終ディレクトリの直接指定ではありません。`.env` には書かず環境変数として渡します。以前の固定名の `dist/android/prelis-play.aab`・`prelis-github.apk` は移動・削除しないため、新しい手順では版付きディレクトリ内のファイルを使ってください。
 出力ルートは `apps/mobile/android/` の外に置きます。`clean` が消すビルド領域への出力を防ぐため、シンボリックリンク経由も含めて同プロジェクト内の指定は事前に拒否します。
 
 ## 2. 成果物と署名を確認する
 
 ```sh
-version="$(node -p 'require("./apps/mobile/app.json").expo.version')"
+version="$(node -p 'require("./apps/mobile/package.json").version')"
 release_dir="dist/android/v${version}"
 apk="${release_dir}/PrelisMobile_${version}_github.apk"
 aab="${release_dir}/PrelisMobile_${version}_play.aab"
@@ -160,7 +160,7 @@ React Native / Expo のネイティブライブラリを含むため、[16 KB �
 ```sh
 adb devices
 serial='検証対象のシリアル'
-version="$(node -p 'require("./apps/mobile/app.json").expo.version')"
+version="$(node -p 'require("./apps/mobile/package.json").version')"
 adb -s "$serial" install -r "dist/android/v${version}/PrelisMobile_${version}_github.apk"
 adb -s "$serial" shell am start -W -n jp.co.kupacllc.prelis/.MainActivity
 ```
@@ -187,7 +187,7 @@ Metro を停止した状態で、以下を確認します。Play 配信 APK の�
 3. APK の SHA-256 とアプリ署名証明書の SHA-256、対応 Android・CPU、インストール方法、確認した動作、既知の問題をリリースノートに記載します。旧 CLI 版からのデータ自動移行がないことも案内します。
 4. 公開先から APK を取得し直し、ハッシュ・署名とインストール・起動を確認します。
 
-リリース本文などの公開資料は [GitHub Releases の公開資料](../../../../dist/github-release/README.md)の構成に従い版ごとに保存します。公開バージョンとリポジトリのタグが異なる場合は両方を明記します。成果物本体は `dist/android/v<version>/` に保持します。
+リリース本文などの公開資料は [GitHub Releases の公開資料](../../../../dist/github-release/README.md)の構成に従い頒布版ごとに保存します。今回のリリースタグは `v0.1.3` とし、ストア向けのバージョン・`versionCode` も別途明記します。成果物本体は `dist/android/v<version>/` に保持します。
 
 利用者には、端末で APK を開き、必要に応じて取得に使ったブラウザーやファイル管理アプリの「不明なアプリのインストール」を許可する手順を案内します。更新時は同じ署名の新しい APK を上書きインストールします。署名不一致をアンインストールで回避する案内は、保存データの削除を伴うため通常の更新手順には含めません。
 

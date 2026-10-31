@@ -13,6 +13,7 @@
 | 項目 | このリポジトリの設定・提出物 |
 | --- | --- |
 | パッケージ名 | `jp.co.kupacllc.prelis` |
+| 頒布バージョン | `apps/mobile/package.json` の `version`：`0.1.3`。出力ディレクトリとファイル名の `<version>` に使う |
 | ストア向け表示バージョン / ビルド番号 | 現行設定は `1.0.1` / `2`。提出履歴に続く番号を使用する |
 | 提出用 AAB | `dist/android/v<version>/PrelisMobile_<version>_play.aab` |
 | アップロード鍵 | 既定は `~/keys/play-upload.jks`、別名 `play-upload` |
@@ -36,7 +37,7 @@ AAB はローカルのアップロード鍵で署名し、Google Play はアプ�
 
 ```sh
 npm run build:android:play
-version="$(node -p 'require("./apps/mobile/app.json").expo.version')"
+version="$(node -p 'require("./apps/mobile/package.json").version')"
 release_dir="dist/android/v${version}"
 aab="${release_dir}/PrelisMobile_${version}_play.aab"
 # 既定の鍵・別名の例。変更している場合は実際の値に置き換える
