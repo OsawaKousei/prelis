@@ -2,6 +2,7 @@
 
 コマンドは、特記がない限り開発・ビルドする OS 上のリポジトリのルートで実行します。Android は Ubuntu、iOS は Ubuntu で編集したソースを Mac の `~/prelis-ios-remote` へ同期して開発する構成です。iOS の Metro・ビルド・Simulator は Mac 上で実行します。
 現行のモバイル版は Expo SDK 58 / React Native 0.88 を使用します。デスクトップで確認した共通機能を、モバイルの UI と操作に合わせて反映します。
+Android の署名付き成果物の作成・直接頒布は [ビルド・署名手順](dist/android/sign.md)、ストアへの提出・公開は [Google Play での頒布](dist/android/google-play.md)を参照してください。
 
 ## ウィンドウの互換性要件
 
