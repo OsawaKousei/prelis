@@ -1,6 +1,6 @@
 [package]
 name = "desktop"
-version = "0.1.2"
+version = "0.1.3"
 description = "Prelis desktop app"
 authors = ["Kupac LLC"]
 edition = "2024"
