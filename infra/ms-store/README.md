@@ -35,7 +35,7 @@ terraform -chdir=infra/ms-store plan
 
 ## MSI の公開
 
-署名付き Windows ビルドの回収と検証には [Windows ビルド手順](../../docs/development/windows.md)を使います。`publish-msi.sh` はローカルの `windows-prelis-signature-report.json` にある `WebviewInstallMode = offlineInstaller`、署名状態、タイムスタンプ、SHA-256 を照合し、MSI だけを存在しないキーにアップロードします。アップロード後に S3 の SHA-256 を照合して URL を表示します。同じ内容が既に公開済みなら再実行できます。違う内容で同じ URL を使うことはできません。
+署名付き Windows ビルドの回収と検証には [Windows ビルド手順](../../docs/development/dist/windows/sign.md)を使います。`publish-msi.sh` はローカルの `windows-prelis-signature-report.json` にある `WebviewInstallMode = offlineInstaller`、署名状態、タイムスタンプ、SHA-256 を照合し、MSI だけを存在しないキーにアップロードします。アップロード後に S3 の SHA-256 を照合して URL を表示します。同じ内容が既に公開済みなら再実行できます。違う内容で同じ URL を使うことはできません。
 
 0.1.0 の URL には別の MSI が公開済みです。0.1.1 の署名付き MSI を新しくビルド・回収してから、次のコマンドを実行します。ファイル名だけを変えた旧 MSI は使用できません。
 
@@ -48,4 +48,4 @@ terraform -chdir=infra/ms-store plan
 
 表示された URL を `curl -fIL <URL>` で確認し、`200 OK`、`Content-Type: application/x-msi`、正しいファイル名を確認してください。必要なら `curl -fL <URL> -o /tmp/<ファイル名>` で取得し、表示された SHA-256 と照合します。
 
-現在公開中の `0.1.0` MSI は `offlineInstaller` で再ビルド・再署名済みですが、マシン単位のインストーラーです。ユーザー単位 MSI のソース設定と検証手順は [Windows ビルド手順](../../docs/development/windows.md)を参照してください。新しい MSI を Store に提出する前に、WebView2 のない標準ユーザー環境でオフラインのサイレントインストールを検証してください。インストール時のダウンロードが発生する MSI は提出しないでください。
+現在公開中の `0.1.0` MSI は `offlineInstaller` で再ビルド・再署名済みですが、マシン単位のインストーラーです。ユーザー単位 MSI のソース設定と検証手順は [Windows ビルド手順](../../docs/development/dist/windows/sign.md)を参照してください。新しい MSI を Store に提出する前に、WebView2 のない標準ユーザー環境でオフラインのサイレントインストールを検証してください。インストール時のダウンロードが発生する MSI は提出しないでください。

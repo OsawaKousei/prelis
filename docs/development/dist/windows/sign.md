@@ -1,12 +1,12 @@
 # Windows の署名付きビルド
 
-Ubuntu からソースを同期し、Windows のログオン済み GUI セッションで NSIS・MSI のビルドと署名を行い、検証済み成果物を回収します。環境準備と通常の開発起動は [desktop.md](desktop.md) を参照してください。
+Ubuntu からソースを同期し、Windows のログオン済み GUI セッションで NSIS・MSI のビルドと署名を行い、検証済み成果物を回収します。環境準備と通常の開発起動は [desktop.md](../../desktop.md) を参照してください。
 
 現在はタスクスケジューラ方式への仮実装です。提供された実行ログでは本体の署名付き NSIS・MSI 生成と SignTool 検証まで成功し、その後の表形式ログ処理と UTF-8 結果 JSON の読み取りで失敗しています。この2点を修正し、集約・バージョン検証を追加した後の通し実行、強制中断、通信断後の回復は実機未検証です。実機での実行は変更内容の確認後に行います。
 
 ## 起動方法と操作
 
-Ubuntu の `scripts/windows/.env` に SSH 接続先と署名情報を設定します。[.env.example](../../scripts/windows/.env.example) のキーを使い、サービスプリンシパルには対象プロファイルの Artifact Signing Certificate Profile Signer ロールを付与します。Windows には Artifact Signing Client Tools、Node.js・Rust・MSVC・WebView2・MSI ビルド用の VBScript が必要です。
+Ubuntu の `scripts/windows/.env` に SSH 接続先と署名情報を設定します。[.env.example](../../../../scripts/windows/.env.example) のキーを使い、サービスプリンシパルには対象プロファイルの Artifact Signing Certificate Profile Signer ロールを付与します。Windows には Artifact Signing Client Tools、Node.js・Rust・MSVC・WebView2・MSI ビルド用の VBScript が必要です。
 
 実行時は Ubuntu のリポジトリルートで次を使います。
 

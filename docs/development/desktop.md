@@ -98,7 +98,7 @@ Windows の配布パッケージは `apps/desktop/src-tauri/target/release/bundl
 `CARGO_TARGET_DIR` や Cargo の `build.target-dir` を指定すると Rust 側の出力先が変わります。配布スクリプトは既定の `apps/desktop/src-tauri/target/` を前提にしています。
 
 `npm run build:desktop` は分離署名の作成・検証を行いません。頒布用の deb・AppImage は [Linux 配布物のビルド・署名手順](dist/linux/sign.md)に従います。
-Windows も、現行の共通設定だけでビルドした場合はコード署名を行いません。署名付きの NSIS・MSI は [Windows の署名付きビルド](windows.md) のタスクスケジューラ経由の手順で作成・検証し、最終成果物を `dist/windows/v<version>/` に集約します。この手順は現在仮実装で、最新の修正を含めた通し実行は実機未検証です。
+Windows も、現行の共通設定だけでビルドした場合はコード署名を行いません。署名付きの NSIS・MSI は [Windows の署名付きビルド](dist/windows/sign.md) のタスクスケジューラ経由の手順で作成・検証し、最終成果物を `dist/windows/v<version>/` に集約します。この手順は現在仮実装で、最新の修正を含めた通し実行は実機未検証です。
 
 ## バージョンを揃える
 
