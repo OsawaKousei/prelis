@@ -14,8 +14,3 @@ ref/
 docs-old/
 docs/environment
 docs/plan
-
-# Local data from the APT registry formerly managed here
-/infra/apt-repo/
-/dist/apt-repo/
-/dist/apt-repo-backup.*/
