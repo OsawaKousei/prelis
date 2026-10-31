@@ -2,8 +2,6 @@
 
 Ubuntu からソースを同期し、Windows のログオン済み GUI セッションで NSIS・MSI のビルドと署名を行い、検証済み成果物を回収します。環境準備と通常の開発起動は [desktop.md](../../desktop.md) を参照してください。
 
-現在はタスクスケジューラ方式への仮実装です。提供された実行ログでは本体の署名付き NSIS・MSI 生成と SignTool 検証まで成功し、その後の表形式ログ処理と UTF-8 結果 JSON の読み取りで失敗しています。この2点を修正し、集約・バージョン検証を追加した後の通し実行、強制中断、通信断後の回復は実機未検証です。実機での実行は変更内容の確認後に行います。
-
 ## 起動方法と操作
 
 Ubuntu の `scripts/windows/.env` に SSH 接続先と署名情報を設定します。[.env.example](../../../../scripts/windows/.env.example) のキーを使い、サービスプリンシパルには対象プロファイルの Artifact Signing Certificate Profile Signer ロールを付与します。Windows には Artifact Signing Client Tools、Node.js・Rust・MSVC・WebView2・MSI ビルド用の VBScript が必要です。
@@ -14,7 +12,7 @@ Ubuntu の `scripts/windows/.env` に SSH 接続先と署名情報を設定し�
 ./scripts/windows/build-windows.sh
 ```
 
-スクリプトが SSH トンネルを開始して同期した後、VNC クライアントで `127.0.0.1:22118` に接続し、SSH 接続先と同じユーザーで Windows の GUI にログインします。既にログオン済みならビルドが自動で始まります。PowerShell へのコマンド貼り付けや、ビルド後の Enter 操作は不要です。ログオン待機は最大10分、ビルドは最大2時間です。
+スクリプトが SSH トンネルを開始して同期した後、VNC クライアントで `127.0.0.1:22118` に接続し、SSH 接続先と同じユーザーで Windows の GUI にログインします。既にログオン済みならビルドが自動で始まります。PowerShell へのコマンド貼り付けや、ビルド後の Enter 操作は不要です。
 
 対象ユーザーの Explorer が存在するセッションを WTS API のユーザー名・ドメインから SID に照合します。他ユーザーの GUI ログオンでは開始しません。同一ユーザーの GUI セッションが複数ある場合は、1つに絞るようエラーを返します。ビルド中は対象ユーザーからサインアウトしないでください。
 
@@ -38,7 +36,7 @@ VNC トンネルはスクリプト終了時に閉じます。回収後の UI 確
 
 PowerShell の `-NonInteractive` は入力プロンプトをエラーにする指定です。タスク自体は GUI セッション内で実行されます。[about_PowerShell_exe](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_powershell_exe?view=powershell-5.1#-noninteractive)
 
-実機では SSH からの CIM 読み取りが拒否されたため、タスク操作には公式 COM API を使います。環境変数による Artifact Signing 認証には `ExcludeCredentials` を設定し、他の資格情報へのフォールバックを抑止します。[署名統合の認証仕様](https://learn.microsoft.com/en-us/azure/artifact-signing/how-to-signing-integrations#authentication)
+タスク操作には公式 COM API を使います。環境変数による Artifact Signing 認証には `ExcludeCredentials` を設定し、他の資格情報へのフォールバックを抑止します。[署名統合の認証仕様](https://learn.microsoft.com/en-us/azure/artifact-signing/how-to-signing-integrations#authentication)
 
 Windows PowerShell 5.1 では、リダイレクトした外部コマンドの標準エラーが `ErrorRecord` として扱われます。npm・ビルド・署名検証の外部コマンド実行中は `ErrorActionPreference = Continue` とし、終了コードで成功・失敗を判定します。進捗を標準エラーに出すツールでもログを取得できるようにするためです。[外部コマンドと ErrorActionPreference](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_preference_variables#erroractionpreference)
 
@@ -46,14 +44,7 @@ Windows PowerShell 5.1 では、リダイレクトした外部コマンドの標
 
 実行 ID は32桁の英小文字16進数です。Windows 側のタスク名は `prelis-build-<id>`、ログと結果は `%USERPROFILE%\prelis-build-jobs\<id>\build.log`・`result.json` です。結果には実行 ID、状態、終了コード、ユーザー SID、セッション ID、開始・終了時刻、エラーを記録します。
 
-Ubuntu 側のログは `apps/desktop/src-tauri/target/release/windows-build-logs/<id>/` に回収します。ビルド用の `release/bundle/` を経由し、最終成果物を Linux 版と同じくバージョン別のディレクトリに集約します。0.1.3 の構造は次のとおりです。
-
-```text
-dist/windows/v0.1.3/
-  PrelisDesktop_0.1.3_x64-setup.exe
-  PrelisDesktop_0.1.3_x64_en-US.msi
-  windows-prelis-signature-report.json
-```
+Ubuntu 側のログは `apps/desktop/src-tauri/target/release/windows-build-logs/<id>/` に回収します。ビルド用の `release/bundle/` を経由し、最終成果物を Linux 版と同じくバージョン別のディレクトリに集約します。
 
 結果 JSON の実行 ID・成功状態・終了コード、署名レポート、SHA-256、期待するバージョンを照合してから集約します。同じバージョンで再実行するとそのバージョンのディレクトリを入れ替え、別バージョンは保持します。検証または入れ替えの失敗時には既存の同バージョンの集約先を保持・復元します。`dist/windows/` の成果物は Git 管理対象外です。
 
@@ -77,23 +68,3 @@ powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$env:US
 ```
 
 ログと結果は調査用に残ります。不要になった実行 ID のディレクトリは、タスクが終了したことを確認してから削除してください。Ubuntu と Windows それぞれに多重実行用のロックがありますが、ビルド中のソース編集や別環境からの同期は避けてください。
-
-## ローカル検証と実機検証の区別
-
-次は実機への接続、同期、タスク登録、署名付きビルドを行いません。
-
-```sh
-bash -n scripts/windows/build-windows.sh
-bash -n scripts/windows/create-windows-sync.sh
-bash -n scripts/windows/read-windows-env.sh
-python3 scripts/sync.test.py
-python3 scripts/windows/build-windows.test.py
-python3 scripts/windows/verify-artifact-report.test.py
-pwsh -NoProfile -File scripts/windows/build-task.test.ps1
-```
-
-Python テストは一時リポジトリで SSH・SCP・同期をモックに置き換え、成功・ビルド失敗・別実行 ID・改変された成果物・中断・停止失敗・バージョン不整合と、フラット集約・復元を確認します。PowerShell テストは共有関数と停止処理の対象照合に加え、表形式ログと日本語を含む UTF-8 JSON をローカルで確認し、COM オブジェクトを作成しません。
-
-`scripts/sync.test.py` は Windows・iOS の同期スクリプトを対象に、セッションの作成・再利用・除外設定変更、接続待ち・作成・同期完了待ちの時間制限、省略分を含む競合、一時停止、接続失敗を確認します。Windows 専用 SSH ラッパーと旧セッションの移行も検証し、一時停止中や想定外の同期元を持つセッションは変更しません。
-
-実機実行を承認した後は、Windows PowerShell 5.1 の構文確認、本体の署名付き NSIS・MSI 作成と回収、GUI 未ログオン時の待機、失敗ログの回収、Ctrl+C 時の子プロセス終了、通信断後の停止、旧成果物の保持を確認します。
