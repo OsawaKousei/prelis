@@ -8,10 +8,9 @@ Windows の PowerShell では、以下の `npm` を `npm.cmd` に読み替えま
 - デスクトップ版の最小ウィンドウサイズは、コンテンツ領域で **800×600 論理ピクセル**とします。OS の表示倍率を適用した物理ピクセル数とは区別します。画面の作業領域には、これに加えてタイトルバー・ウィンドウ枠が収まる必要があります。
 - 通常起動時の既定サイズは1280×860です。起動先モニターの作業領域に収まらない場合は、表示倍率・タイトルバー・ウィンドウ枠を考慮し、最小サイズを下限として縮小・配置します。作業領域にはタスクバーなどを含めません。
 - 通常ウィンドウのリサイズに応じて、余白・列幅・見出し・タイマーの大きさを調整します。フルスクリーンや最大化を操作の前提にしません。
-- 800×600以上で、ホーム・日記・タイマー・パスワード生成を、ページ全体のスクロールなしで操作できるようにします。日記本文と、長いファイル名・エラーを含む終了音設定の内部スクロールは許容します。
-- 最小サイズでも、日記のカレンダー・保存、タイマーの開始・リセット・終了音設定、パスワードの生成条件・生成結果・コピーへアクセスできるようにします。
+- 800×600以上で、各種アプリページ全体をスクロールなしで操作できるようにします。テキスト入力欄やエラー表示などの内部スクロールは許容します。
 
-変更時は800×600、1000×600、1280×600、1024×768、既定の1280×860で確認します。高さだけを縮めた場合と、起動中に縮小・拡大した場合も対象です。終了音設定の展開、タイマーの入力エラー、短いパスワードの警告、文字種の未選択、日記の長文入力・保存失敗・未保存変更の確認ダイアログを含めます。ネイティブアプリでは最小サイズ制限と、小さいモニター・表示倍率変更時の初期配置も確認します。
+変更時は800×600、1000×600、1280×600、1024×768、既定の1280×860で確認します。高さだけを縮めた場合と、起動中に縮小・拡大した場合も対象です。
 
 ## 環境準備
 
@@ -66,9 +65,7 @@ Tauri CLI が Vite と Rust アプリを起動します。
 ```
 
 Mutagen セッション `prelis-windows` を作成または再利用し、Windows のユーザーディレクトリ直下の `prelis-remote` に同期します。スクリプトが同期完了を確認して正常終了してから、次に進みます。
-Ubuntu 側の Mutagen データは `.mutagen-windows/` に保存します。旧 `.mutagen/` に同じ同期元・想定内の同期先パスを持つ `prelis-windows` がある場合は、そのセッションを終了して新しいデータディレクトリで作成します。SSH 接続先や除外設定が変わった既存セッションも作り直します。同期元や同期先パスが想定外の場合は停止します。
-
-初回接続と同期完了待ちは、それぞれ最大300秒です。SSH の接続タイムアウトは10秒とし、Mutagen の作成・同期完了待ちの制限には Ubuntu の `timeout`（coreutils）を使います。省略分を含む競合と一時停止を検出した場合は即時停止し、一時停止中のセッションは移行・再作成しません。競合を解消する際は、同期先の変更を退避してから Ubuntu 側と内容を揃えます。
+Ubuntu 側の Mutagen データは `.mutagen-windows/` に保存します。SSH 接続先や除外設定が変わった既存セッションも作り直します。同期元や同期先パスが想定外の場合は停止します。
 
 Windows 実機を直接操作するか、RustDesk で Windows のリモートデスクトップを操作します。同期先のユーザー（現行設定では `builduser`）のデスクトップ上で PowerShell を開き、同期先フォルダに移動して起動します。
 
@@ -93,7 +90,7 @@ npm.cmd run dev:desktop
 
 Mutagen セッション `prelis-macos` を作成または再利用し、Ubuntu から Mac へ `one-way-safe` で同期します。除外設定が変わった場合は、同期先のファイルを保持してセッションを作り直します。スクリプトが同期完了・接続状態・競合なし・必要ファイルの存在・不要ディレクトリの不在を確認して正常終了してから、次に進みます。Mutagen データは、Windows 用の SSH ラッパーの影響を避けるため `.mutagen-macos/` に分け、`MUTAGEN_SSH_PATH` は解除します。待機時間の制限には Ubuntu の `timeout`（coreutils）を使います。
 
-初回接続と同期完了待ちは、それぞれ最大120秒です。表示件数から省略されたものを含む競合や一時停止を検出した場合は、待ち続けず停止します。`one-way-safe` は Mac 側の異なる内容を上書きしないため、以前のソースが残った同期先でセッションを作り直すと競合することがあります。Mac 側の変更を同期先の外へ退避し、Ubuntu 側を正として該当ファイルの内容を揃えてから再実行します。`node_modules` や Rust の `target` を含む同期先全体の削除は不要です。
+`one-way-safe` は Mac 側の異なる内容を上書きしないため、以前のソースが残った同期先でセッションを作り直すと競合することがあります。Mac 側の変更を同期先の外へ退避し、Ubuntu 側を正として該当ファイルの内容を揃えてから再実行します。`node_modules` や Rust の `target` を含む同期先全体の削除は不要です。
 
 Mac のデスクトップ上でターミナルを開き、同期先で起動します。`xcode-select` が Command Line Tools を指している環境でも Xcode 本体を使うため、次の例では `DEVELOPER_DIR` を指定しています。
 
@@ -119,42 +116,6 @@ npm run dev -w apps/desktop
 
 ファイル操作など Tauri のネイティブ API を使う機能は、アプリで確認します。
 
-### 動作確認用ビルド
-
-| コマンド | 内容 | 既定の出力先 |
-| --- | --- | --- |
-| `npm run build -w apps/desktop` | TypeScript の型チェックと Vite ビルド | `apps/desktop/dist/` |
-| `npm run build:desktop:debug` | 配布パッケージを作らず debug 実行ファイルを生成 | `apps/desktop/src-tauri/target/debug/desktop` |
-| `npm run build:desktop` | release 実行ファイルと配布パッケージを生成 | 実行ファイルは `apps/desktop/src-tauri/target/release/PrelisDesktop`、パッケージは同じ階層の `bundle/` |
-
-上表の Rust 実行ファイル名は Ubuntu 向けです。Windows では debug が `apps/desktop/src-tauri/target/debug/desktop.exe`、release が `apps/desktop/src-tauri/target/release/desktop.exe` になります。
-Windows の配布パッケージは `apps/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe` と `apps/desktop/src-tauri/target/release/bundle/msi/*.msi` です。現行設定では WebView2 オフラインインストーラーを同梱するため、ビルド時にそのダウンロードが必要です。
-macOS では debug が `apps/desktop/src-tauri/target/debug/desktop`、release が `apps/desktop/src-tauri/target/release/desktop` です。アプリバンドルは `apps/desktop/src-tauri/target/release/bundle/macos/PrelisDesktop.app`、DMG は同じ `bundle/` 内の `dmg/` に生成します。通常のビルドはホストの CPU 向けで、Universal ビルドにはなりません。
-`CARGO_TARGET_DIR` や Cargo の `build.target-dir` を指定すると Rust 側の出力先が変わります。配布スクリプトは既定の `apps/desktop/src-tauri/target/` を前提にしています。
-
-`npm run build:desktop` は分離署名の作成・検証を行いません。頒布用の deb・AppImage は [Linux 配布物のビルド・署名手順](dist/linux/sign.md)に従います。
-Windows も、現行の共通設定だけでビルドした場合はコード署名を行いません。署名付きの NSIS・MSI は [Windows の署名付きビルド](dist/windows/sign.md) のタスクスケジューラ経由の手順で作成・検証し、最終成果物を `dist/windows/v<version>/` に集約します。この手順は現在仮実装で、最新の修正を含めた通し実行は実機未検証です。
-
-### macOS の確認用 App・DMG を Ubuntu から作る
-
-SSH 経由では、Tauri の DMG 作成が Finder の外観設定用 AppleScript で応答待ちになることがあります。Ubuntu からの確認用ビルドには次を使います。Ubuntu 側には、同期用のツールに加えて Python 3 と `sha256sum` が必要です。
-
-```sh
-./scripts/macos/build-macos.sh
-```
-
-同期後に Mac 上で `npm ci` と `tauri build --bundles app` を実行し、同じ `.app` から ZIP と、`Applications` へのリンクを含む DMG を作ります。DMG は Finder を使わず `hdiutil` で生成します。Mac 側で ZIP の整合性と `hdiutil verify` を確認し、Ubuntu へ回収したファイルの SHA-256 を照合します。
-
-| 成果物 | Ubuntu 側の回収先 |
-| --- | --- |
-| アプリの ZIP | `apps/desktop/src-tauri/target/release/bundle/macos/PrelisDesktop_<version>_<arch>.app.zip` |
-| DMG | `apps/desktop/src-tauri/target/release/bundle/dmg/PrelisDesktop_<version>_<arch>.dmg` |
-| SHA-256 一覧 | `apps/desktop/src-tauri/target/release/bundle/macos-artifacts.sha256` |
-
-`<version>` は共通の `tauri.conf.json` の値、`<arch>` は Apple Silicon で `aarch64`、Intel Mac で `x64` です。Mac 側には `.app` と上記の ZIP・DMG・SHA-256 一覧が残ります。同期済みの Mac で直接同じビルドを行う場合は、`~/prelis-remote` で `bash scripts/macos/build-on-mac.sh` を実行します。
-
-この確認用ビルドは Developer ID 署名・公証を行いません。共通の `npm run build:desktop` も、現行設定では配布用の署名・公証を設定していません。配布時は [macOS 配布物のビルド・署名・公証](dist/macos/sign.md)、または [Mac App Store での頒布](dist/macos/app-store.md)に従います。
-
 ## バージョンを揃える
 
 リリースするデスクトップ版のバージョンを、次の設定・ロックファイル・画面表示で揃えます。
@@ -171,21 +132,6 @@ SSH 経由では、Tauri の DMG 作成が Finder の外観設定用 AppleScript
 ビルド後はサイドバーの表示がリリースするバージョンと一致することを確認します。
 Linux の配布スクリプトはデスクトップの `package.json` の値を成果物名の確認に使います。
 macOS のビルドスクリプトは共通の `tauri.conf.json` の値を成果物名に使います。配布先別設定にはバージョンを持たせず、共通設定から引き継ぎます。
-
-## 検証
-
-[共通チェック](architecture.md#共通セットアップ)は全 workspace がある Ubuntu 側で実行します。各 OS でデスクトップのフロントエンドをビルドし、変更箇所を Tauri アプリで確認します。Windows・macOS では同期先で実行します。Linux 配布時の署名検証・インストール確認は [Linux 配布物のビルド・署名手順](dist/linux/sign.md#2-成果物と署名を確認する)を参照してください。
-
-Windows では `npm.cmd run build:desktop:debug` で生成した `desktop.exe` も起動し、変更箇所に加えて保存内容の再読込とタイマー完了時の音声を確認します。
-NSIS・MSI を作成した場合は両方のインストーラーでインストール・起動・アンインストールと、インストーラー・アプリのアイコンを確認します。MSI はユーザー単位の構成なので、管理者権限のないアカウントでも確認します。
-
-macOS では `npm run build:desktop:debug` で生成した `apps/desktop/src-tauri/target/debug/desktop` を Mac のターミナルから起動し、変更箇所・保存内容の再読込・タイマー完了時の音声を確認します。release の `.app` を作成した場合は、Mac 上で次のように起動します。
-
-```sh
-open apps/desktop/src-tauri/target/release/bundle/macos/PrelisDesktop.app
-```
-
-DMG を作成した場合は、マウントしてアプリと `Applications` リンク、アプリアイコンを確認し、アプリをコピーした後の起動・機能操作も確認します。ZIP・DMG の整合性と SHA-256 の一致だけでは、画面操作や Gatekeeper の通過を確認したことにはなりません。
 
 ## 設定の所在とアイコン更新
 
