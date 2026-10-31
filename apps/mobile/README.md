@@ -17,5 +17,5 @@ npm run check
 
 旧実装は `../mobile-old/` に保存し、workspace・型チェック・ビルドから除外しています。旧日記 TXT・音声 JSON の移行や互換窓口は提供しません。
 
-- [モバイル v0.1.3 の仕様・移植メモ](../../docs/specs/mobile/v0.1.3.md)
+- [v0.1.3 の仕様・モバイル移植メモ](../../docs/specs/v0.1.3.md)
 - [構成・検証・ネイティブワークフロー](../../docs/development/mobile-native.md)

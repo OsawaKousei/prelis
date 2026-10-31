@@ -35,7 +35,7 @@ Run lint and typecheck before declaring any task done.
 - 開発は Expo CLI、署名付き配布は `scripts/android/` の Gradle と `scripts/ios/` の Xcode ワークフローを使います。
 - `ios/`・`android/` は Git 管理し、署名設定を直接保守します。`expo prebuild --clean` は署名設定を削除するため、通常のビルドで実行しません。
 - Expo 公式モジュールを優先し、仕様を多少変更して実装できる場合はそちらを選びます。独自ネイティブモジュールは Expo が根本的に提供しない機能に限定します。
-- 仕様変更は [モバイル v0.1.3](../../docs/specs/mobile/v0.1.3.md)、構成・検証は [mobile-native.md](../../docs/development/mobile-native.md) に記録します。
+- 仕様変更は [v0.1.3 仕様書](../../docs/specs/v0.1.3.md)、構成・検証は [mobile-native.md](../../docs/development/mobile-native.md) に記録します。
 
 ## Rules
 
