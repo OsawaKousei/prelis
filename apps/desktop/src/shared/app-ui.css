@@ -53,6 +53,19 @@
     margin-bottom: 32px;
   }
 }
+@media (max-height: 720px) {
+  .page-intro {
+    margin-bottom: 16px;
+  }
+  .page-intro h1 {
+    font-size: 32px;
+  }
+  .app-emblem {
+    width: 44px;
+    height: 44px;
+    border-radius: 13px;
+  }
+}
 @media (max-width: 600px) {
   .page-intro h1 {
     font-size: 38px;

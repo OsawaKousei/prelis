@@ -1,4 +1,5 @@
 .shell {
+  --frame-header-height: 74px;
   height: 100dvh;
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr);
@@ -83,7 +84,7 @@
   background: linear-gradient(135deg, #fcfdff, #fff 55%, #f9fcff);
 }
 .frame-header {
-  height: 74px;
+  height: var(--frame-header-height);
   padding: 0 38px;
   border-bottom: 1px solid #eaf0f5;
   display: flex;
@@ -112,6 +113,7 @@
   font-size: 11px;
 }
 .workspace-empty {
+  min-width: 0;
   padding: 90px 60px;
 }
 .workspace-empty h1 {
@@ -151,8 +153,29 @@
     padding: 0 26px;
   }
 }
+@media (max-height: 720px) {
+  .shell {
+    --frame-header-height: 56px;
+  }
+  .sidebar {
+    padding-top: 20px;
+  }
+  .sidebar nav {
+    margin-top: 28px;
+  }
+  .workspace-empty {
+    padding: 40px 32px;
+  }
+  .launch-list {
+    margin-top: 24px;
+  }
+  .launch-list button {
+    padding: 18px;
+  }
+}
 @media (max-width: 600px) {
   .shell {
+    --frame-header-height: 55px;
     display: block;
   }
   .sidebar {
@@ -194,7 +217,6 @@
     display: none;
   }
   .frame-header {
-    height: 55px;
     padding: 0 20px;
   }
   .frame-breadcrumb {
