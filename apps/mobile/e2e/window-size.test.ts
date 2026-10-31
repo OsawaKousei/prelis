@@ -90,6 +90,12 @@ async function assertFits(id: string, labels: string[]) {
 }
 
 before(async () => {
+  const response = await fetch('http://127.0.0.1:8081/_expo/open?platform=android&runtime=expo', {signal: AbortSignal.timeout(5000)});
+  assert(response.ok, 'Metro must be running on port 8081.');
+  const launch = await response.json() as {url: string | null};
+  const launchUrl = launch.url ?? '';
+  assert(launchUrl.startsWith('exp://'), 'Metro did not return an Android launch URL.');
+  const metroUrl = launchUrl.replace('exp://', 'http://');
   originalSize = adb('shell', 'wm', 'size').match(/Override size: (\S+)/)?.[1] ?? 'reset';
   originalDensity = adb('shell', 'wm', 'density').match(/Override density: (\d+)/)?.[1] ?? 'reset';
   originalFontScale = adb('shell', 'settings', 'get', 'system', 'font_scale').trim();
@@ -99,7 +105,7 @@ before(async () => {
   adb('install', '-r', '-g', resolve(process.env.PRELIS_ANDROID_APK ?? 'apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk'));
   adb('reverse', 'tcp:8081', 'tcp:8081');
   adb('shell', 'am', 'force-stop', packageName);
-  adb('shell', 'am', 'start', '-W', '-a', 'android.intent.action.VIEW', '-d', 'prelis://?__expo_url=http%3A%2F%2F127.0.0.1%3A8081', packageName);
+  adb('shell', 'am', 'start', '-W', '-a', 'android.intent.action.VIEW', '-d', `prelis://?__expo_url=${encodeURIComponent(metroUrl)}`, packageName);
   await waitFor(byId('page-home'));
   const notice = nodes().find(node => node.attributes['content-desc']?.includes('Open debugger to view warnings.'));
   if (notice) {
@@ -122,6 +128,12 @@ test('all four initial pages fit the native 360×640 window', async () => {
   await assertFits('diary', ['今日へ', '前日', '翌日', 'カレンダーを開く', '日記の本文', '保存']);
   await openPage('timer', 'timer');
   await assertFits('timer', ['時間（分）', '開始', 'リセット', '音声設定を開く']);
+  const timerTree = nodes();
+  const ring = byId('timer-ring')(timerTree);
+  const page = byId('page-timer')(timerTree)!;
+  assert(ring, 'Missing circular timer');
+  assert.equal(ring.bounds[2] - ring.bounds[0], ring.bounds[3] - ring.bounds[1], 'Timer ring must remain circular');
+  assert(ring.bounds[1] >= page.bounds[1] && ring.bounds[3] <= page.bounds[3], 'Timer ring must fit the initial viewport');
   await openPage('password', 'password');
   await assertFits('password', ['設定を開く', 'パスワードを生成', '生成したパスワード', 'コピー']);
 });

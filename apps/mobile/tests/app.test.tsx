@@ -116,14 +116,17 @@ test('keeps a timer across routes, loops its sound at completion and stops it on
     await act(async () => {jest.advanceTimersByTime(30_000);});
     await testRouter.navigate('/timer');
     expect(screen.getByTestId('timer-clock')).toHaveTextContent('00:30');
+    expect(screen.getByRole('progressbar', {name: '残り時間の割合'})).toHaveAccessibilityValue({min: 0, max: 100, now: 50});
     await act(async () => {jest.advanceTimersByTime(30_000);});
     expect(screen.getByTestId('timer-clock')).toHaveTextContent('00:00');
+    expect(screen.getByRole('progressbar', {name: '残り時間の割合'})).toHaveAccessibilityValue({now: 0});
     const player = require('expo-audio').__player;
     expect(player.loop).toBe(true);
     expect(player.play).toHaveBeenCalledTimes(1);
     await fireEvent.press(screen.getByRole('button', {name: 'リセット'}));
     expect(player.replace).toHaveBeenLastCalledWith(null);
     expect(screen.getByTestId('timer-clock')).toHaveTextContent('01:00');
+    expect(screen.getByRole('progressbar', {name: '残り時間の割合'})).toHaveAccessibilityValue({now: 100});
   } finally {jest.useRealTimers();}
 });
 
