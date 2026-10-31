@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import {ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
 import type {SoundLibrary} from './sound-storage';
-import {Button, colors, Section, styles} from '../../shared/ui';
+import {Button, colors, Page, Section, styles} from '../../shared/ui';
 import {Icon} from '../../shared/icon';
 
 type Props = {
@@ -30,26 +30,33 @@ export function TimerView({minutes, valid, remaining, running, library, error, b
   const total = valid ? Number(minutes) * 60 * 1000 : remaining;
   const progress = total > 0 ? Math.max(0, Math.min(100, remaining / total * 100)) : 0;
   const progressWidth = {width: `${progress}%` as `${number}%`};
-  return <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-    <View style={styles.pageIntro}><Text style={styles.heading}>Timer</Text><View style={styles.emblem}><Icon name="timer" size={29} color={colors.accent} /></View></View>
-    <Section title="残り時間">
+  return <Page id="timer" contentStyle={timerStyles.content}>
+    <View style={styles.pageIntro}><Text style={styles.heading}>Timer</Text><View style={styles.emblem}><Icon name="timer" size={22} color={colors.accent} /></View></View>
+    <View style={timerStyles.clockArea}>
       <Text testID="timer-clock" accessibilityRole="timer" style={[timerStyles.clock, completed && timerStyles.completed]}>{String(Math.floor(seconds / 60)).padStart(2, '0')}:{String(seconds % 60).padStart(2, '0')}</Text>
       <Text style={[styles.muted, timerStyles.center]}>{completed ? '完了 — リセットしてください' : running ? '実行中' : '停止中'}</Text>
-      <View accessibilityRole="progressbar" accessibilityLabel="残り時間の割合" accessibilityValue={{min: 0, max: 100, now: Math.round(progress)}} style={timerStyles.progressTrack}><View style={[timerStyles.progressFill, progressWidth]} /></View>
+    </View>
+    <View accessibilityRole="progressbar" accessibilityLabel="残り時間の割合" accessibilityValue={{min: 0, max: 100, now: Math.round(progress)}} style={timerStyles.progressTrack}><View style={[timerStyles.progressFill, progressWidth]} /></View>
+    <View style={timerStyles.minuteRow}>
       <Text style={styles.text}>時間（分）</Text>
-      <TextInput accessibilityLabel="時間（分）" keyboardType="number-pad" style={styles.input} value={minutes} editable={!running && !completed} onChangeText={onMinutes} />
-      {!valid && <Text style={styles.error}>1〜180の整数を入力してください。</Text>}
-      <View style={styles.row}>
-        <Button label={running ? '一時停止' : '開始'} variant="primary" icon={!running ? 'arrow' : undefined} disabled={completed || !running && (!valid || !library || busy)} onPress={onToggle} />
-        <Button label="リセット" onPress={onReset} />
+      <TextInput accessibilityLabel="時間（分）" keyboardType="number-pad" style={[styles.input, timerStyles.minuteInput]} value={minutes} editable={!running && !completed} onChangeText={onMinutes} />
+    </View>
+    {!valid && <Text style={styles.error}>1〜180の整数を入力してください。</Text>}
+    <View style={styles.row}>
+      <Button label={running ? '一時停止' : '開始'} variant="primary" icon={!running ? 'arrow' : undefined} disabled={completed || !running && (!valid || !library || busy)} onPress={onToggle} />
+      <Button label="リセット" onPress={onReset} />
+    </View>
+    <View style={timerStyles.soundRow}>
+      <View style={timerStyles.soundSummary}>
+        <Text style={styles.caption}>終了音</Text>
+        <Text style={styles.muted} numberOfLines={2}>{selected?.name ?? 'なし'}</Text>
       </View>
-      <Text style={styles.muted}>タブを切り替えてもタイマーは動作します。バックグラウンド中の終了音は保証されません。Prelis の終了時にリセットされます。</Text>
-    </Section>
-    <Section title="終了音">
-      <Text style={styles.muted}>選択中: {selected?.name ?? 'なし'}</Text>
-      <Button label={soundOpen ? '音声設定を閉じる' : '音声設定を開く'} onPress={() => setSoundOpen(value => !value)} />
-      {!!error && <Text style={styles.error}>{error}</Text>}
-      {soundOpen && (!library ? <Button label="再読み込み" onPress={onRetry} /> : <>
+      <Button label={soundOpen ? '音声設定を閉じる' : '音声設定を開く'} expanded={soundOpen} onPress={() => setSoundOpen(value => !value)} />
+    </View>
+    {!!error && <ScrollView style={timerStyles.error} nestedScrollEnabled><Text style={styles.error}>{error}</Text></ScrollView>}
+    <Text style={styles.caption}>バックグラウンドの終了音は保証されません。{'\n'}アプリ終了時にリセットされます。</Text>
+    {soundOpen && <Section title="音声設定">
+      {!library ? <Button label="再読み込み" onPress={onRetry} /> : <>
         <Text style={styles.muted}>音声を選択</Text>
         <Button label="音声なし" icon={!library.selectedId ? 'check' : undefined} variant="choice" selected={!library.selectedId} disabled={busy || running || completed} onPress={() => onSelectSound(null)} />
         {library.sounds.map(sound => <Button key={sound.id} label={sound.name} icon={library.selectedId === sound.id ? 'check' : undefined} variant="choice" selected={library.selectedId === sound.id} disabled={busy || running || completed} onPress={() => onSelectSound(sound.id)} />)}
@@ -58,13 +65,20 @@ export function TimerView({minutes, valid, remaining, running, library, error, b
           <Button label="試聴" disabled={!selected || busy || running || completed} onPress={() => {if (selected) onPreviewSound(selected.id);}} />
           <Button label="選択中の音声を削除" variant="danger" disabled={!selected || busy || running || completed} onPress={() => {if (selected) onDeleteSound(selected.id);}} />
         </View>
-      </>)}
-    </Section>
-  </ScrollView>;
+      </>}
+    </Section>}
+  </Page>;
 }
 
 const timerStyles = StyleSheet.create({
-  clock: {fontSize: 58, fontWeight: '600', letterSpacing: 1, color: colors.ink, textAlign: 'center'},
+  content: {gap: 6},
+  clockArea: {flexGrow: 1, justifyContent: 'center', minHeight: 76},
+  clock: {fontSize: 48, lineHeight: 56, fontWeight: '600', letterSpacing: 1, color: colors.ink, textAlign: 'center'},
+  minuteRow: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8},
+  minuteInput: {width: 100, textAlign: 'center'},
+  soundRow: {flexDirection: 'row', alignItems: 'center', gap: 8},
+  soundSummary: {flex: 1},
+  error: {maxHeight: 60},
   completed: {color: colors.danger},
   progressTrack: {height: 3, borderRadius: 2, backgroundColor: colors.line, overflow: 'hidden'},
   progressFill: {height: 3, borderRadius: 2, backgroundColor: colors.accent},

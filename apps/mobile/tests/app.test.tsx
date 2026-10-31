@@ -66,6 +66,28 @@ test('generates with Expo Crypto and copies the result as sensitive content', as
   expect(Clipboard.setStringAsync).toHaveBeenCalledWith(result, {android: {isSensitive: true}});
 });
 
+test('password settings start collapsed and retain choices after closing', async () => {
+  await renderRouter(routes, {initialUrl: '/password'});
+  expect(screen.queryByRole('button', {name: '8文字'})).toBeNull();
+  await fireEvent.press(screen.getByRole('button', {name: '設定を開く'}));
+  await fireEvent.press(screen.getByRole('button', {name: '8文字'}));
+  await fireEvent.press(screen.getByRole('button', {name: '設定を閉じる'}));
+  expect(screen.queryByRole('button', {name: '8文字'})).toBeNull();
+  await fireEvent.press(screen.getByRole('button', {name: 'パスワードを生成'}));
+  expect(screen.getByLabelText('生成したパスワード').props.value).toHaveLength(8);
+});
+
+test('diary calendar starts collapsed and expanding it preserves the draft', async () => {
+  await renderRouter(routes, {initialUrl: '/diary'});
+  await fireEvent.changeText(await screen.findByLabelText('日記の本文'), 'カレンダー操作中の下書き');
+  expect(screen.queryByRole('button', {name: '前の月'})).toBeNull();
+  await fireEvent.press(screen.getByRole('button', {name: 'カレンダーを開く'}));
+  expect(screen.getByRole('button', {name: '前の月'})).toBeVisible();
+  await fireEvent.press(screen.getByRole('button', {name: 'カレンダーを閉じる'}));
+  expect(screen.queryByRole('button', {name: '前の月'})).toBeNull();
+  expect(screen.getByLabelText('日記の本文')).toHaveDisplayValue('カレンダー操作中の下書き');
+});
+
 test('does not carry a discarded diary draft into a date that fails to load', async () => {
   const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
   try {

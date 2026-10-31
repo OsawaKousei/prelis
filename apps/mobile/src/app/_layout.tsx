@@ -38,6 +38,7 @@ export default function RootLayout() {
       }}>
         {tabs.map(tab => <Tabs.Screen key={tab.name} name={tab.name} options={{
           title: tab.title,
+          tabBarButtonTestID: `tab-${tab.name}`,
           tabBarIcon: ({focused, size}) => <Icon name={tab.icon} color={focused ? colors.accent : colors.muted} size={size} />,
         }} />)}
       </Tabs>

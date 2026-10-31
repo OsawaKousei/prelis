@@ -1,8 +1,7 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View} from 'react-native';
 import {isDiaryDate, localDate, shiftDate} from '@prelis/core';
-import {Button, colors, Section, styles} from '../../shared/ui';
-import {Icon} from '../../shared/icon';
+import {Button, colors, Page, Section, styles} from '../../shared/ui';
 
 type Props = {
   date: string;
@@ -24,29 +23,23 @@ const heading = (date: string) => `${Number(date.slice(0, 4))}年${Number(date.s
 
 export function DiaryView({date, month, content, dirty, everSaved, loading, saving, error, onContent, onDate, onMonth, onRetry, onSave}: Props) {
   const {width: screenWidth} = useWindowDimensions();
-  const calendarWidth = {width: Math.max(308, screenWidth - 48)};
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const calendarWidth = {width: Math.max(308, screenWidth - 32)};
   const first = `${month}-01`;
   const offset = (new Date(`${first}T12:00:00`).getDay() + 6) % 7;
   const days = Array.from({length: 42}, (_, i) => shiftDate(first, i - offset));
-  return <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-    <View style={styles.pageIntro}><Text style={styles.heading}>Diary</Text><View style={styles.emblem}><Icon name="diary" size={29} color={colors.accent} /></View></View>
-    <Section title={heading(date)}>
-      <Text style={styles.muted}>{date === localDate() ? '今日' : date}</Text>
-      <View style={[styles.row, diaryStyles.wrap]}>
-        <Button label="前日" icon="left" disabled={saving || !isDiaryDate(shiftDate(date, -1))} onPress={() => onDate(shiftDate(date, -1))} />
-        <Button label="翌日" icon="right" disabled={saving || !isDiaryDate(shiftDate(date, 1))} onPress={() => onDate(shiftDate(date, 1))} />
-        <Button label="今日へ" disabled={saving || date === localDate()} onPress={() => onDate(localDate())} />
-      </View>
-    </Section>
-    {loading ? <Text style={styles.muted}>日記を読み込んでいます…</Text> : error && !dirty ? <Section title="日記を開けませんでした"><Text style={styles.error}>{error}</Text><Button label="もう一度読み込む" onPress={onRetry} /></Section> : <Section title="日記の本文">
-      <TextInput testID="diary-content" accessibilityLabel="日記の本文" style={[styles.input, diaryStyles.editor]} multiline value={content} editable={!saving} onChangeText={onContent} />
-      <Text style={styles.muted}>{[...content].length.toLocaleString()} 文字　{saving ? '保存中…' : dirty ? '未保存' : everSaved ? '保存済み' : '変更なし'}</Text>
-      <Button label={saving ? '保存中…' : '保存'} disabled={saving || !dirty} variant="primary" icon="save" onPress={onSave} />
-      {!!error && <Text style={styles.error}>{error}</Text>}
-      <Text style={styles.muted}>保存先: このデバイス</Text>
-      <Text style={styles.muted}>未保存の内容はタブを切り替えても保持されます。アプリを終了する前に保存してください。</Text>
-    </Section>}
-    <Section title={`${Number(month.slice(0, 4))}年${Number(month.slice(5, 7))}月`}>
+  return <Page id="diary" contentStyle={diaryStyles.content}>
+    <View style={styles.pageIntro}>
+      <Text style={styles.heading}>Diary</Text>
+      <Button label="今日へ" disabled={saving || date === localDate()} onPress={() => onDate(localDate())} />
+    </View>
+    <Text style={styles.subheading}>{heading(date)}{date === localDate() ? '（今日）' : ''}</Text>
+    <View style={[styles.row, diaryStyles.wrap]}>
+      <Button label="前日" icon="left" disabled={saving || !isDiaryDate(shiftDate(date, -1))} onPress={() => onDate(shiftDate(date, -1))} />
+      <Button label="翌日" icon="right" disabled={saving || !isDiaryDate(shiftDate(date, 1))} onPress={() => onDate(shiftDate(date, 1))} />
+      <Button label="カレンダー" accessibilityLabel={calendarOpen ? 'カレンダーを閉じる' : 'カレンダーを開く'} expanded={calendarOpen} onPress={() => setCalendarOpen(value => !value)} />
+    </View>
+    {calendarOpen && <Section title={`${Number(month.slice(0, 4))}年${Number(month.slice(5, 7))}月`}>
       <View style={styles.row}><Button label="前の月" icon="left" onPress={() => onMonth(-1)} /><Button label="次の月" icon="right" onPress={() => onMonth(1)} /></View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View style={[diaryStyles.calendar, calendarWidth]}>
@@ -57,13 +50,28 @@ export function DiaryView({date, month, content, dirty, everSaved, loading, savi
             </Pressable> : null}</View>)}
         </View>
       </ScrollView>
-    </Section>
-  </ScrollView>;
+    </Section>}
+    {loading ? <Text style={styles.muted}>日記を読み込んでいます…</Text> : error && !dirty ? <Section title="日記を開けませんでした"><Text style={styles.error}>{error}</Text><Button label="もう一度読み込む" onPress={onRetry} /></Section> : <>
+      <TextInput testID="diary-content" accessibilityLabel="日記の本文" placeholder="日記を入力…" style={[styles.input, diaryStyles.editor]} multiline scrollEnabled value={content} editable={!saving} onChangeText={onContent} />
+      <View style={diaryStyles.footer}>
+        <View>
+          <Text style={styles.muted}>{[...content].length.toLocaleString()} 文字 · {saving ? '保存中…' : dirty ? '未保存' : everSaved ? '保存済み' : '変更なし'}</Text>
+          <Text style={styles.caption}>保存先: このデバイス</Text>
+        </View>
+        <Button label={saving ? '保存中…' : '保存'} disabled={saving || !dirty} variant="primary" icon="save" onPress={onSave} />
+      </View>
+      {!!error && <ScrollView style={diaryStyles.error} nestedScrollEnabled><Text style={styles.error}>{error}</Text></ScrollView>}
+      <Text style={styles.caption}>未保存の変更はアプリ終了で失われます。</Text>
+    </>}
+  </Page>;
 }
 
 const diaryStyles = StyleSheet.create({
+  content: {gap: 8},
   wrap: {flexWrap: 'wrap'},
-  editor: {minHeight: 220, textAlignVertical: 'top'},
+  editor: {flexGrow: 1, flexShrink: 1, height: 96, minHeight: 96, textAlignVertical: 'top'},
+  footer: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8},
+  error: {maxHeight: 60},
   calendar: {flexDirection: 'row', flexWrap: 'wrap'},
   weekday: {width: '14.2857%', textAlign: 'center', color: colors.muted, fontSize: 12, paddingBottom: 10},
   day: {width: '14.2857%', alignItems: 'center', paddingVertical: 2},
