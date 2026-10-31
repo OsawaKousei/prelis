@@ -6,26 +6,17 @@ if [[ $# -ne 0 || "$(uname -s)" != Darwin ]]; then
   exit 2
 fi
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-cd "$repo_root"
-
-export PATH="/opt/homebrew/bin:$PATH"
-if ! command -v node >/dev/null 2>&1 && command -v fnm >/dev/null 2>&1; then
-  eval "$(fnm env --shell bash)"
-  fnm use default >/dev/null
-fi
-if [[ -z "${DEVELOPER_DIR:-}" && -d /Applications/Xcode.app/Contents/Developer ]]; then
-  export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
-fi
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.sh"
+macos_native_init
+macos_build_environment
+unset APPLE_SIGNING_IDENTITY APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID APPLE_API_KEY APPLE_API_ISSUER APPLE_API_KEY_PATH
 for command_name in node npm cargo xcodebuild ditto hdiutil shasum unzip; do
   if ! command -v "$command_name" >/dev/null 2>&1; then
     echo "$command_name が必要です。" >&2
     exit 1
   fi
 done
-xcodebuild -version
 
-version="$(node -p 'require("./apps/desktop/src-tauri/tauri.conf.json").version')"
 case "$(uname -m)" in
   arm64) arch=aarch64 ;;
   x86_64) arch=x64 ;;
@@ -43,8 +34,8 @@ if [[ ! -f "$app/Contents/MacOS/desktop" ]]; then
   exit 1
 fi
 
+macos_verify_app "$app"
 stage="$(mktemp -d "$bundle_root/.prelis-macos-stage.XXXXXXXX")"
-trap 'rm -rf -- "$stage"' EXIT
 
 ditto -c -k --sequesterRsrc --keepParent "$app" "$stage/$zip_name"
 unzip -tq "$stage/$zip_name" >/dev/null

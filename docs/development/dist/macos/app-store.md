@@ -9,7 +9,7 @@ Mac App Store 向けの署名済み `.app` と提出用 `.pkg` を作成し、Ap
 [環境準備](../../desktop.md#環境準備)・[バージョンの更新](../../desktop.md#バージョンを揃える)・[ビルド前の検証](../../desktop.md#検証)を完了します。
 接続先・署名ファイル・既定の出力先・`.env` の準備は [署名の準備](sign.md#署名の準備)に従います。Mac 側には、共通のビルド・署名ツールに加えて `productbuild`・`pkgutil` と、Xcode 付属の `xcrun altool` が必要です。
 
-- Mac に秘密鍵を含む Apple Distribution と Mac Installer Distribution の `.p12`、対象アプリの配布用 Provisioning Profile を用意します。各スクリプトの入力パスと署名 ID・App ID の検証条件を揃えます。
+- Mac に秘密鍵を含む Apple Distribution と Mac Installer Distribution の `.p12`、対象アプリの配布用 Provisioning Profile を用意します。`.env` の入力パス・署名 ID・Team ID を証明書と Profile に揃えます。
 - Ubuntu の `scripts/macos/.env` に `PRELIS_APPSTORE_P12_PASSWORD` を設定します。インストーラー用証明書のパスワードが異なる場合は `PRELIS_APPSTORE_INSTALLER_P12_PASSWORD` も設定します。
 - Apple 側の検証・アップロードには `PRELIS_APPSTORE_API_KEY_ID`・`PRELIS_APPSTORE_API_ISSUER_ID` と、Mac 上の `~/.appstoreconnect/private_keys/AuthKey_<KEY_ID>.p8` を用意します。秘密鍵の内容は `.env` に書き込みません。
 - App Store Connect に対象アプリを登録し、アップロード・審査提出に必要な権限と契約状況を確認します。
@@ -20,7 +20,8 @@ Mac App Store 向けの署名済み `.app` と提出用 `.pkg` を作成し、Ap
 | --- | --- |
 | 製品名・バージョン・共通ビルド設定 | `apps/desktop/src-tauri/tauri.conf.json` |
 | App Store 用 Bundle ID・最低対応 macOS・埋め込み Profile | `apps/desktop/src-tauri/tauri.appstore.conf.json` |
-| App Sandbox・ネットワーククライアント権限・App ID・Team ID | `apps/desktop/src-tauri/Entitlements.appstore.plist` |
+| App Sandbox・ネットワーククライアント権限のテンプレート | `apps/desktop/src-tauri/Entitlements.appstore.plist` |
+| Team ID・App ID を加えたビルド用 Entitlements | `apps/desktop/src-tauri/signing/Entitlements.appstore.plist`（ビルド時に生成） |
 | ビルド時にコピーする Profile | `apps/desktop/src-tauri/signing/Prelis.provisionprofile`（Git 管理・同期対象外） |
 
 Profile・署名証明書・Entitlements・App Store Connect のアプリ登録で識別情報を揃えます。通常のデスクトップ設定の Bundle ID は変更せず、App Store 用設定を重ねて使います。
@@ -52,7 +53,7 @@ App ZIP と PKG、およびそれぞれの SHA-256 を Ubuntu へ回収し、ハ
 | SHA-256 | App ZIP・PKG と同名のファイルに `.sha256` を付けたもの |
 
 `<version>` は共通の `tauri.conf.json` の値、`<arch>` は Apple Silicon で `aarch64`、Intel Mac で `x64` です。Mac 側にも同じ相対パスの ZIP・PKG・SHA-256 が残ります。
-同期済みの Mac で直接ビルドする場合は、Mac 側のリポジトリルートで `bash scripts/macos/build-appstore-on-mac.sh` を実行します。この場合は2種類の `.p12` のパスワードを対話入力します。
+同期済みの Mac で直接ビルドする場合は、Mac 側のリポジトリルートで `bash scripts/macos/build-appstore-on-mac.sh` を実行します。この場合も、Mac 側の `scripts/macos/.env` または環境変数に証明書・Profile・署名 ID・パスワードを設定します。
 
 ## 2. 提出する成果物を確認する
 
@@ -77,9 +78,9 @@ App ZIP から展開したアプリを Mac 上で起動し、Sandbox 内での�
 ./scripts/macos/upload-appstore.sh --validate-only "$pkg"
 ```
 
-スクリプトはローカルの `.pkg.sha256` と PKG のハッシュを確認し、Mac 側の同名 PKG とも一致することを確認します。Mac 側の PKG がビルド後に上書きされて内容が変わっている場合は停止します。
+スクリプトはローカルの `.pkg.sha256` と PKG のハッシュを確認し、Mac 側の同名 PKG を実行専用の一時領域へコピーし、そのコピーとも一致することを確認します。Mac 側の PKG がビルド後に上書きされて内容が変わっている場合は停止します。
 PKG の署名、展開後の App の署名・Bundle ID・最低対応 macOS・一般ユーザーの読み取り権限を確認した後、[Apple のアップロード手順](https://developer.apple.com/help/app-store-connect/manage-builds/upload-builds/)に沿って `xcrun altool --validate-app` を実行します。
-ソース同期・再ビルド・PKG の転送・再署名は行わないため、対応する Mac 側の PKG とローカルの `.sha256` を保持してください。
+検証とアップロードには同じ一時コピーを使います。ソース同期・再ビルド・PKG の転送・再署名は行わないため、対応する Mac 側の PKG とローカルの `.sha256` を保持してください。
 
 ## 4. 検証した PKG をアップロードする
 
@@ -87,7 +88,7 @@ PKG の署名、展開後の App の署名・Bundle ID・最低対応 macOS・�
 ./scripts/macos/upload-appstore.sh "$pkg"
 ```
 
-同じ確認と `altool` による検証を再実行し、成功した場合だけアップロードします。指定した PKG を使用し、ビルドや同期は実行しません。
+同じ確認と `altool` による検証を再実行し、成功した場合だけ検証済みの一時コピーをアップロードします。元のビルド用 PKG が途中で変わっても、送信対象のコピーは変わりません。指定した PKG を使用し、ビルドや同期は実行しません。
 アップロード成功後も、Apple 側の処理が完了し、App Store Connect に対象ビルドが表示されることを確認します。アップロード完了と審査提出完了は別です。
 
 ## 5. 掲載情報を確認して審査に提出する
@@ -114,4 +115,4 @@ PKG の署名、展開後の App の署名・Bundle ID・最低対応 macOS・�
 ## 確認状況
 
 旧資料の 2026-10-29〜30 の記録では、`0.1.1` の署名済み App ZIP・PKG の生成、App Sandbox・署名・Profile・識別情報・読み取り権限・最低対応 macOS・回収後の SHA-256 を確認しています。読み取り権限と arm64 専用 App の最低対応 macOS の指摘を修正後、`altool --validate-app` はエラー 0 件でした。
-同記録では Sandbox 内の機能操作とアップロード・審査は未確認です。今回の整理では現行スクリプト・設定との照合を行っており、ビルド・Apple 側の検証・アップロードは再実行していません。
+同記録では Sandbox 内の機能操作とアップロード・審査は未確認です。今回の変更では設定の読み込みと PKG の一時コピーを使う検証・送信をローカルテストで確認しており、ビルド・Apple 側の検証・アップロードは再実行していません。

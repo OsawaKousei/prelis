@@ -43,7 +43,9 @@ Ubuntu 側の `scripts/windows/.env` に SSH 接続先を設定します。フ�
 - Mac に Xcode をインストールし、初回起動時のセットアップを完了します。Tauri のデスクトップ開発だけなら Command Line Tools でも構いませんが、現行の macOS ビルドスクリプトは `xcodebuild` を使うため Xcode 本体が必要です。[Tauri の macOS 前提条件](https://v2.tauri.app/start/prerequisites/#macos)も参照してください。
 - Mac 上でも Node.js・npm・Rust を準備し、開発に使うターミナルで `node`・`npm`・`cargo` が実行できることを確認します。Rust はホストの CPU に合う stable toolchain を使います。
 
-macOS への同期では `.nvmrc` を除外するため、Node.js のバージョンは Ubuntu 側の `.nvmrc` と[共通セットアップ](architecture.md#共通セットアップ)を確認して Mac に設定します。ビルドスクリプトは `/opt/homebrew/bin` を PATH に追加し、`node` が見つからない場合は fnm の `default` を使います。fnm を使う場合は、その既定バージョンも揃えます。
+macOS の同期・ビルドの接続先と作業パスは `scripts/macos/.env` の `PRELIS_MACOS_SSH_HOST`・`PRELIS_MACOS_REMOTE_ROOT` に設定します。[.env.example](../../scripts/macos/.env.example) を初回だけコピーして権限を `0600` にし、使用する環境の値を記入してください。署名に関するキーは配布ビルド時に設定します。
+
+`.nvmrc` も Mac へ同期します。Mac のビルドスクリプトはその Node.js の版を使い、fnm の `default` には依存しません。fnm を使う場合は事前にその版をインストールします。
 
 ## 開発起動と動作確認用ビルド
 
@@ -104,7 +106,7 @@ npm run dev:desktop
 
 `npm ci` は初回と依存変更時に、開発サーバーを停止した状態で実行します。Tauri CLI が Mac 上で Vite と Rust アプリを起動します。画面の操作は Mac 実機または画面共有で行います。
 
-ソースは Ubuntu 側で編集します。同期対象はルートの `package.json`・`package-lock.json`、デスクトップ・共有パッケージ・Mac 側のビルドスクリプトです。モバイル・Web・LP・ドキュメント・インフラ・他 OS のスクリプト・アイコン生成スクリプト・Git 管理情報・各 OS の Mutagen データ・認証情報・生成物は除外します。`node_modules` と Rust の `target` は Mac 側で生成して再利用します。
+ソースは Ubuntu 側で編集します。同期対象はルートの `package.json`・`package-lock.json`、デスクトップ・共有パッケージ・Mac 側のビルドスクリプトと `.nvmrc` です。モバイル・Web・LP・ドキュメント・インフラ・他 OS のスクリプト・アイコン生成スクリプト・Git 管理情報・各 OS の Mutagen データ・認証情報・生成物は除外します。`node_modules` と Rust の `target` は Mac 側で生成して再利用します。
 除外設定を変更しても、以前に Mac 側へ同期した不要なファイルは自動削除されません。不要ディレクトリが残ってスクリプトが停止した場合は、同期先の内容を確認・整理して再実行します。
 
 ### フロントエンドだけを確認する
@@ -194,7 +196,7 @@ DMG を作成した場合は、マウントしてアプリと `Applications` リ
 | Windows の WebView2 同梱方式・WiX テンプレート・NSIS のインストーラー／アンインストーラー用アイコン | `apps/desktop/src-tauri/tauri.conf.json` の `bundle.windows` |
 | Windows MSI のユーザー単位インストール | `apps/desktop/src-tauri/wix/per-user.wxs` |
 | macOS の配布先別設定 | `apps/desktop/src-tauri/tauri.appstore.conf.json`・`tauri.github.conf.json` |
-| macOS の Mac App Store 用権限 | `apps/desktop/src-tauri/Entitlements.appstore.plist` |
+| macOS の Mac App Store 用権限 | `apps/desktop/src-tauri/Entitlements.appstore.plist` を元に `signing/Entitlements.appstore.plist` を生成 |
 | ネイティブ API の権限とファイルアクセス範囲 | `apps/desktop/src-tauri/capabilities/default.json` |
 | Rust の依存・release 最適化 | `apps/desktop/src-tauri/Cargo.toml`・`Cargo.lock` |
 | 開発サーバー・ポート・HMR | `apps/desktop/vite.config.ts` |

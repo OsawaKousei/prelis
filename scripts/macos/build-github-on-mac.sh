@@ -1,22 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ $# -ne 1 || "$1" != --password-stdin || "$(uname -s)" != Darwin ]]; then
-  echo 'このスクリプトは build-github.sh から Mac 上で実行してください。' >&2
-  exit 2
-fi
-
+if [[ $# -ne 0 ]]; then echo '引数なしで実行してください。' >&2; exit 2; fi
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.sh"
+macos_native_init
+macos_build_environment
 umask 077
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-cd "$repo_root"
-export PATH="/opt/homebrew/bin:$HOME/.cargo/bin:$PATH"
-if ! command -v node >/dev/null 2>&1 && command -v fnm >/dev/null 2>&1; then
-  eval "$(fnm env --shell bash)"
-  fnm use default >/dev/null
-fi
-if [[ -z "${DEVELOPER_DIR:-}" && -d /Applications/Xcode.app/Contents/Developer ]]; then
-  export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
-fi
 for command_name in node npm cargo rustup xcodebuild security codesign ditto hdiutil shasum unzip openssl curl python3 lipo; do
   if ! command -v "$command_name" >/dev/null 2>&1; then
     echo "$command_name が必要です。" >&2
@@ -24,8 +13,9 @@ for command_name in node npm cargo rustup xcodebuild security codesign ditto hdi
   fi
 done
 
-certificate_source="$HOME/KUPACLLC-Developer-ID-Application.p12"
-identity='Developer ID Application: KUPAC LLC (GLQCJ8YF9S)'
+macos_require PRELIS_MACOS_GITHUB_CERTIFICATE PRELIS_MACOS_GITHUB_SIGNING_IDENTITY PRELIS_MACOS_TEAM_ID PRELIS_GITHUB_P12_PASSWORD
+certificate_source="$(macos_expand_path "$PRELIS_MACOS_GITHUB_CERTIFICATE")"
+identity="$PRELIS_MACOS_GITHUB_SIGNING_IDENTITY"
 bundle_root="$repo_root/apps/desktop/src-tauri/target/universal-apple-darwin/release/bundle"
 app="$bundle_root/macos/PrelisDesktop.app"
 if [[ ! -f "$certificate_source" ]]; then
@@ -45,7 +35,7 @@ done < <(security list-keychains -d user)
 
 stage="$(mktemp -d)"
 temporary_keychain="$stage/github.keychain-db"
-cleanup() {
+macos_signing_cleanup() {
   if [[ -n "$default_keychain" ]]; then
     security default-keychain -d user -s "$default_keychain" >/dev/null 2>&1 || true
   fi
@@ -55,7 +45,6 @@ cleanup() {
   security delete-keychain "$temporary_keychain" >/dev/null 2>&1 || true
   rm -rf -- "$stage"
 }
-trap cleanup EXIT
 
 keychain_password="$(openssl rand -hex 24)"
 security create-keychain -p "$keychain_password" "$temporary_keychain"
@@ -69,12 +58,10 @@ if [[ "$certificate_subject" != *'CN=Developer ID Certification Authority'* || "
 fi
 security import "$stage/DeveloperIDG2CA.cer" -k "$temporary_keychain" -t cert -f x509
 
-if ! IFS= read -r certificate_password || [[ -z "$certificate_password" ]]; then
-  echo '標準入力から Developer ID .p12 のパスワードを読み取れません。' >&2
-  exit 1
-fi
+certificate_password="$PRELIS_GITHUB_P12_PASSWORD"
 security import "$certificate_source" -k "$temporary_keychain" -f pkcs12 -P "$certificate_password" -T /usr/bin/codesign
 unset certificate_password
+unset PRELIS_GITHUB_P12_PASSWORD PRELIS_APPSTORE_P12_PASSWORD PRELIS_APPSTORE_INSTALLER_P12_PASSWORD
 security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$temporary_keychain" >/dev/null
 unset keychain_password
 security list-keychains -d user -s "$temporary_keychain" "${keychains[@]}" /System/Library/Keychains/SystemRootCertificates.keychain /Library/Keychains/System.keychain
@@ -85,13 +72,12 @@ if [[ "$available_identities" != *"\"$identity\""* ]]; then
   echo "Developer ID 署名 ID が見つかりません: $identity" >&2
   exit 1
 fi
-identity_hash="$(printf '%s\n' "$available_identities" | awk '/Developer ID Application: KUPAC LLC/ {print $2; exit}')"
+identity_hash="$(printf '%s\n' "$available_identities" | awk -v wanted="\"$identity\"" 'index($0,wanted) {print $2; exit}')"
 security find-certificate -c "$identity" -p "$temporary_keychain" > "$stage/leaf.pem"
 security verify-cert -c "$stage/leaf.pem" -k "$temporary_keychain" -p codeSign
 
 export APPLE_SIGNING_IDENTITY="$identity_hash"
 unset APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID APPLE_API_KEY APPLE_API_ISSUER APPLE_API_KEY_PATH
-xcodebuild -version
 rustup target add aarch64-apple-darwin x86_64-apple-darwin
 umask 022
 npm ci
@@ -106,15 +92,17 @@ if [[ -e "$app/Contents/embedded.provisionprofile" ]]; then
   echo 'GitHub 用 App に App Store Provisioning Profile が含まれています。' >&2
   exit 1
 fi
+macos_verify_app "$app"
 chmod -R a+rX "$app"
 codesign --verify --deep --strict --verbose=2 "$app"
 signature="$(codesign -dv --verbose=4 "$app" 2>&1)"
-if [[ "$signature" != *"Authority=$identity"* || "$signature" != *'TeamIdentifier=GLQCJ8YF9S'* || "$signature" != *'runtime'* || "$signature" != *'Timestamp='* ]]; then
+if [[ "$signature" != *"Authority=$identity"* || "$signature" != *"TeamIdentifier=$PRELIS_MACOS_TEAM_ID"* || "$signature" != *'runtime'* || "$signature" != *'Timestamp='* ]]; then
   echo 'Developer ID 署名、Team ID、Hardened Runtime、またはタイムスタンプを確認できません。' >&2
   exit 1
 fi
 bundle_id="$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$app/Contents/Info.plist")"
-if [[ "$bundle_id" != 'jp.co.kupacllc.prelis' ]]; then
+expected_bundle_id="$(python3 -c 'import json; print(json.load(open("apps/desktop/src-tauri/tauri.conf.json"))["identifier"])')"
+if [[ "$bundle_id" != "$expected_bundle_id" ]]; then
   echo "Bundle ID が一致しません: $bundle_id" >&2
   exit 1
 fi
@@ -135,7 +123,6 @@ if entitlements.get('com.apple.security.app-sandbox'):
 PY
 fi
 
-version="$(node -p 'require("./apps/desktop/src-tauri/tauri.conf.json").version')"
 zip_name="PrelisDesktop_${version}_universal.app.zip"
 dmg_name="PrelisDesktop_${version}_universal.dmg"
 ditto -c -k --sequesterRsrc --keepParent "$app" "$stage/$zip_name"

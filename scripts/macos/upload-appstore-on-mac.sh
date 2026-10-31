@@ -1,35 +1,31 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ $# -ne 5 || "$(uname -s)" != Darwin ]]; then
-  echo 'このスクリプトは upload-appstore.sh から Mac 上で実行してください。' >&2
-  exit 2
-fi
-
+if [[ $# -ne 3 ]]; then echo 'このスクリプトは upload-appstore.sh から実行してください。' >&2; exit 2; fi
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.sh"
+macos_native_init
+macos_require PRELIS_APPSTORE_API_KEY_ID PRELIS_APPSTORE_API_ISSUER_ID PRELIS_MACOS_INSTALLER_SIGNING_IDENTITY
 filename="$1"
 expected_hash="$2"
-api_key="$3"
-api_issuer="$4"
-mode="$5"
+mode="$3"
+api_key="$PRELIS_APPSTORE_API_KEY_ID"
+api_issuer="$PRELIS_APPSTORE_API_ISSUER_ID"
 if [[ ! "$filename" =~ ^PrelisDesktop_[A-Za-z0-9.+-]+_(aarch64|x64|universal)_appstore\.pkg$ || ! "$expected_hash" =~ ^[0-9a-f]{64}$ || ! "$api_key" =~ ^[A-Z0-9]{10}$ || ! "$api_issuer" =~ ^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$ || ( "$mode" != validate-only && "$mode" != upload ) ]]; then
   echo 'PKG 名、SHA-256、または API キー情報が不正です。' >&2
   exit 2
 fi
 
-pkg="$HOME/prelis-remote/apps/desktop/src-tauri/target/release/bundle/appstore/$filename"
+source_pkg="$repo_root/apps/desktop/src-tauri/target/release/bundle/appstore/$filename"
 key_file="$HOME/.appstoreconnect/private_keys/AuthKey_${api_key}.p8"
-installer_identity='3rd Party Mac Developer Installer: KUPAC LLC (GLQCJ8YF9S)'
+installer_identity="$PRELIS_MACOS_INSTALLER_SIGNING_IDENTITY"
 
-if [[ ! -f "$pkg" ]]; then
-  echo "Mac 上に提出対象の PKG が見つかりません: $pkg" >&2
+if [[ ! -f "$source_pkg" ]]; then
+  echo "Mac 上に提出対象の PKG が見つかりません: $source_pkg" >&2
   exit 1
 fi
 if [[ ! -f "$key_file" || ! -r "$key_file" ]]; then
   echo "App Store Connect API キーが読み取れません: $key_file" >&2
   exit 1
-fi
-if [[ -z "${DEVELOPER_DIR:-}" && -d /Applications/Xcode.app/Contents/Developer ]]; then
-  export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
 fi
 for command_name in xcrun pkgutil shasum python3 lipo codesign; do
   if ! command -v "$command_name" >/dev/null 2>&1; then
@@ -38,6 +34,9 @@ for command_name in xcrun pkgutil shasum python3 lipo codesign; do
   fi
 done
 
+stage="$(mktemp -d)"
+pkg="$stage/$filename"
+cp "$source_pkg" "$pkg"
 actual_hash="$(shasum -a 256 "$pkg" | awk '{print $1}')"
 if [[ "$actual_hash" != "$expected_hash" ]]; then
   echo 'ローカルと Mac 上の PKG の SHA-256 が一致しません。' >&2
@@ -50,11 +49,10 @@ if [[ "$signature" != *"$installer_identity"* || "$signature" != *'Status: signe
   exit 1
 fi
 
-stage="$(mktemp -d)"
-trap 'rm -rf -- "$stage"' EXIT
 pkgutil --expand-full "$pkg" "$stage/expanded"
-python3 - "$stage/expanded" <<'PY'
-import pathlib, plistlib, subprocess, sys, xml.etree.ElementTree as ET
+expected_bundle_id="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["identifier"])' "$repo_root/apps/desktop/src-tauri/tauri.appstore.conf.json")"
+python3 - "$stage/expanded" "$expected_bundle_id" "$filename" <<'PY'
+import pathlib, plistlib, re, subprocess, sys, xml.etree.ElementTree as ET
 
 root = pathlib.Path(sys.argv[1])
 if not (root / 'Distribution').is_file():
@@ -63,7 +61,7 @@ infos = list(root.rglob('PackageInfo'))
 if len(infos) != 1:
     raise SystemExit(f'PKG の PackageInfo が 1 件ではありません: {len(infos)}')
 info = ET.parse(infos[0]).getroot()
-if (info.get('identifier'), info.get('install-location')) != ('jp.co.kupac.prelis', '/Applications'):
+if (info.get('identifier'), info.get('install-location')) != (sys.argv[2], '/Applications'):
     raise SystemExit('PKG の Bundle ID またはインストール先が一致しません。')
 apps = list(root.rglob('PrelisDesktop.app'))
 if len(apps) != 1:
@@ -71,8 +69,11 @@ if len(apps) != 1:
 app = apps[0]
 with (app / 'Contents' / 'Info.plist').open('rb') as file:
     app_info = plistlib.load(file)
-if app_info.get('CFBundleIdentifier') != 'jp.co.kupac.prelis':
+if app_info.get('CFBundleIdentifier') != sys.argv[2]:
     raise SystemExit('PKG 内の App の Bundle ID が一致しません。')
+expected_version = re.fullmatch(r'PrelisDesktop_(.+)_(aarch64|x64|universal)_appstore\.pkg', sys.argv[3])[1]
+if app_info.get('CFBundleShortVersionString') != expected_version or info.get('version') != expected_version:
+    raise SystemExit('PKG のバージョンがファイル名と一致しません。')
 version = app_info.get('LSMinimumSystemVersion', '0')
 architectures = subprocess.check_output(['lipo', '-archs', str(app / 'Contents' / 'MacOS' / 'desktop')], text=True).split()
 if 'arm64' in architectures and 'x86_64' not in architectures and tuple(map(int, version.split('.'))) < (12, 0):

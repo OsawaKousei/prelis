@@ -8,8 +8,9 @@ fi
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 session_name=prelis-macos
-remote_host=kousei@192.168.10.22
-remote_root=prelis-remote
+source "$repo_root/scripts/macos/common.sh"
+macos_load_config
+macos_connection
 remote_endpoint="${remote_host}:${remote_root}"
 
 # Use a separate daemon: the Windows session needs an SSH wrapper that is
@@ -24,12 +25,12 @@ ignore_paths=(
   scripts/android scripts/ios scripts/linux scripts/mutagen-ssh scripts/windows
   scripts/macos/build-appstore.sh scripts/macos/build-macos.sh
   scripts/macos/create-macos-sync.sh scripts/macos/create-macos-sync.test.py
-  scripts/macos/read-appstore-env.mjs
+  scripts/macos/read-appstore-env.mjs scripts/macos/build-workflow.test.py
   scripts/sync.test.py
   packages/icons/scripts apps/desktop/public apps/desktop/src/assets/react.svg
   apps/desktop/src-tauri/gen apps/desktop/src-tauri/signing
-  '*.md' .gitignore .nvmrc LICENSE .DS_Store
-  node_modules Pods target dist build '*.tsbuildinfo' DerivedData
+  '*.md' .gitignore LICENSE .DS_Store
+  node_modules Pods target dist build '*.tsbuildinfo' DerivedData __pycache__
   .cxx .gradle .terraform .next '.mutagen*'
   .env '.env.*' .xcode.env.local
   '*.p12' '*.p8' '*.mobileprovision' '*.provisionprofile'
@@ -75,7 +76,12 @@ if grep -Fxq "$session_name" <<< "$sessions"; then
   fi
 fi
 
-ssh "${ssh_options[@]}" "$remote_host" 'mkdir -p "$HOME/prelis-remote"'
+if [[ "$remote_root" == /* ]]; then
+  remote_directory="$(macos_quote "$remote_root")"
+else
+  remote_directory="\"\$HOME\"/$(macos_quote "$remote_root")"
+fi
+ssh "${ssh_options[@]}" "$remote_host" "mkdir -p -- $remote_directory"
 
 if ! grep -Fxq "$session_name" <<< "$sessions"; then
   echo "Mutagen セッション $session_name を作成します。"
@@ -135,14 +141,16 @@ else
 fi
 wait_for_watching
 
-ssh "${ssh_options[@]}" "$remote_host" '
+remote_check='
   set -eu
-  remote="$HOME/prelis-remote"
-  for file in package.json package-lock.json apps/desktop/package.json apps/desktop/src-tauri/tauri.conf.json apps/desktop/src-tauri/tauri.github.conf.json packages/core/package.json packages/icons/package.json scripts/macos/build-on-mac.sh scripts/macos/build-appstore-on-mac.sh scripts/macos/build-github-on-mac.sh; do
+  remote="$1"
+  case "$remote" in /*) ;; *) remote="$HOME/$remote" ;; esac
+  for file in .nvmrc scripts/macos/common.sh scripts/macos/read-config.py package.json package-lock.json apps/desktop/package.json apps/desktop/src-tauri/tauri.conf.json apps/desktop/src-tauri/tauri.github.conf.json packages/core/package.json packages/icons/package.json scripts/macos/build-on-mac.sh scripts/macos/build-appstore-on-mac.sh scripts/macos/build-github-on-mac.sh; do
     test -f "$remote/$file" || { echo "必要な同期対象がありません: $file" >&2; exit 1; }
   done
   for path in .git apps/mobile apps/web docs docs-old infra lp scripts/android scripts/ios scripts/linux scripts/windows scripts/mutagen-ssh scripts/macos/.env; do
     test ! -e "$remote/$path" || { echo "不要な同期対象が残っています: $path" >&2; exit 1; }
   done
 '
+ssh "${ssh_options[@]}" "$remote_host" "bash -c $(macos_quote "$remote_check") -- $(macos_quote "$remote_root")"
 echo 'Mac 側の必要ファイルと不要ディレクトリの除外を確認しました。'

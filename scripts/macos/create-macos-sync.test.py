@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -99,6 +100,8 @@ class MacosSyncTest(unittest.TestCase):
         source = (SCRIPTS / self.script.name).read_text()
         source = re.sub(r'^remote_host=.*$', 'remote_host=unit@fake', source, flags=re.M)
         self.script.write_text(source)
+        for name in ('common.sh', 'read-config.py'):
+            shutil.copy2(SCRIPTS / name, scripts / name)
         binaries = self.root / 'bin'
         binaries.mkdir()
         for name in ('mutagen', 'ssh', 'timeout', 'sleep'):
@@ -110,6 +113,9 @@ class MacosSyncTest(unittest.TestCase):
             'PATH': str(binaries) + os.pathsep + self.environment['PATH'],
             'PRELIS_SYNC_TEST_ROOT': str(self.root),
             'MUTAGEN_SSH_PATH': '/unused-windows-ssh-wrapper',
+            'PRELIS_MACOS_SSH_HOST': 'unit@fake',
+            'PRELIS_MACOS_REMOTE_ROOT': 'prelis-remote',
+            'PRELIS_MACOS_ENV_FILE': str(self.root / 'absent.env'),
         })
         self.state_path = self.root / 'state.json'
         self.state_path.write_text('{}')

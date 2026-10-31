@@ -23,19 +23,25 @@ Apple の中間証明書取得・署名のタイムスタンプ付与・公証�
 
 ### 接続設定・署名ファイル・出力先
 
-接続先・Mac 側の作業パス・証明書のパス・署名 ID は現在のスクリプト内に固定されています。使用する環境に合わせて、次の設定箇所を揃えます。`.env` は SSH 接続先や証明書パスの設定には使いません。
+接続先・Mac 側の作業パス・証明書の所在・署名 ID・Team ID は、Git 管理と通常のソース同期から除外する `scripts/macos/.env` に設定します。[.env.example](../../../../scripts/macos/.env.example) はキーだけのテンプレートです。スクリプトへの環境固有の値の記入は不要です。
 
-| 設定する内容 | 設定箇所 |
+| 変数 | 用途 |
 | --- | --- |
-| ソース同期先 | `scripts/macos/create-macos-sync.sh` の接続先と同期先 |
-| ビルド・公証・アップロードの接続先と作業パス | 使用する `scripts/macos/*.sh` の SSH 接続先・リモートパス |
-| Developer ID の `.p12` と署名 ID | `scripts/macos/build-github-on-mac.sh` の `certificate_source`・`identity`、署名 ID の抽出と検証処理 |
-| App Store の `.p12`・Profile・署名 ID | `scripts/macos/build-appstore-on-mac.sh` の各入力パス・署名 ID と検証処理、`upload-appstore-on-mac.sh` の署名検証処理 |
-| Bundle ID・Team ID・App ID | 共通／配布先別 Tauri 設定、`Entitlements.appstore.plist`、各スクリプトの検証処理 |
+| `PRELIS_MACOS_SSH_HOST` | `user@host` 形式の SSH 接続先 |
+| `PRELIS_MACOS_REMOTE_ROOT` | Mac のホーム相対、または絶対パスの作業ディレクトリ（空白なし） |
+| `PRELIS_MACOS_GITHUB_CERTIFICATE`・`PRELIS_MACOS_GITHUB_SIGNING_IDENTITY` | Developer ID Application の `.p12` と署名 ID |
+| `PRELIS_MACOS_APPSTORE_CERTIFICATE`・`PRELIS_MACOS_APPSTORE_SIGNING_IDENTITY` | Apple Distribution の `.p12` と署名 ID |
+| `PRELIS_MACOS_INSTALLER_CERTIFICATE`・`PRELIS_MACOS_INSTALLER_SIGNING_IDENTITY` | Mac Installer Distribution の `.p12` と署名 ID |
+| `PRELIS_MACOS_APPSTORE_PROFILE` | App Store 用 Provisioning Profile |
+| `PRELIS_MACOS_TEAM_ID` | 署名・Profile に対応する Team ID |
+| `PRELIS_MACOS_DEVELOPER_DIR` | Xcode の Developer ディレクトリ。未指定なら OS の選択に従う |
+
+証明書と Profile のパスは絶対パスか `~/` で指定します。`.env` 内で `$HOME` などの変数展開は行いません。Bundle ID はアプリの Tauri 設定から取得し、App Store の Team ID を含む Entitlements はビルド時に Git 管理対象外の `signing/` へ生成します。
+接続先や作業パスを変更して既存の同期セッションと一致しなくなった場合は、安全のため停止します。旧セッションの同期元・同期先を確認し、そのセッションを終了してから再実行してください。
 
 必要な秘密鍵を含む証明書を `.p12` として Mac に用意し、権限を `0600` にします。署名 ID と検証に使う識別情報は、その証明書とアプリの登録内容に一致させます。
 現行スクリプトは既定の `apps/desktop/src-tauri/target/` を前提にしています。`CARGO_TARGET_DIR` と Cargo の `build.target-dir` を設定している場合は、ビルド環境で既定の出力先に戻してください。
-macOS の成果物は `target/` 配下に保持し、Linux・Windows のような `dist/<OS>/v<version>/` への自動集約は行いません。
+公証前と確認用の成果物は `target/` に保持します。公証後の直接頒布用 ZIP・DMG・`SHA256SUMS` は `dist/macos/v<version>/` に集約します。成果物と署名用の生成物は Git 管理対象外です。
 
 ### パスワードと API キー
 
@@ -54,7 +60,7 @@ chmod 600 scripts/macos/.env
 | `PRELIS_APPSTORE_API_KEY_ID` | 公証・App Store Connect アップロード用の Key ID |
 | `PRELIS_APPSTORE_API_ISSUER_ID` | 同じ API キーの Issuer ID |
 
-実行する工程で必要な値を設定します。[読み込み処理](../../../../scripts/macos/read-appstore-env.mjs)は環境変数を優先し、`.env` をシェルコードとして実行せず、許可したキーだけを読み込みます。`.env` が存在する場合は権限 `0600` が必要です。パスワードは SSH の標準入力で Mac へ渡します。
+実行する工程で必要な値を設定します。[読み込み処理](../../../../scripts/macos/read-config.py)は環境変数を優先し、`.env` をシェルコードとして実行せず、許可したキーだけを読み込みます。`.env` が存在する場合は権限 `0600` が必要です。設定とパスワードは、実行するスクリプトとともに SSH の標準入力で Mac へ渡し、Mac の一時 `.env` から読み込みます。一時ファイルはその処理の終了時に削除します。設定値をリモートコマンドの引数に埋め込みません。
 
 公証にはチーム用の App Store Connect API キーを用意します。現行スクリプトは Key ID・Issuer ID と、Mac 上の `~/.appstoreconnect/private_keys/AuthKey_<KEY_ID>.p8` を使います。秘密鍵の内容を `.env` に複製したり Ubuntu にコピーしたりする必要はありません。
 `.p12`・`.p8`・`.env` は Git 管理とソース同期から除外します。
@@ -86,27 +92,36 @@ App の署名・Team ID・Hardened Runtime・タイムスタンプ・Bundle ID�
 ./scripts/macos/notarize-github.sh
 ```
 
-スクリプトはソース同期や再ビルドを行わず、Ubuntu と Mac にある公証前 ZIP・DMG の SHA-256 が一致することを確認します。対応する Mac 側の `.app` も残しておきます。
+スクリプトはソース同期や再ビルドを行わず、Ubuntu と Mac にある公証前 ZIP・DMG の SHA-256 が一致することを確認します。Mac 側の同じ ZIP から App を展開して処理するため、ビルド用ディレクトリの `.app` の上書きには依存しません。
 [Apple の公証手順](https://developer.apple.com/documentation/security/customizing-the-notarization-workflow)に従い、ZIP と DMG を `notarytool` でそれぞれ申請し、両方の結果を約20秒ごとに確認します。両方が `Accepted` になった後、App にチケットを付与して ZIP を作り直し、DMG にもチケットを付与します。
 `stapler validate`・署名検証・DMG の整合性・App の `spctl --assess` が成功した後、最終成果物を Ubuntu へ回収して SHA-256 を照合します。
 
-最終成果物は前節の `github/` 内の `notarized/` に、同名の ZIP・DMG と `SHA256SUMS` として保存します。公証前のファイルは `github/` に保持します。公開対象には `notarized/` の成果物を使います。
+Mac 側の作業用成果物は前節の `github/notarized/` に残します。Ubuntu 側では、元のビルドとの対応と全ファイルの SHA-256 を確認してから、同名の ZIP・DMG と `SHA256SUMS` を `dist/macos/v<version>/` に保存します。その後、同じ3ファイルを Mac 側のリポジトリの `dist/macos/v<version>/` にも自動配置します。Mac でも転送後の SHA-256 を照合し、一式を置き換えます。配置に失敗した場合は以前の一式を復元します。公証前のファイルは `target/` の `github/` に保持します。
 通信断や処理失敗後は、再ビルドせず同じコマンドを再実行します。Mac 側の `notarized/` にハッシュに対応した申請 ID を保存しているため、同じ入力なら保存済み申請を再利用します。同じビルドの公証済み成果物が揃い、ハッシュとチケット検証が通る場合は再申請を省きます。Apple が拒否した場合は、表示された公証ログを確認して修正・再ビルドします。
 
 ## 3. 公証済み成果物と起動を確認する
 
+公証後の Mac への配置だけを再実行する場合や、既存の公証済み成果物を検証用 Mac に配置する場合は、Ubuntu 側で次を実行します。接続先は `.env` の設定に従います。公証・再ビルド・ソース同期は行いません。
+
+```sh
+./scripts/macos/sync-release.sh
+```
+
+引数を省略すると現在の `tauri.conf.json` の版を使います。過去版は `sync-release.sh <version>` と指定します。Ubuntu の `dist/macos/v<version>/` にある ZIP・DMG・`SHA256SUMS` が必要です。公証後の Mac への配置に失敗しても、Ubuntu 側に保存済みの成果物は残るため、このコマンドで再転送できます。
+
 Ubuntu 側で、公開する ZIP・DMG のハッシュを確認します。
 
 ```sh
-bundle=apps/desktop/src-tauri/target/universal-apple-darwin/release/bundle/github/notarized
+version="$(node -p 'require("./apps/desktop/src-tauri/tauri.conf.json").version')"
+bundle="dist/macos/v$version"
 (cd "$bundle" && sha256sum -c SHA256SUMS)
 ```
 
-その成果物を検証用 Mac に渡します。以下は、Mac 側のリポジトリルートで実行する例です。
+自動配置した成果物を Mac で確認します。別の検証用 Mac を使う場合も `.env` の接続先・作業パスをその Mac に合わせ、上記のコマンドで配置できます。以下は、Mac 側のリポジトリルートで実行する例です。
 
 ```sh
 version="$(node -p 'require("./apps/desktop/src-tauri/tauri.conf.json").version')"
-bundle=apps/desktop/src-tauri/target/universal-apple-darwin/release/bundle/github/notarized
+bundle="dist/macos/v$version"
 verification_dir="$(mktemp -d)"
 ditto -x -k "$bundle/PrelisDesktop_${version}_universal.app.zip" "$verification_dir"
 app="$verification_dir/PrelisDesktop.app"
@@ -135,7 +150,7 @@ open "$app"
 2. GitHub Releases に、動作確認した公証済み ZIP・DMG と対応する `SHA256SUMS` を添付します。
 3. リリースノートに対応 CPU、確認した macOS、インストール方法、既知の問題を記載します。
 
-公開資料は [GitHub Releases の公開資料](../../../../dist/github-release/README.md)の構成に合わせます。成果物は `target/` に保持し、秘密鍵・`.p12`・`.p8`・`.env` は公開物に含めません。公開済みの同じ版を内容だけ変えて再頒布せず、修正時はバージョンを上げて作り直します。
+公開資料は [GitHub Releases の公開資料](../../../../dist/github-release/README.md)の構成に合わせます。公開する成果物は `dist/macos/v<version>/` に保持し、秘密鍵・`.p12`・`.p8`・`.env` は公開物に含めません。公開済みの同じ版を内容だけ変えて再頒布せず、修正時はバージョンを上げて作り直します。
 
 ## トラブルシュート
 
@@ -147,7 +162,22 @@ open "$app"
 | 公証が拒否された | 公証ログの指摘を修正し、新しい成果物をビルドする |
 | SSH 経由で DMG 作成が止まる | Tauri に DMG を直接作らせず、`build-github.sh` の `hdiutil` による生成を使う |
 
+## 同時実行とローカル検証
+
+Ubuntu 側はリポジトリ内の `.mutagen-macos/build.lock`、Mac 側はユーザーの `~/.prelis-macos-build.lock` を使い、ビルド・公証・アップロードの重複起動を拒否します。通常終了・エラー・中断ではロックと一時ファイルを片付けます。強制終了などでロックが残った場合は、関連する処理が終了していることを確認してから空のロックディレクトリを `rmdir` で削除します。
+
+ビルド前に Cargo の実際の出力先が既定の `src-tauri/target` と一致すること、Node.js が同期した `.nvmrc` の版であることを確認します。ビルド後は App 内のバージョンも照合します。fnm を使う場合は、事前に `.nvmrc` の版をインストールしてください。
+
+以下のテストは SSH・署名・Apple への送信を代替し、実機のビルドや公証を行いません。
+
+```sh
+python3 scripts/macos/build-workflow.test.py
+python3 scripts/macos/create-macos-sync.test.py
+```
+
+設定の安全な読み込み、二重起動の拒否、Cargo 出力先と App の版の不整合、公証後の集約、改変された成果物の拒否、配置失敗時の復元、PKG の検証・送信に使うコピーの一致を確認します。
+
 ## 確認状況
 
 旧資料の 2026-10-30 の記録では、`0.1.1` の Universal App ZIP・DMG の生成、Developer ID 署名、Hardened Runtime・タイムスタンプ、両 CPU の収録、Profile の不在、DMG の整合性、回収後の SHA-256 を確認しています。公証申請と別の Mac での起動は未確認です。
-今回の整理では現行スクリプト・設定との照合を行っており、ビルド・公証・実機操作は再実行していません。
+今回の変更は上記のローカルテストで確認しています。署名付きビルド・公証・実機操作は再実行していません。
