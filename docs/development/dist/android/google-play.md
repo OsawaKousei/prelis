@@ -14,7 +14,7 @@
 | --- | --- |
 | パッケージ名 | `jp.co.kupacllc.prelis` |
 | ストア向け表示バージョン / ビルド番号 | 現行設定は `1.0.1` / `2`。提出履歴に続く番号を使用する |
-| 提出用 AAB | `dist/android/prelis-play.aab` |
+| 提出用 AAB | `dist/android/v<version>/PrelisMobile_<version>_play.aab` |
 | アップロード鍵 | 既定は `~/keys/play-upload.jks`、別名 `play-upload` |
 | 直接頒布 APK のアプリ署名鍵 | 既定は `~/keys/app-signing.jks`、別名 `app-signing` |
 | 掲載文・画像 | `dist/play-store/text.md` と同ディレクトリの画像 |
@@ -26,8 +26,8 @@ AAB はローカルのアップロード鍵で署名し、Google Play はアプ�
 
 | 確認する証明書 | 照合先 |
 | --- | --- |
-| Console のアップロード鍵の証明書 | `play-upload.jks` と `prelis-play.aab` の SHA-256 |
-| Console のアプリ署名鍵の証明書 | 既存の配信 APK。直接頒布との相互更新を提供する場合は `app-signing.jks` と `prelis-github.apk` の SHA-256 も照合 |
+| Console のアップロード鍵の証明書 | `play-upload.jks` と `PrelisMobile_<version>_play.aab` の SHA-256 |
+| Console のアプリ署名鍵の証明書 | 既存の配信 APK。直接頒布との相互更新を提供する場合は `app-signing.jks` と `PrelisMobile_<version>_github.apk` の SHA-256 も照合 |
 
 初回の Play アプリ署名設定で直接頒布と共通の鍵を使う場合は、Console の既存キーのエクスポート・アップロード手順に従い、アプリ署名鍵を登録します。鍵の転送には Console が案内する PEPK などの手順を使います。通常の AAB 提出ではキーストアやパスワードを添付しません。
 既に登録済みの場合は登録内容を確認し、公開作業のたびに鍵を変更しません。Google 生成の鍵を使っている場合は、[更新互換性の制約](sign.md#play-と直接頒布の更新互換性)を確認します。
@@ -36,10 +36,14 @@ AAB はローカルのアップロード鍵で署名し、Google Play はアプ�
 
 ```sh
 npm run build:android:play
-jarsigner -verify dist/android/prelis-play.aab
-keytool -printcert -jarfile dist/android/prelis-play.aab
-unzip -t dist/android/prelis-play.aab
-sha256sum dist/android/prelis-play.aab
+version="$(node -p 'require("./apps/mobile/app.json").expo.version')"
+release_dir="dist/android/v${version}"
+aab="${release_dir}/PrelisMobile_${version}_play.aab"
+# 既定の鍵・別名の例。変更している場合は実際の値に置き換える
+jarsigner -verify -strict -keystore "$HOME/keys/play-upload.jks" "$aab" play-upload
+keytool -printcert -jarfile "$aab"
+unzip -t "$aab"
+(cd "$release_dir" && sha256sum -c SHA256SUMS)
 ```
 
 直接頒布用 APK も同時に必要なら、ビルドコマンドを `npm run build:android:all` に置き換えます。ビルド元のコミットとタグ、公開バージョン・`versionCode`、AAB の SHA-256、アップロード証明書の SHA-256、動作確認の記録を残します。
@@ -50,7 +54,7 @@ Release では R8 を有効にしています。調査用に `apps/mobile/androi
 ## 2. テストトラックへアップロードする
 
 1. Play Console で対象アプリを開き、内部テストまたは対象のクローズドテストトラックを選び、リリースを作成します。
-2. 確認した `prelis-play.aab` をアップロードします。リリース名と変更内容を入力し、Console が読み取ったパッケージ名・表示バージョン・`versionCode`・対象 SDK・対応端末を確認します。
+2. 確認した `PrelisMobile_<version>_play.aab` をアップロードします。リリース名と変更内容を入力し、Console が読み取ったパッケージ名・表示バージョン・`versionCode`・対象 SDK・対応端末を確認します。
 3. アップロード証明書の不一致、使用済みの `versionCode`、API レベル・ネイティブライブラリの互換性などのエラーを解消します。警告は理由と影響を確認します。
 4. テスターのアカウントやグループを登録し、テスト版を公開します。参加リンクと配信状況を確認します。
 

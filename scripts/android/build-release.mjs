@@ -1,15 +1,21 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
-import { X509Certificate } from 'node:crypto';
-import { existsSync, mkdtempSync, mkdirSync, copyFileSync, renameSync, rmSync, readFileSync } from 'node:fs';
+import { createHash, X509Certificate } from 'node:crypto';
+import { accessSync, constants, existsSync, mkdtempSync, mkdirSync, copyFileSync, realpathSync, rmSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { basename, join } from 'node:path';
+import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { publishRelease, readReleaseInfo, validateDestination } from './release-output.mjs';
 
 const repoRoot = fileURLToPath(new URL('../../', import.meta.url));
 const androidDir = join(repoRoot, 'apps/mobile/android');
 const envFile = fileURLToPath(new URL('./.env', import.meta.url));
 const mode = process.argv[2];
+if (!['play', 'github', 'all', 'check'].includes(mode) || process.argv.length !== 3) {
+  console.error('使い方: node scripts/android/build-release.mjs play|github|all|check');
+  process.exit(2);
+}
+const jdkTool = name => process.env.JAVA_HOME ? join(process.env.JAVA_HOME, 'bin', name) : name;
 const allowedEnv = new Set([
   'PRELIS_PLAY_KEYSTORE', 'PRELIS_PLAY_KEY_ALIAS',
   'PRELIS_PLAY_STORE_PASSWORD', 'PRELIS_PLAY_KEY_PASSWORD',
@@ -57,7 +63,6 @@ const options = {
     keyPassword: process.env.PRELIS_PLAY_KEY_PASSWORD,
     task: ':app:bundleRelease',
     source: 'app/build/outputs/bundle/release/app-release.aab',
-    destination: 'prelis-play.aab',
   },
   github: {
     keystore: process.env.PRELIS_APP_KEYSTORE || join(homedir(), 'keys/app-signing.jks'),
@@ -66,22 +71,22 @@ const options = {
     keyPassword: process.env.PRELIS_APP_KEY_PASSWORD,
     task: ':app:assembleRelease',
     source: 'app/build/outputs/apk/release/app-release.apk',
-    destination: 'prelis-github.apk',
   },
 };
 
-function run(command, args, { cwd = androidDir, env = process.env, input, inherit = false } = {}) {
+function run(command, args, { cwd = androidDir, env = process.env, inherit = false, timeout = 60_000 } = {}) {
   const result = spawnSync(command, args, {
     cwd,
     env: { ...env, LC_ALL: 'C' },
-    input,
     encoding: 'utf8',
     stdio: inherit ? 'inherit' : 'pipe',
+    timeout,
+    maxBuffer: 4 * 1024 * 1024,
   });
   if (result.error) fail(`${basename(command)} を起動できません: ${result.error.message}`);
   if (result.status !== 0) {
-    if (!inherit) process.stderr.write(result.stderr || '');
-    fail(`${basename(command)} が失敗しました (終了コード ${result.status})。`);
+    if (!inherit) process.stderr.write((result.stdout || '') + (result.stderr || ''));
+    fail(`${basename(command)} が失敗しました (${result.signal || `終了コード ${result.status}`})。`);
   }
   return result.stdout;
 }
@@ -91,9 +96,10 @@ function fingerprint(value) {
 }
 
 function keystoreFingerprint(config) {
-  const pem = run('keytool', [
+  const pem = run(jdkTool('keytool'), [
     '-exportcert', '-rfc', '-keystore', config.keystore, '-alias', config.alias,
-  ], { input: `${config.storePassword}\n` });
+    '-storepass:env', 'ANDROID_SIGNING_STORE_PASSWORD',
+  ], { env: signingEnv(config) });
   try {
     return fingerprint(new X509Certificate(pem).fingerprint256);
   } catch {
@@ -101,84 +107,141 @@ function keystoreFingerprint(config) {
   }
 }
 
-function artifactFingerprint(config, artifact) {
-  if (mode === 'play') {
-    const verified = run('jarsigner', ['-verify', artifact]);
-    if (!verified.includes('jar verified.')) fail('AAB の JAR 署名を確認できませんでした。');
-    const details = run('keytool', ['-printcert', '-jarfile', artifact]);
-    const match = details.match(/SHA256:\s*([0-9A-Fa-f:]{64,95})/);
-    if (!match) fail('AAB の署名証明書を読み取れませんでした。');
-    return fingerprint(match[1]);
-  }
-
+function apksignerPath() {
   const sdkRoot = process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT;
   if (!sdkRoot) fail('ANDROID_HOME または ANDROID_SDK_ROOT を設定してください。');
   const apksigner = join(sdkRoot, 'build-tools/37.0.0/apksigner');
   if (!existsSync(apksigner)) fail(`apksigner が見つかりません: ${apksigner}`);
-  const verified = run(apksigner, ['verify', '--verbose', '--print-certs', artifact]);
+  return apksigner;
+}
+
+function verifyJar(config, artifact, expected) {
+  // Trust the configured certificate explicitly, so Android self-signed keys
+  // pass strict verification without suppressing unsigned-entry/signer errors.
+  run(jdkTool('jarsigner'), [
+    '-verify', '-strict', '-keystore', config.keystore,
+    '-storepass:env', 'ANDROID_SIGNING_STORE_PASSWORD', artifact, config.alias,
+  ], { env: signingEnv(config) });
+  run(jdkTool('java'), [join(repoRoot, 'scripts/android/verify-jar.java'), artifact, expected]);
+}
+
+function verifyArtifact(name, config, artifact, expected) {
+  if (name === 'play') {
+    verifyJar(config, artifact, expected);
+    return;
+  }
+  const verified = run(apksignerPath(), ['verify', '--verbose', '--print-certs', artifact]);
   const matches = [...verified.matchAll(/Signer(?: #\d+)?: certificate SHA-256 digest: ([0-9a-fA-F]{64})/g)];
   const certificates = new Set(matches.map(match => fingerprint(match[1])));
-  if (!verified.includes('Number of signers: 1') || certificates.size !== 1) {
+  if (!/^Number of signers: 1\s*$/m.test(verified) || certificates.size !== 1) {
     fail('APK の署名証明書を一意に確認できませんでした。');
   }
-  return [...certificates][0];
+  if ([...certificates][0] !== expected) fail('APK の署名証明書が指定した鍵と一致しません。');
 }
 
-if ((!Object.hasOwn(options, mode) && mode !== 'check') || process.argv.length !== 3) {
-  console.error('使い方: node scripts/android/build-release.mjs play|github|check');
-  process.exit(2);
-}
-
-function validateConfig(config, modeName) {
-  if (!existsSync(config.keystore)) fail(`キーストアが見つかりません: ${config.keystore}`);
-  if (!config.storePassword || !config.keyPassword) {
-    const prefix = modeName === 'play' ? 'PRELIS_PLAY' : 'PRELIS_APP';
-    fail(`${prefix}_STORE_PASSWORD と ${prefix}_KEY_PASSWORD を scripts/android/.env または環境変数に設定してください。`);
-  }
-  return keystoreFingerprint(config);
-}
-
-try {
-  if (mode === 'check') {
-    for (const [name, config] of Object.entries(options)) validateConfig(config, name);
-    console.log('Play 用と GitHub 用の署名設定を確認しました。');
-    process.exit(0);
-  }
-
-  const config = options[mode];
-  const expected = validateConfig(config, mode);
-  const env = {
+function signingEnv(config) {
+  return {
     ...process.env,
     ANDROID_SIGNING_STORE_FILE: config.keystore,
     ANDROID_SIGNING_STORE_PASSWORD: config.storePassword,
     ANDROID_SIGNING_KEY_ALIAS: config.alias,
     ANDROID_SIGNING_KEY_PASSWORD: config.keyPassword,
   };
+}
 
-  // Gradle may clean dependency Codegen output before Ninja cleans the app.
-  // Drop the generated app CMake state first so clean cannot reconfigure it
-  // against JNI sources that have just been removed.
-  rmSync(join(androidDir, 'app', '.cxx'), { recursive: true, force: true });
-  rmSync(join(androidDir, 'app', 'build', 'intermediates', 'cxx'), { recursive: true, force: true });
-  run('./gradlew', ['clean', config.task, '--no-daemon'], { env, inherit: true });
-  const source = join(androidDir, config.source);
-  if (!existsSync(source)) fail(`ビルド成果物が見つかりません: ${source}`);
-  const actual = artifactFingerprint(config, source);
-  if (actual !== expected) fail(`${config.destination} の署名証明書が指定した鍵と一致しません。`);
+function checkTools(names) {
+  run(jdkTool('java'), ['-version']);
+  run(jdkTool('jar'), ['--version']);
+  run(jdkTool('keytool'), ['-help']);
+  run(jdkTool('jarsigner'), ['-help']);
+  accessSync(join(androidDir, 'gradlew'), constants.X_OK);
+  if (names.includes('github')) run(apksignerPath(), ['--version']);
+}
 
-  const outputDir = process.env.PRELIS_ANDROID_OUTPUT_DIR || join(repoRoot, 'dist/android');
-  mkdirSync(outputDir, { recursive: true });
-  const stagingDir = mkdtempSync(join(outputDir, '.stage-'));
-  try {
-    const staged = join(stagingDir, config.destination);
-    copyFileSync(source, staged);
-    renameSync(staged, join(outputDir, config.destination));
-  } finally {
-    rmSync(stagingDir, { recursive: true, force: true });
+function validateConfig(config, modeName, temporary) {
+  config.keystore = resolve(config.keystore);
+  if (!existsSync(config.keystore) || !statSync(config.keystore).isFile()) {
+    fail(`キーストアが見つかりません: ${config.keystore}`);
   }
-  console.log(`署名を確認しました (SHA-256: ${actual})`);
-  console.log(`成果物: ${join(outputDir, config.destination)}`);
+  accessSync(config.keystore, constants.R_OK);
+  if (!config.storePassword || !config.keyPassword) {
+    const prefix = modeName === 'play' ? 'PRELIS_PLAY' : 'PRELIS_APP';
+    fail(`${prefix}_STORE_PASSWORD と ${prefix}_KEY_PASSWORD を scripts/android/.env または環境変数に設定してください。`);
+  }
+  const expected = keystoreFingerprint(config);
+  const probe = join(temporary, `probe-${modeName}`);
+  mkdirSync(probe);
+  writeFileSync(join(probe, 'probe.txt'), 'Prelis Android signing preflight\n');
+  const archive = join(probe, 'probe.jar');
+  run(jdkTool('jar'), ['--create', '--file', archive, '-C', probe, 'probe.txt']);
+  run(jdkTool('jarsigner'), [
+    '-keystore', config.keystore,
+    '-storepass:env', 'ANDROID_SIGNING_STORE_PASSWORD',
+    '-keypass:env', 'ANDROID_SIGNING_KEY_PASSWORD', archive, config.alias,
+  ], { env: signingEnv(config) });
+  verifyJar(config, archive, expected);
+  return expected;
+}
+
+let temporary;
+try {
+  const release = readReleaseInfo(repoRoot);
+  const names = mode === 'all' || mode === 'check' ? ['play', 'github'] : [mode];
+  const outputRoot = resolve(process.env.PRELIS_ANDROID_OUTPUT_DIR || join(repoRoot, 'dist/android'));
+  const destination = join(outputRoot, `v${release.version}`);
+  validateDestination(destination, release.filenames);
+  checkTools(names);
+  mkdirSync(outputRoot, { recursive: true });
+  const outputRelativeToAndroid = relative(realpathSync(androidDir), realpathSync(outputRoot));
+  if (!isAbsolute(outputRelativeToAndroid) && outputRelativeToAndroid !== '..' &&
+      !outputRelativeToAndroid.startsWith(`..${sep}`)) {
+    fail('Gradle clean による削除を避けるため、Android プロジェクトの外に出力先を指定してください。');
+  }
+  // Creating and writing the stage also checks output permissions before Gradle.
+  temporary = mkdtempSync(join(outputRoot, `.v${release.version}-stage-`));
+  const staged = join(temporary, 'new');
+  mkdirSync(staged);
+  const expected = new Map(names.map(name => [name, validateConfig(options[name], name, temporary)]));
+  if (mode === 'check') {
+    console.log(`署名試行・検証ツール・出力先を確認しました: ${destination}`);
+  } else {
+    for (const name of names) {
+      const config = options[name];
+      // Drop app CMake state first: Gradle clean can otherwise ask Ninja to
+      // reconfigure against dependency Codegen sources already removed by clean.
+      rmSync(join(androidDir, 'app', '.cxx'), { recursive: true, force: true });
+      rmSync(join(androidDir, 'app', 'build', 'intermediates', 'cxx'), { recursive: true, force: true });
+      run('./gradlew', ['clean', config.task, '--no-daemon'], { env: signingEnv(config), inherit: true, timeout: 0 });
+      const source = join(androidDir, config.source);
+      if (!existsSync(source)) fail(`ビルド成果物が見つかりません: ${source}`);
+      const artifact = join(staged, release.filenames[name]);
+      copyFileSync(source, artifact);
+      verifyArtifact(name, config, artifact, expected.get(name));
+      console.log(`${release.filenames[name]} の署名を確認しました (証明書 SHA-256: ${expected.get(name)})`);
+    }
+    const checksums = names.map(name => {
+      const filename = release.filenames[name];
+      const digest = createHash('sha256').update(readFileSync(join(staged, filename))).digest('hex');
+      return `${digest}  ${filename}\n`;
+    }).join('');
+    writeFileSync(join(staged, 'SHA256SUMS'), checksums);
+    validateDestination(destination, release.filenames);
+    publishRelease(staged, destination);
+    console.log(`成果物: ${destination}`);
+  }
 } catch (error) {
   console.error(error.message);
   process.exitCode = 1;
+} finally {
+  if (temporary) {
+    if (existsSync(join(temporary, 'previous')) && existsSync(join(temporary, 'new'))) {
+      console.error(`復元用の旧成果物を保持しています: ${join(temporary, 'previous')}`);
+    } else {
+      try {
+        rmSync(temporary, { recursive: true, force: true });
+      } catch (error) {
+        console.error(`一時ディレクトリを削除できません: ${temporary}: ${error.message}`);
+      }
+    }
+  }
 }

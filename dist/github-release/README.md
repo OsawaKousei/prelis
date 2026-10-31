@@ -19,6 +19,7 @@
 
 ビルド成果物本体と分離署名は、Git 管理対象外の `dist/linux/v<version>/` に保持します。公開資料のディレクトリには重複配置しません。
 macOS の公証済み ZIP・DMG・`SHA256SUMS` は `dist/macos/v<version>/` に保持します。生成と検証は [macOS 配布物の手順](../../docs/development/dist/macos/sign.md)を参照してください。
+Android の署名付き AAB・APK・`SHA256SUMS` は、内部管理用の版ではなく公開バージョンの `dist/android/v<version>/` に保持します。作成と検証は [Android 配布物の手順](../../docs/development/dist/android/sign.md)を参照してください。直接頒布するのは `PrelisMobile_<version>_github.apk` です。
 
 ## v0.1.2 の公開対象
 
