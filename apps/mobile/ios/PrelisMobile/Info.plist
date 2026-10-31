@@ -51,6 +51,8 @@
     </array>
     <key>RCTMetroPort</key>
     <string>$(RCT_METRO_PORT)</string>
+    <key>RCTNewArchEnabled</key>
+    <true/>
     <key>UIApplicationSceneManifest</key>
     <dict>
       <key>UIApplicationSupportsMultipleScenes</key>

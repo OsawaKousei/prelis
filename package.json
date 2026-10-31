@@ -28,6 +28,7 @@
     "test": "npm run test -w apps/mobile -- --runInBand",
     "test:mobile:window": "node --experimental-strip-types --test apps/mobile/e2e/window-size.test.ts",
     "test:android:scripts": "node --test scripts/android/release.test.mjs",
+    "test:ios:scripts": "python3 scripts/ios/native-source.test.py",
     "test:core": "npm run test -w packages/core",
     "test:web": "npm test -w apps/web",
     "check": "npm run typecheck && npm run lint && npm test -- --no-watchman && npm run test:core && npm run test:web"

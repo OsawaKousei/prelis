@@ -156,7 +156,7 @@ fi
 run_logged npm-ci npm ci
 run_logged pod-install bash "$repo_root/scripts/ios/prepare-pods-on-mac.sh"
 
-run_logged simulator-build xcodebuild \
+run_logged simulator-build python3 "$repo_root/scripts/ios/check-native-source.py" xcodebuild \
   -quiet \
   -workspace "$ios_root/PrelisMobile.xcworkspace" \
   -scheme PrelisMobile \
@@ -179,7 +179,7 @@ manifest=ios-simulator-artifacts.sha256
 if [[ "$build_all" == true ]]; then
   archive="$stage/PrelisMobile.xcarchive"
   mkdir -p "$stage/appstore"
-  run_logged appstore-archive xcodebuild -quiet \
+  run_logged appstore-archive python3 "$repo_root/scripts/ios/check-native-source.py" xcodebuild -quiet \
     -workspace "$ios_root/PrelisMobile.xcworkspace" -scheme PrelisMobile \
     -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
     -derivedDataPath "$derived_data" -archivePath "$archive" \

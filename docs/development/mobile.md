@@ -124,7 +124,7 @@ Metro に接続できない場合は、起動状態を確認して `adb reverse 
 
 Mutagen セッション `prelis-ios` を作成または再利用し、Ubuntu から Mac へ `one-way-safe` で同期します。除外設定が変わった場合は、同期先のファイルを保持してセッションを作り直します。同期完了・接続状態・競合なし・必要ファイルの存在と不要ディレクトリの不在を確認して正常終了してから、次に進みます。Mutagen データは `.mutagen-ios/` に保存し、`MUTAGEN_SSH_PATH` は解除します。
 
-同期対象はルートの npm 定義と `.nvmrc`、モバイルの共通コードと `ios/`、共有 core・アイコン、iOS の Mac 側スクリプトです。Android・旧モバイル・デスクトップ・ウェブ・ドキュメント・他 OS のスクリプト・認証情報・生成物は除外します。`node_modules`・`Pods`・CocoaPods workspace・`DerivedData` は Mac 側で生成して再利用します。
+同期対象はルートの npm 定義と `.nvmrc`、モバイルの共通コードと `ios/`、共有 core・アイコン、iOS の Mac 側スクリプトです。Android・旧モバイル・デスクトップ・ウェブ・ドキュメント・他 OS のスクリプト・認証情報・生成物は除外します。`node_modules`・`Pods`・すべての `*.xcworkspace`（Xcode project 内の workspace も含む）・`DerivedData`・`.expo` は Mac 側で生成して再利用します。
 
 ソースは Ubuntu 側で編集します。`one-way-safe` は Mac 側の異なる内容を上書きしないため、競合時は差分を確認し、必要な変更を退避・反映して Ubuntu 側を正として揃えます。以前に同期した除外対象は自動削除されないため、不要ディレクトリが残って停止した場合は同期先を確認・整理します。
 
@@ -137,7 +137,11 @@ npm ci
 bash scripts/ios/prepare-pods-on-mac.sh
 ```
 
-Pod の準備には必ず `prepare-pods-on-mac.sh` を使います。固定版の Ruby ツールで `pod install --deployment` を実行し、Xcode 設定や `Podfile.lock` が変わった場合は停止します。依存準備の最後には、この同期先の Watchman 監視を作り直します。
+Pod の準備には必ず `prepare-pods-on-mac.sh` を使います。固定版の Ruby ツールで `pod install --deployment` を実行します。Pod 準備・`npm run ios`・配布ビルドでは、`check-native-source.py` が生成物を除く `ios/` 全体と Gemfile・Gemfile.lock・app.json・package.json を処理前後でバイト単位に比較します。追加・削除・変更があれば、コマンドが失敗した場合も変更前後のファイルを一時ディレクトリへ退避し、対象パスを表示して異常終了します。変更は自動復元せず、必要な設定を Ubuntu の正本へ反映してから再同期します。依存準備の最後には、この同期先の Watchman 監視を作り直します。
+
+`Info.plist` には React Native の Pod 処理が要求する `RCTNewArchEnabled=true` をあらかじめ記載し、書き換えと再整形を防ぎます。Xcode が参照する `PrivacyInfo.xcprivacy` も Git 管理します。以前のビルドで `Info.plist` が競合した場合は Mac 側の内容を退避して比較し、このキーと書式以外に差分がなければ更新後の Ubuntu の正本に揃えます。内容の異なる設定まで書式差分として上書きしないでください。
+
+`DEVELOPMENT_TEAM` は Debug / Release の通常のビルド設定に記載し、Expo CLI が署名設定済みと認識できるようにします。署名方式・証明書・プロファイルは引き続き `sdk=iphoneos*` の条件付き設定で管理します。Team を SDK 条件付きにすると Expo CLI が未設定と判断し、Xcode project に自動署名設定を書き足して競合するため避けます。
 
 `npm run ios` も同じ `bundle-on-mac.sh` を通して Expo CLI を起動し、不足している gem があれば固定版をインストールします。`Gemfile.lock` は Mac 用の `ffi` を固定しているため、`BUNDLE_FORCE_RUBY_PLATFORM` は使用しません。以前の設定で `Could not find ffi-1.17.4 in locally installed gems` が発生した場合は、Ubuntu 側の修正を同期してから同じ起動コマンドを再実行してください。Ruby ツールの更新や `Gemfile.lock` の削除は不要です。
 

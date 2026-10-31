@@ -22,8 +22,8 @@ ignore_paths=(
   scripts/ios/create-ios-sync.sh scripts/ios/build-ios-simulator.sh
   scripts/sync.test.py packages/icons/scripts
   '*.md' .gitignore LICENSE
-  node_modules Pods PrelisMobile.xcworkspace xcuserdata '*.xcuserstate'
-  .xcode.env.local apps/mobile/vendor coverage
+  node_modules Pods '*.xcworkspace' xcuserdata '*.xcuserstate'
+  .xcode.env.local .expo apps/mobile/vendor coverage
   target dist build '*.tsbuildinfo' DerivedData .cxx .gradle .terraform .next
   '.mutagen*' .DS_Store '.metro-health-check*'
   .env '.env.*' '*.p12' '*.p8' '*.mobileprovision' '*.provisionprofile'
@@ -102,7 +102,7 @@ wait_for_watching() {
       last_state="$session_state"
     fi
     if [[ "$conflicts" != 0 ]]; then
-      echo '同期競合があります。差分を確認し、Xcode 設定の書式差分なら normalize-xcode-project.sh を実行してください。' >&2
+      echo '同期競合があります。表示されたファイルの内容を比較し、Mac 側の変更を退避して Ubuntu の正本へ反映してください。Xcode 設定の書式差分だけなら normalize-xcode-project.sh を使用できます。' >&2
       mutagen sync list "$session_name" --long >&2
       return 1
     fi
@@ -138,7 +138,7 @@ wait_for_watching
 ssh "${ssh_options[@]}" "$remote_host" '
   set -eu
   remote="$HOME/prelis-ios-remote"
-  for file in package.json package-lock.json .nvmrc apps/mobile/package.json apps/mobile/Gemfile apps/mobile/Gemfile.lock apps/mobile/src/app/_layout.tsx apps/mobile/src/app/index.tsx apps/mobile/ios/Podfile apps/mobile/ios/Podfile.lock apps/mobile/ios/.xcode.env apps/mobile/ios/PrelisMobile.xcodeproj/project.pbxproj apps/mobile/ios/PrelisMobile.xcodeproj/xcshareddata/xcschemes/PrelisMobile.xcscheme packages/core/package.json packages/core/src/index.ts packages/icons/package.json packages/icons/src/index.ts scripts/ios/build-on-mac.sh scripts/ios/bundle-on-mac.sh scripts/ios/prepare-pods-on-mac.sh scripts/ios/normalize-xcode-project.rb; do
+  for file in package.json package-lock.json .nvmrc apps/mobile/package.json apps/mobile/Gemfile apps/mobile/Gemfile.lock apps/mobile/src/app/_layout.tsx apps/mobile/src/app/index.tsx apps/mobile/ios/Podfile apps/mobile/ios/Podfile.lock apps/mobile/ios/.xcode.env apps/mobile/ios/PrelisMobile/Info.plist apps/mobile/ios/PrelisMobile/PrivacyInfo.xcprivacy apps/mobile/ios/PrelisMobile.xcodeproj/project.pbxproj apps/mobile/ios/PrelisMobile.xcodeproj/xcshareddata/xcschemes/PrelisMobile.xcscheme packages/core/package.json packages/core/src/index.ts packages/icons/package.json packages/icons/src/index.ts scripts/ios/build-on-mac.sh scripts/ios/bundle-on-mac.sh scripts/ios/run-on-mac.sh scripts/ios/check-native-source.py scripts/ios/prepare-pods-on-mac.sh scripts/ios/normalize-xcode-project.rb; do
     test -f "$remote/$file" || { echo "必要な同期対象がありません: $file" >&2; exit 1; }
   done
   for path in .git apps/desktop apps/web apps/mobile-old apps/mobile/android docs docs-old infra lp scripts/android scripts/macos scripts/linux scripts/windows scripts/mutagen-ssh scripts/ios/create-ios-sync.sh scripts/ios/build-ios-simulator.sh packages/icons/scripts .mutagen .mutagen-macos .mutagen-ios .agents .aws .codex ref .env scripts/ios/.env; do

@@ -355,7 +355,7 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Development";
 				"CODE_SIGN_STYLE[sdk=iphoneos*]" = Manual;
 				CURRENT_PROJECT_VERSION = 2;
-				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = GLQCJ8YF9S;
+				DEVELOPMENT_TEAM = GLQCJ8YF9S;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -397,7 +397,7 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "$(PRELIS_IOS_DISTRIBUTION_IDENTITY)";
 				"CODE_SIGN_STYLE[sdk=iphoneos*]" = Manual;
 				CURRENT_PROJECT_VERSION = 2;
-				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = GLQCJ8YF9S;
+				DEVELOPMENT_TEAM = GLQCJ8YF9S;
 				INFOPLIST_FILE = PrelisMobile/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
 				LD_RUNPATH_SEARCH_PATHS = (

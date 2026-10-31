@@ -12,20 +12,8 @@ if lsof -nP -iTCP:8081 -sTCP:LISTEN >/dev/null 2>&1; then
   exit 1
 fi
 bash "$bundle_script" exec ruby "$repo_root/scripts/ios/normalize-xcode-project.rb"
-stage="$(mktemp -d)"
-trap 'rm -rf -- "$stage"' EXIT
-cp "$ios_root/PrelisMobile.xcodeproj/project.pbxproj" "$stage/project.pbxproj"
-cp "$ios_root/Podfile.lock" "$stage/Podfile.lock"
 cd "$ios_root"
-bash "$bundle_script" exec pod install --deployment
-for file in PrelisMobile.xcodeproj/project.pbxproj Podfile.lock; do
-  if ! cmp -s "$stage/${file##*/}" "$ios_root/$file"; then
-    echo "pod install が $file を変更しました。差分を確認して Ubuntu の正本へ反映してください。" >&2
-    diff -u "$stage/${file##*/}" "$ios_root/$file" >&2 || true
-    exit 1
-  fi
-done
-echo 'pod install: Xcode 設定・Podfile.lock の差分なし'
+bash "$bundle_script" exec python3 "$repo_root/scripts/ios/check-native-source.py" pod install --deployment
 
 # npm ci can leave a stale Watchman index after macOS drops filesystem events.
 # Recreate only this mirror's watches after all dependency writes have finished.

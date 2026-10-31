@@ -37,7 +37,7 @@
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
-    "ios": "bash ../../scripts/ios/bundle-on-mac.sh exec expo run:ios",
+    "ios": "bash ../../scripts/ios/run-on-mac.sh",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "test": "jest"
