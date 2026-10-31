@@ -6,6 +6,9 @@
 ## 環境準備
 
 Node.js・npm の準備と依存管理は [共通セットアップ](architecture.md#共通セットアップ)を参照してください。モバイル固有の条件は次のとおりです。ファイル監視には Watchman を使用します。
+Metro は `apps/mobile/metro.config.js` で Watchman の使用を明示し、Linux で Node.js のディレクトリ監視を大量に追加して inotify の上限に達することを避けます。
+
+Expo CLI の型付きルート生成は Node.js から Expo Router を読み込みます。ルート側のツールから参照できるよう、Expo Router と関連依存はルートの `node_modules` から解決できる配置を `package-lock.json` に記録しています。依存の取得にはリポジトリルートで `npm ci` を使用します。
 
 ### Android
 
@@ -217,6 +220,7 @@ Android の更新時は `versionCode`、iOS の再提出時はビルド番号を
 | --- | --- |
 | Expo のアプリ名・識別子・向き・アイコン・プラグイン | `apps/mobile/app.json` |
 | 起動コマンド・Expo / React Native の依存 | `apps/mobile/package.json` |
+| Metro のファイル監視 | `apps/mobile/metro.config.js` |
 | Android の Gradle プラグイン・SDK 設定の入口 | `apps/mobile/android/build.gradle`・`settings.gradle` |
 | Android の識別子・バージョン・署名・ビルド種別 | `apps/mobile/android/app/build.gradle` |
 | Android の権限・起動 Activity | `apps/mobile/android/app/src/main/AndroidManifest.xml` |
