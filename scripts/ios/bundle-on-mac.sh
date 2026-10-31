@@ -20,7 +20,8 @@ export BUNDLE_IGNORE_CONFIG=true
 export BUNDLE_GEMFILE="$repo_root/apps/mobile/Gemfile"
 export BUNDLE_PATH="$repo_root/apps/mobile/vendor/bundle"
 export BUNDLE_FROZEN=true
-unset BUNDLE_PATH__SYSTEM
+# Gemfile.lock uses native macOS gems (including ffi-arm64-darwin).
+unset BUNDLE_PATH__SYSTEM BUNDLE_FORCE_RUBY_PLATFORM
 if ! bundle check >/dev/null 2>&1; then
   bundle install >&2
 fi

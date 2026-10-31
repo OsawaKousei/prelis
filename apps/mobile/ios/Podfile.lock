@@ -2212,7 +2212,7 @@ DEPENDENCIES:
   - ExpoModulesJSI (from `../../../node_modules/expo-modules-jsi/apple`)
   - ExpoModulesWorklets (from `../../../node_modules/expo-modules-core/ExpoModulesWorklets.podspec`)
   - ExpoModulesWorkletsAdapter (from `../../../node_modules/expo-modules-core`)
-  - ExpoRouter (from `../node_modules/expo-router/ios`)
+  - ExpoRouter (from `../../../node_modules/expo-router/ios`)
   - ExpoSplashScreen (from `../../../node_modules/expo-splash-screen/ios`)
   - ExpoSQLite (from `../../../node_modules/expo-sqlite/ios`)
   - ExpoStatusBar (from `../../../node_modules/expo-status-bar/ios`)
@@ -2303,9 +2303,9 @@ DEPENDENCIES:
   - ReactNativeDependencies (from `../../../node_modules/react-native/third-party-podspecs/ReactNativeDependencies.podspec`)
   - "RNCMaskedView (from `../../../node_modules/@react-native-masked-view/masked-view`)"
   - RNGestureHandler (from `../../../node_modules/react-native-gesture-handler`)
-  - RNReanimated (from `../node_modules/react-native-reanimated`)
+  - RNReanimated (from `../../../node_modules/react-native-reanimated`)
   - RNScreens (from `../../../node_modules/react-native-screens`)
-  - RNWorklets (from `../node_modules/react-native-worklets`)
+  - RNWorklets (from `../../../node_modules/react-native-worklets`)
   - SocketRocket (from `build/rndeps-facades/SocketRocket`)
   - Yoga (from `build/rncore-facades/Yoga`)
 
@@ -2351,7 +2351,7 @@ EXTERNAL SOURCES:
   ExpoModulesWorkletsAdapter:
     :path: "../../../node_modules/expo-modules-core"
   ExpoRouter:
-    :path: "../node_modules/expo-router/ios"
+    :path: "../../../node_modules/expo-router/ios"
   ExpoSplashScreen:
     :path: "../../../node_modules/expo-splash-screen/ios"
   ExpoSQLite:
@@ -2532,11 +2532,11 @@ EXTERNAL SOURCES:
   RNGestureHandler:
     :path: "../../../node_modules/react-native-gesture-handler"
   RNReanimated:
-    :path: "../node_modules/react-native-reanimated"
+    :path: "../../../node_modules/react-native-reanimated"
   RNScreens:
     :path: "../../../node_modules/react-native-screens"
   RNWorklets:
-    :path: "../node_modules/react-native-worklets"
+    :path: "../../../node_modules/react-native-worklets"
   SocketRocket:
     :path: build/rndeps-facades/SocketRocket
   Yoga:
@@ -2559,10 +2559,10 @@ SPEC CHECKSUMS:
   ExpoKeepAwake: fd18a5d233329013c578030ad399d8e10b252b5f
   ExpoLinking: c4c98c2c889e183ab2cdd95c5d0739a3e187e6c0
   ExpoLogBox: ba4cb945593f38ea8b8d0a01bcb24f4ea458918f
-  ExpoModulesCore: 798c50374a496e6758733e90618862acaa02cee5
+  ExpoModulesCore: 73f44b3bd5c84296a4693ea4f809331c2e46c9a4
   ExpoModulesJSI: 0c41d2327b3002cc736e81465a3e5e55b6d93b94
   ExpoModulesWorklets: 8908bee33c6f95479b209bc05ea24346da9ff606
-  ExpoModulesWorkletsAdapter: 303ee48a9bd5c457bccebe956aa09639b72a77b9
+  ExpoModulesWorkletsAdapter: 19c4b6df40e824fff0d35ed58c97963cdef4e38a
   ExpoRouter: 03899d5c94d2e5c5e4dadae1fd0ba71a50f162d8
   ExpoSplashScreen: e60a9120f4e05377f92278b0c94cfb0ef39eb351
   ExpoSQLite: 580284867126f45f25a5a70a06a84df9664d3786

@@ -29,6 +29,8 @@ Node.js・npm の準備と依存管理は [共通セットアップ](architectur
 Metro は `apps/mobile/metro.config.js` で Watchman の使用を明示し、Linux で Node.js のディレクトリ監視を大量に追加して inotify の上限に達することを避けます。
 
 Expo CLI の型付きルート生成は Node.js から Expo Router を読み込みます。ルート側のツールから参照できるよう、Expo Router と関連依存はルートの `node_modules` から解決できる配置を `package-lock.json` に記録しています。依存の取得にはリポジトリルートで `npm ci` を使用します。
+
+iOS の `Podfile.lock` もこの配置に合わせ、ExpoRouter・RNReanimated・RNWorklets はルートの `node_modules` を参照します。依存の配置変更時は、Pod の参照パスと生成される podspec のチェックサムも揃えてから `pod install --deployment` で検証します。
 Android の自動リンク設定もルートの `package-lock.json` を監視し、依存の配置変更時にネイティブライブラリの参照先を再生成します。
 
 ### Android
@@ -136,6 +138,8 @@ bash scripts/ios/prepare-pods-on-mac.sh
 ```
 
 Pod の準備には必ず `prepare-pods-on-mac.sh` を使います。固定版の Ruby ツールで `pod install --deployment` を実行し、Xcode 設定や `Podfile.lock` が変わった場合は停止します。依存準備の最後には、この同期先の Watchman 監視を作り直します。
+
+`npm run ios` も同じ `bundle-on-mac.sh` を通して Expo CLI を起動し、不足している gem があれば固定版をインストールします。`Gemfile.lock` は Mac 用の `ffi` を固定しているため、`BUNDLE_FORCE_RUBY_PLATFORM` は使用しません。以前の設定で `Could not find ffi-1.17.4 in locally installed gems` が発生した場合は、Ubuntu 側の修正を同期してから同じ起動コマンドを再実行してください。Ruby ツールの更新や `Gemfile.lock` の削除は不要です。
 
 Mac の2つのターミナルで Metro と Simulator 用 Debug アプリを起動します。`SIMULATOR_UDID` には一覧の対象デバイスの UDID を設定します。
 
