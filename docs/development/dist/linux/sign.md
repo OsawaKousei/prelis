@@ -136,16 +136,6 @@ GitHub Releases の公開資料は [`dist/github-release/v<version>/`](../../../
 
 公開するファイルは、動作確認したファイルと同じものを使います。同じバージョン番号で内容だけ変えて再頒布せず、修正時はバージョンを上げて作り直します。
 
-## トラブルシュート
-
-| 症状 | 確認・対処 |
-| --- | --- |
-| GPG 秘密鍵が見つからない | [署名鍵の情報](../../../environment/signing-key.md)に従い、GnuPG ホーム、秘密鍵の登録、フィンガープリントを確認します |
-| 署名の入力待ちでビルドが止まる | パスフレーズ入力画面を確認します。端末で署名する場合は `export GPG_TTY="$(tty)"` を設定して再実行します |
-| ビルド後に成果物が見つからない | `CARGO_TARGET_DIR`・Cargo の `build.target-dir`、[設定・ロックファイル・画面表示のバージョン](../../desktop.md#バージョンを揃える)、amd64 環境であることを確認します |
-| AppImage が FUSE エラーで起動しない | Ubuntu 22.04 は `libfuse2`、24.04 は `libfuse2t64` を導入するか、`--appimage-extract-and-run` を付けて起動します |
-| AppImage で音声が鳴らない・WebView が停止する | `tauri.conf.json` の `bundle.linux.appimage.bundleMediaFramework` が `true` であることと、ビルド環境に必要な GStreamer プラグインがあることを確認し、作り直します |
-
 ## 注意
 
 - AppImage は `tauri.conf.json` の `bundle.linux.appimage.bundleMediaFramework: true` で GStreamer を同梱します。無効にすると `GStreamer element appsink not found` などの不具合が発生する場合があります。この同梱機能は Ubuntu のビルド環境を前提とし、実行時に必要なプラグインをビルド環境へ用意します。

@@ -105,19 +105,3 @@ snap info prelis
 
 未インストールのテスト環境では `sudo snap install prelis` で stable 版を確認します。
 既に Store 版を使用している場合は `sudo snap refresh --channel=stable prelis` で切り替えます。
-
-## LXD に接続できない場合
-
-`ClientConnectionFailed` と `PermissionError(13, 'Permission denied')` が出た場合は、Snapcraft が LXD の Unix ソケットへ接続できていません。
-現在のシェルで次を確認します。
-
-```sh
-id -nG
-getent group lxd
-lxc info local:
-```
-
-`getent group lxd` にユーザー名があり、`id -nG` に `lxd` が無い場合は、ログアウトして再ログインするか `newgrp lxd` で新しいシェルを開きます。
-`getent group lxd` にユーザー名が無い場合は `sudo usermod -aG lxd "$USER"` で追加し、再ログインします。
-新しいシェルでは `deb`・`snap_version`・`snap_file` などのシェル変数を設定し直してください。
-`lxc info local:` が成功してからビルドを再実行します。
