@@ -14,20 +14,29 @@ export AWS_PROFILE="${AWS_PROFILE:-kupacllc}"
 
 msi_path="$(realpath -- "$1")"
 msi_name="$(basename -- "$msi_path")"
-if [[ "$(dirname -- "$msi_path")" != "$bundle_dir/msi" ||
-      ! "$msi_name" =~ ^PrelisDesktop_([0-9]+\.[0-9]+\.[0-9]+)_x64_en-US\.msi$ ]]; then
-  echo "Expected PrelisDesktop_<version>_x64_en-US.msi in bundle/msi" >&2
+if [[ ! "$msi_name" =~ ^PrelisDesktop_([0-9]+\.[0-9]+\.[0-9]+)_x64_en-US\.msi$ ]]; then
+  echo "Expected PrelisDesktop_<version>_x64_en-US.msi" >&2
   exit 1
 fi
 version="${BASH_REMATCH[1]}"
+if [[ "$(dirname -- "$msi_path")" == "$repo_root/dist/windows/v$version" ]]; then
+  report_dir="$(dirname -- "$msi_path")"
+  require_version=true
+elif [[ "$(dirname -- "$msi_path")" == "$bundle_dir/msi" ]]; then
+  report_dir="$bundle_dir"
+  require_version=false
+else
+  echo "Expected an MSI in dist/windows/v<version> or the build bundle/msi directory" >&2
+  exit 1
+fi
 
 checksum_hex="$(sha256sum -- "$msi_path" | cut -d ' ' -f1)"
-checksum="$(python3 - "$bundle_dir/windows-prelis-signature-report.json" "$msi_name" "$checksum_hex" <<'PY'
+checksum="$(python3 - "$report_dir/windows-prelis-signature-report.json" "$msi_name" "$checksum_hex" "$version" "$require_version" <<'PY'
 import base64
 import json
 import sys
 
-with open(sys.argv[1], encoding="utf-8") as stream:
+with open(sys.argv[1], encoding="utf-8-sig") as stream:
     report = json.load(stream)
 entries = [entry for entry in report.get("Files", []) if entry.get("Path") == f"msi/{sys.argv[2]}"]
 if (report.get("SchemaVersion") != 1 or report.get("WebviewInstallMode") != "offlineInstaller"
@@ -35,6 +44,12 @@ if (report.get("SchemaVersion") != 1 or report.get("WebviewInstallMode") != "off
         or entries[0].get("Status") != "Valid" or entries[0].get("Timestamp") is not True
         or not entries[0].get("Publisher") or entries[0].get("Sha256", "").lower() != sys.argv[3]):
     raise SystemExit("MSI signature report or SHA-256 verification failed")
+if (report.get('Version', sys.argv[4]) != sys.argv[4]
+        or report.get('ApplicationVersion', sys.argv[4]) != sys.argv[4]
+        or entries[0].get('Version', sys.argv[4]) != sys.argv[4]):
+    raise SystemExit('MSI version does not match its signature report')
+if sys.argv[5] == 'true' and any(item.get('Version') != sys.argv[4] for item in (report, entries[0])):
+    raise SystemExit('The collected release must include verified version metadata')
 print(base64.b64encode(bytes.fromhex(sys.argv[3])).decode("ascii"))
 PY
 )"

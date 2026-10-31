@@ -5,10 +5,14 @@ param(
 
     [Parameter(Mandatory = $true)]
     [ValidatePattern('^prelis-build-[a-zA-Z0-9._-]+\.ok$')]
-    [string]$CompletionFile
+    [string]$CompletionFile,
+
+    [ValidatePattern('^[a-f0-9]{32}$')]
+    [string]$BuildId
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'build-task-common.ps1')
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $credentialPath = Join-Path $env:USERPROFILE $CredentialFile
 $completionPath = Join-Path $env:USERPROFILE $CompletionFile
@@ -23,13 +27,25 @@ $signingKeys = @(
     'AZURE_ARTIFACT_SIGNING_ENDPOINT', 'AZURE_ARTIFACT_SIGNING_ACCOUNT_NAME',
     'AZURE_ARTIFACT_SIGNING_CERTIFICATE_PROFILE_NAME'
 )
+$values = @{}
 
 try {
+    $version = Get-PrelisDesktopVersion $repoRoot
+    Write-Output "Desktop release version: $version"
+    if ($BuildId) {
+        $jobPaths = Get-PrelisBuildPaths $BuildId
+        if ($CredentialFile -ne $jobPaths.CredentialFile -or $CompletionFile -ne $jobPaths.CompletionFile) {
+            throw 'The credential and completion files do not match this build job.'
+        }
+        New-Item -ItemType Directory -Path $jobPaths.SigningDirectory -Force | Out-Null
+        $metadataPath = Join-Path $jobPaths.SigningDirectory 'metadata.json'
+        $configPath = Join-Path $jobPaths.SigningDirectory 'config.json'
+        $signingLogPath = Join-Path $jobPaths.SigningDirectory 'signing.log'
+    }
     if (-not (Test-Path -LiteralPath $credentialPath -PathType Leaf)) {
-        throw "Signing credentials were not found: $credentialPath. Keep the Ubuntu script running and use its latest Windows command."
+        throw "Signing credentials were not found: $credentialPath. Start a new build from Ubuntu."
     }
 
-    $values = @{}
     foreach ($line in [System.IO.File]::ReadAllLines($credentialPath, [System.Text.Encoding]::UTF8)) {
         $separator = $line.IndexOf('=')
         if ($separator -le 0) { throw 'Invalid signing credential file.' }
@@ -87,6 +103,12 @@ try {
         Endpoint = $values['AZURE_ARTIFACT_SIGNING_ENDPOINT']
         CodeSigningAccountName = $values['AZURE_ARTIFACT_SIGNING_ACCOUNT_NAME']
         CertificateProfileName = $values['AZURE_ARTIFACT_SIGNING_CERTIFICATE_PROFILE_NAME']
+        # Use the supplied service-principal credentials without interactive or cached fallbacks.
+        ExcludeCredentials = @(
+            'ManagedIdentityCredential', 'WorkloadIdentityCredential', 'SharedTokenCacheCredential',
+            'VisualStudioCredential', 'VisualStudioCodeCredential', 'AzureCliCredential',
+            'AzurePowerShellCredential', 'AzureDeveloperCliCredential', 'InteractiveBrowserCredential'
+        )
     }
     [System.IO.File]::WriteAllText($metadataPath, ($metadata | ConvertTo-Json -Compress), $utf8)
     $env:PRELIS_SIGNTOOL_PATH = $signTool
@@ -117,14 +139,15 @@ try {
     }
     if (Test-Path -LiteralPath $completionPath) { Remove-Item -LiteralPath $completionPath -Force }
 
-    & npm.cmd ci --no-audit --no-fund
-    if ($LASTEXITCODE -ne 0) { throw "npm ci failed ($LASTEXITCODE)." }
+    Write-Output 'Installing npm dependencies.'
+    Invoke-PrelisBuildCommand -FilePath 'npm.cmd' -Arguments @('ci', '--no-audit', '--no-fund') -Description 'npm ci'
 
     foreach ($key in @('AZURE_TENANT_ID', 'AZURE_CLIENT_ID', 'AZURE_CLIENT_SECRET')) {
         [Environment]::SetEnvironmentVariable($key, $values[$key], 'Process')
     }
-    & npm.cmd run build:desktop -- --bundles nsis,msi --config $configPath
-    if ($LASTEXITCODE -ne 0) { throw "Tauri build failed ($LASTEXITCODE)." }
+    Write-Output 'Building and signing NSIS and MSI installers.'
+    Invoke-PrelisBuildCommand -FilePath 'npm.cmd' `
+        -Arguments @('run', 'build:desktop', '--', '--bundles', 'nsis,msi', '--config', $configPath) -Description 'Tauri build'
 
     $nsis = @(Get-ChildItem -LiteralPath (Join-Path $bundleRoot 'nsis') -Filter '*-setup.exe' -File)
     $msi = @(Get-ChildItem -LiteralPath (Join-Path $bundleRoot 'msi') -Filter '*.msi' -File)
@@ -136,13 +159,12 @@ try {
     # standalone executable again before the final verification.
     & $signScript -FilePath $appExe
     foreach ($file in @($appExe) + @($nsis.FullName) + @($msi.FullName)) {
-        & $signTool verify /pa /all $file
-        if ($LASTEXITCODE -ne 0) { throw "Signature verification failed: $file" }
+        Invoke-PrelisBuildCommand -FilePath $signTool -Arguments @('verify', '/pa', '/all', $file) -Description "Signature verification: $file"
     }
     & (Join-Path $PSScriptRoot 'verify-signatures.ps1') `
         -BundleRoot $bundleRoot -ApplicationPath $appExe -ReportPath $reportPath
     [System.IO.File]::WriteAllText($completionPath, 'signed', $utf8)
-    Write-Host 'Signed Windows build completed.'
+    Write-Output 'Signed Windows build completed.'
 }
 catch {
     if (Test-Path -LiteralPath $signingLogPath -PathType Leaf) {
@@ -155,7 +177,7 @@ catch {
         if ($values -and $values.ContainsKey('AZURE_CLIENT_SECRET') -and $values['AZURE_CLIENT_SECRET']) {
             $diagnostics = $diagnostics.Replace($values['AZURE_CLIENT_SECRET'], '[redacted]')
         }
-        Write-Host "Artifact Signing diagnostics:`n$diagnostics"
+        Write-Output "Artifact Signing diagnostics:`n$diagnostics"
     }
     throw
 }

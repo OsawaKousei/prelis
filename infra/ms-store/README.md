@@ -41,7 +41,7 @@ terraform -chdir=infra/ms-store plan
 
 ```sh
 ./infra/ms-store/publish-msi.sh \
-  apps/desktop/src-tauri/target/release/bundle/msi/PrelisDesktop_0.1.1_x64_en-US.msi
+  dist/windows/v0.1.1/PrelisDesktop_0.1.1_x64_en-US.msi
 ```
 
 このスクリプトは既定で AWS profile `kupacllc` を使用します。別の profile を使う場合は `AWS_PROFILE=<profile名>` を指定してください。
