@@ -4,19 +4,20 @@ if [[ $# -ne 0 ]]; then
   echo '使い方: normalize-xcode-project.sh' >&2
   exit 2
 fi
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/internal/common.sh"
 if [[ "$(uname -s)" == Darwin ]]; then
-  exec bash "$repo_root/scripts/ios/bundle-on-mac.sh" exec ruby "$repo_root/scripts/ios/normalize-xcode-project.rb" --write
+  ios_native_init
+  bash "$ios_script_dir/bundle-on-mac.sh" exec ruby "$ios_script_dir/normalize-xcode-project.rb" --write
+  exit
 fi
-
+ios_local_init
 project_file="$repo_root/apps/mobile/ios/PrelisMobile.xcodeproj/project.pbxproj"
 stage="$(mktemp -d)"
-trap 'rm -rf -- "$stage"' EXIT
 cp -p "$project_file" "$stage/original"
 # Normalize only a temporary copy on Mac; the live sync destination is untouched.
-ssh -T -o BatchMode=yes kousei@192.168.10.22 \
-  'bash "$HOME/prelis-ios-remote/scripts/ios/bundle-on-mac.sh" exec ruby "$HOME/prelis-ios-remote/scripts/ios/normalize-xcode-project.rb" --stdin' \
-  < "$stage/original" > "$stage/normalized"
+# The project travels inside the payload, leaving stdin available for the config transport.
+# --stdin keeps normalization away from the live synchronized project.
+ios_remote_run internal/normalize-remote.sh public < /dev/null > "$stage/normalized"
 if ! cmp -s "$project_file" "$stage/original"; then
   echo '正規化中に Ubuntu の設定が変更されました。変更を保存して再実行してください。' >&2
   exit 1

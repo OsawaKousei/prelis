@@ -4,21 +4,19 @@ if [[ "$(uname -s)" != Darwin || $# -ne 0 ]]; then
   echo 'Mac で test-native-on-mac.sh を引数なしで実行してください。' >&2
   exit 2
 fi
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-export PATH="/opt/homebrew/bin:$PATH"
-export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}"
-export LANG=en_US.UTF-8
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/internal/common.sh"
+ios_native_init
 app="$repo_root/apps/mobile/ios/DerivedData/Build/Products/Release-iphonesimulator/PrelisMobile.app"
 test -d "$app" || { echo '先に Simulator 用 Release アプリをビルドしてください。' >&2; exit 1; }
 stage="$(mktemp -d "$repo_root/apps/mobile/ios/build/native-smoke.XXXXXXXX")"
+ios_preserve_stage=true
 simulator=''
-cleanup() {
+ios_operation_cleanup() {
   if [[ -n "$simulator" ]]; then
     xcrun simctl shutdown "$simulator" >/dev/null 2>&1 || true
     xcrun simctl delete "$simulator" >/dev/null 2>&1 || true
   fi
 }
-trap cleanup EXIT
 python3 - "$stage" <<'PY'
 import pathlib,sys,wave
 with wave.open(str(pathlib.Path(sys.argv[1]) / 'swift-native-smoke.wav'), 'wb') as output:
@@ -27,7 +25,7 @@ with wave.open(str(pathlib.Path(sys.argv[1]) / 'swift-native-smoke.wav'), 'wb') 
     output.setframerate(8000)
     output.writeframes(bytes(3200))
 PY
-bash "$repo_root/scripts/ios/bundle-on-mac.sh" exec ruby - "$repo_root" "$stage" <<'RUBY'
+bash "$ios_script_dir/bundle-on-mac.sh" exec ruby - "$repo_root" "$stage" <<'RUBY'
 require 'xcodeproj'
 root, stage = ARGV
 project = Xcodeproj::Project.new(File.join(stage, 'NativeSmoke.xcodeproj'))
@@ -89,9 +87,17 @@ if xcodebuild -quiet test \
   -destination "platform=iOS Simulator,id=$simulator" \
   -derivedDataPath "$stage/DerivedData" -resultBundlePath "$stage/results.xcresult" \
   -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO > "$stage/test.log" 2>&1; then
-  xcrun xcresulttool get test-results summary --path "$stage/results.xcresult" > "$stage/summary.json"
-  cat "$stage/summary.json"
+  test_status=0
 else
-  tail -n 100 "$stage/test.log" >&2
+  test_status=$?
+fi
+# Failed UI assertions are recorded in xcresult, often absent from xcodebuild's log.
+if xcrun xcresulttool get test-results summary --path "$stage/results.xcresult" > "$stage/summary.json"; then
+  cat "$stage/summary.json"
+elif [[ "$test_status" == 0 ]]; then
   exit 1
 fi
+if [[ "$test_status" != 0 ]]; then
+  tail -n 100 "$stage/test.log" >&2
+fi
+exit "$test_status"

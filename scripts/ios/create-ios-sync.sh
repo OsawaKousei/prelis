@@ -6,10 +6,9 @@ if [[ $# -ne 0 ]]; then
   exit 2
 fi
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/internal/common.sh"
+ios_local_init
 session_name=prelis-ios
-remote_host=kousei@192.168.10.22
-remote_root=prelis-ios-remote
 remote_endpoint="${remote_host}:${remote_root}"
 
 # Keep iOS separate from the macOS session and the Windows SSH wrapper.
@@ -21,7 +20,7 @@ ignore_paths=(
   scripts/android scripts/macos scripts/linux scripts/mutagen-ssh scripts/windows
   scripts/ios/create-ios-sync.sh scripts/ios/build-ios-simulator.sh
   scripts/sync.test.py packages/icons/scripts
-  '*.md' .gitignore LICENSE
+  '*.md' .gitignore LICENSE __pycache__
   node_modules Pods '*.xcworkspace' xcuserdata '*.xcuserstate'
   .xcode.env.local .expo apps/mobile/vendor coverage
   target dist build '*.tsbuildinfo' DerivedData .cxx .gradle .terraform .next
@@ -35,7 +34,6 @@ for ignore_path in "${ignore_paths[@]}"; do
 done
 expected_ignores="$(printf '%s\n' "${ignore_paths[@]}")"
 endpoint_template='{{range .}}{{.Alpha.Path}}|{{.Beta.User}}@{{.Beta.Host}}:{{.Beta.Path}}{{end}}'
-ssh_options=(-o BatchMode=yes -o ConnectTimeout=10 -o ServerAliveInterval=15 -o ServerAliveCountMax=2)
 
 for command_name in mutagen ssh timeout; do
   if ! command -v "$command_name" >/dev/null 2>&1; then
@@ -69,7 +67,7 @@ if grep -Fxq "$session_name" <<< "$sessions"; then
   fi
 fi
 
-ssh "${ssh_options[@]}" "$remote_host" 'mkdir -p "$HOME/prelis-ios-remote"'
+ssh "${ssh_options[@]}" "$remote_host" "bash -c $(ios_quote 'path="$1"; case "$path" in /*) ;; *) path="$HOME/$path" ;; esac; mkdir -p "$path"') -- $(ios_quote "$remote_root")"
 
 if ! grep -Fxq "$session_name" <<< "$sessions"; then
   echo "Mutagen セッション $session_name を作成します。"
@@ -135,14 +133,16 @@ else
 fi
 wait_for_watching
 
-ssh "${ssh_options[@]}" "$remote_host" '
+validation='
   set -eu
-  remote="$HOME/prelis-ios-remote"
-  for file in package.json package-lock.json .nvmrc apps/mobile/package.json apps/mobile/Gemfile apps/mobile/Gemfile.lock apps/mobile/src/app/_layout.tsx apps/mobile/src/app/index.tsx apps/mobile/ios/Podfile apps/mobile/ios/Podfile.lock apps/mobile/ios/.xcode.env apps/mobile/ios/PrelisMobile/Info.plist apps/mobile/ios/PrelisMobile/PrivacyInfo.xcprivacy apps/mobile/ios/PrelisMobile.xcodeproj/project.pbxproj apps/mobile/ios/PrelisMobile.xcodeproj/xcshareddata/xcschemes/PrelisMobile.xcscheme packages/core/package.json packages/core/src/index.ts packages/icons/package.json packages/icons/src/index.ts scripts/ios/build-on-mac.sh scripts/ios/bundle-on-mac.sh scripts/ios/run-on-mac.sh scripts/ios/check-native-source.py scripts/ios/prepare-pods-on-mac.sh scripts/ios/normalize-xcode-project.rb; do
+  remote="$1"
+  case "$remote" in /*) ;; *) remote="$HOME/$remote" ;; esac
+  for file in package.json package-lock.json .nvmrc apps/mobile/package.json apps/mobile/Gemfile apps/mobile/Gemfile.lock apps/mobile/src/app/_layout.tsx apps/mobile/src/app/index.tsx apps/mobile/ios/Podfile apps/mobile/ios/Podfile.lock apps/mobile/ios/.xcode.env apps/mobile/ios/PrelisMobile/Info.plist apps/mobile/ios/PrelisMobile/PrivacyInfo.xcprivacy apps/mobile/ios/PrelisMobile.xcodeproj/project.pbxproj apps/mobile/ios/PrelisMobile.xcodeproj/xcshareddata/xcschemes/PrelisMobile.xcscheme packages/core/package.json packages/core/src/index.ts packages/icons/package.json packages/icons/src/index.ts scripts/ios/build-on-mac.sh scripts/ios/bundle-on-mac.sh scripts/ios/run-on-mac.sh scripts/ios/check-native-source.py scripts/ios/prepare-pods-on-mac.sh scripts/ios/normalize-xcode-project.rb scripts/ios/internal/common.sh scripts/ios/internal/read-config.py scripts/ios/internal/signing.py scripts/ios/internal/build-input.py scripts/ios/internal/artifacts.py scripts/ios/verify-release.py; do
     test -f "$remote/$file" || { echo "必要な同期対象がありません: $file" >&2; exit 1; }
   done
   for path in .git apps/desktop apps/web apps/mobile-old apps/mobile/android docs docs-old infra lp scripts/android scripts/macos scripts/linux scripts/windows scripts/mutagen-ssh scripts/ios/create-ios-sync.sh scripts/ios/build-ios-simulator.sh packages/icons/scripts .mutagen .mutagen-macos .mutagen-ios .agents .aws .codex ref .env scripts/ios/.env; do
     test ! -e "$remote/$path" || { echo "不要な同期対象が残っています: $path" >&2; exit 1; }
   done
 '
+ssh "${ssh_options[@]}" "$remote_host" "bash -c $(ios_quote "$validation") -- $(ios_quote "$remote_root")"
 echo 'Mac 側の必要ファイルと不要ディレクトリの除外を確認しました。'

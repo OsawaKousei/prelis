@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-exec bash "$repo_root/scripts/ios/bundle-on-mac.sh" exec \
-  python3 "$repo_root/scripts/ios/check-native-source.py" expo run:ios "$@"
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/internal/common.sh"
+ios_native_init
+ios_signing_lock
+bash "$ios_script_dir/bundle-on-mac.sh" exec \
+  python3 "$ios_script_dir/check-native-source.py" expo run:ios "$@"

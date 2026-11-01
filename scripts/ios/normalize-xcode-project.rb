@@ -6,7 +6,8 @@ require 'xcodeproj'
 unless [[], ['--write'], ['--stdin']].include?(ARGV)
   abort 'Usage: normalize-xcode-project.rb [--write|--stdin]'
 end
-project_file = File.expand_path('../../apps/mobile/ios/PrelisMobile.xcodeproj/project.pbxproj', __dir__)
+root = ENV.fetch('PRELIS_IOS_REPO_ROOT', File.expand_path('../..', __dir__))
+project_file = File.join(root, 'apps/mobile/ios/PrelisMobile.xcodeproj/project.pbxproj')
 original = ARGV == ['--stdin'] ? STDIN.read : File.binread(project_file)
 normalized = Dir.mktmpdir('prelis-xcode-format-') do |directory|
   project = File.join(directory, 'PrelisMobile.xcodeproj')

@@ -40,6 +40,10 @@ macos_connection() {
 
 macos_cleanup() {
   if declare -f macos_signing_cleanup >/dev/null; then macos_signing_cleanup; fi
+  if [[ -n "${macos_apple_lock:-}" ]]; then
+    rm -f -- "$macos_apple_lock/owner"
+    rmdir "$macos_apple_lock"
+  fi
   [[ -z "${stage:-}" ]] || rm -rf -- "$stage"
   [[ -z "${macos_lock:-}" ]] || rmdir "$macos_lock"
 }
@@ -56,6 +60,17 @@ macos_lock() {
   trap macos_cleanup EXIT
   trap 'exit 130' INT
   trap 'exit 143' TERM
+}
+
+# Keychain defaults/search lists belong to the user, shared with iOS builds.
+macos_signing_lock() {
+  local directory="${1:-$HOME/.prelis-apple-signing.lock}"
+  if ! mkdir "$directory" 2>/dev/null; then
+    echo "別の Apple 署名処理が実行中です: $directory" >&2
+    return 1
+  fi
+  macos_apple_lock="$directory"
+  printf '%s\n' "$$" > "$directory/owner"
 }
 
 macos_version() {
@@ -83,6 +98,7 @@ macos_native_init() {
   export PATH="/opt/homebrew/bin:$HOME/.cargo/bin:$PATH"
   if [[ -n "${PRELIS_MACOS_DEVELOPER_DIR:-}" ]]; then export DEVELOPER_DIR="$PRELIS_MACOS_DEVELOPER_DIR"; fi
   macos_lock "$HOME/.prelis-macos-build.lock"
+  macos_signing_lock
 }
 
 macos_build_environment() {

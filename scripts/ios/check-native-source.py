@@ -54,5 +54,5 @@ def run(root, command):
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         sys.exit('Usage: check-native-source.py <command> [arguments...]')
-    status = run(Path(__file__).resolve().parents[2], sys.argv[1:])
+    status = run(Path(os.environ.get('PRELIS_IOS_REPO_ROOT', Path(__file__).resolve().parents[2])), sys.argv[1:])
     sys.exit(128 - status if status < 0 else status)

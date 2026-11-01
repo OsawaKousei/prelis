@@ -69,7 +69,7 @@ SDK の場所は、Git 管理対象外の `apps/mobile/android/local.properties`
 - Mac に Xcode 本体をインストールし、初回起動時のライセンス・追加コンポーネントの設定と、使用する iOS Simulator ランタイムの導入を完了します。
 - Mac にも Node.js・npm を用意し、ルートの `.nvmrc` と `package.json` の条件を満たす版を使用します。
 - Ruby 3.2 以降と Bundler 4.0.20 を用意します。CocoaPods 1.17.0・xcodeproj 1.28.1 と間接依存は [Gemfile.lock](../../apps/mobile/Gemfile.lock)、Pod の依存は [Podfile.lock](../../apps/mobile/ios/Podfile.lock) に固定します。
-- Ubuntu に Mutagen・OpenSSH クライアント・`timeout`（coreutils）を用意し、Mac のリモートログインを有効にして SSH 鍵認証で接続できるようにします。現行の iOS スクリプトの接続先は `kousei@192.168.10.22`、同期先は `~/prelis-ios-remote` です。macOS デスクトップ版の同期先とは分けます。
+- Ubuntu に Mutagen・OpenSSH クライアント・Python 3・`timeout`（coreutils）を用意し、Mac のリモートログインを有効にして SSH 鍵認証で接続できるようにします。既定の接続先は `kousei@192.168.10.22`、同期先は `~/prelis-ios-remote` です。変更する場合は iOS 用の [設定例](../../scripts/ios/.env.example)を `scripts/ios/.env` にコピーして権限を `0600` にし、`PRELIS_IOS_SSH_HOST`・`PRELIS_IOS_REMOTE_ROOT` を設定します。macOS デスクトップ版の同期先とは分けます。
 - Simulator 用の確認ビルドを Ubuntu へ回収する場合は、Ubuntu に `sha256sum`・`unzip` も必要です。
 
 Simulator の実行には署名証明書や Apple Developer Team の設定は不要です。iPhone 実機には開発署名が必要です。
@@ -78,7 +78,7 @@ Simulator の実行には署名証明書や Apple Developer Team の設定は不
 
 Mac のホームに `KUPACLLC-Apple-Development.p12` と `kupacprelismobileiosdevelopment.mobileprovision` を用意します。プロファイルは iOS App Development、Team `GLQCJ8YF9S`、App ID `jp.co.kupac.prelis` 用で、使用する iPhone の UDID と `.p12` に対応する証明書を含めます。
 
-Ubuntu 側の `scripts/macos/.env` に `PRELIS_APPSTORE_P12_PASSWORD` を設定し、次を実行します。ファイルがない場合は [.env.example](../../scripts/macos/.env.example)を基に作成します。
+Ubuntu 側の `scripts/ios/.env` に `PRELIS_IOS_DEVELOPMENT_P12_PASSWORD` を設定し、次を実行します。[.env.example](../../scripts/ios/.env.example)を基に作成し、`chmod 600 scripts/ios/.env` を実行します。移行期間は、iOS 側で未指定のパスワードに限り、従来の `scripts/macos/.env` または環境変数の `PRELIS_APPSTORE_P12_PASSWORD` を利用できます。
 
 ```sh
 ./scripts/ios/setup-device-signing.sh
@@ -92,7 +92,7 @@ Ubuntu 側の `scripts/macos/.env` に `PRELIS_APPSTORE_P12_PASSWORD` を設定�
 security unlock-keychain ~/Library/Keychains/prelis-ios-development.keychain-db
 ```
 
-プロファイルを更新した場合は、同じ名前で Mac のホームに保存し、セットアップスクリプトを再実行します。
+プロファイルを更新した場合は、同じ名前で Mac のホームに保存し、セットアップスクリプトを再実行します。古い証明書が残っていても、プロファイルと一致する署名 ID を選びます。一致する署名 ID が複数ある場合は停止するため、使用する証明書をプロファイルで明確にします。`.p12` のパスワードを変更した場合は `PRELIS_IOS_DEVELOPMENT_P12_PASSWORD` を更新し、既存キーチェーンの旧パスワードを `PRELIS_IOS_DEVELOPMENT_KEYCHAIN_PASSWORD` に設定します。キーチェーンは削除・再作成しません。
 
 ## 開発起動と動作確認用ビルド
 
@@ -144,7 +144,7 @@ Pod の準備には必ず `prepare-pods-on-mac.sh` を使います。固定版�
 
 `DEVELOPMENT_TEAM` は Debug / Release の通常のビルド設定に記載し、Expo CLI が署名設定済みと認識できるようにします。署名方式・証明書・プロファイルは引き続き `sdk=iphoneos*` の条件付き設定で管理します。Team を SDK 条件付きにすると Expo CLI が未設定と判断し、Xcode project に自動署名設定を書き足して競合するため避けます。
 
-`npm run ios` も同じ `bundle-on-mac.sh` を通して Expo CLI を起動し、不足している gem があれば固定版をインストールします。`Gemfile.lock` は Mac 用の `ffi` を固定しているため、`BUNDLE_FORCE_RUBY_PLATFORM` は使用しません。以前の設定で `Could not find ffi-1.17.4 in locally installed gems` が発生した場合は、Ubuntu 側の修正を同期してから同じ起動コマンドを再実行してください。Ruby ツールの更新や `Gemfile.lock` の削除は不要です。
+`npm run ios` も同じ `bundle-on-mac.sh` を通して Expo CLI を起動し、不足している gem があれば固定版をインストールします。`Gemfile.lock` は Mac 用の `ffi` を固定しているため、`BUNDLE_FORCE_RUBY_PLATFORM` は使用しません。以前の設定で `Could not find ffi-1.17.4 in locally installed gems` が発生した場合は、Ubuntu 側の修正を同期してから同じ起動コマンドを再実行してください。Ruby ツールの更新や `Gemfile.lock` の削除は不要です。Mac 上の各コマンドは `.nvmrc` と同じ Node.js を使用します。fnm がある場合はその版を選択するため、事前にインストールしてください。
 
 Mac の2つのターミナルで Metro と Simulator 用 Debug アプリを起動します。`SIMULATOR_UDID` には一覧の対象デバイスの UDID を設定します。
 
@@ -224,3 +224,13 @@ Android の更新時は `versionCode`、iOS の再提出時はビルド番号を
 `android/`・`ios/` は Git 管理するネイティブプロジェクトです。app.json の変更は必要なネイティブ設定にも反映します。通常の開発では、手動の署名設定を失う `expo prebuild --clean` は実行しません。
 
 アイコンの正本と更新・生成手順は [共有アイコン](../../packages/icons/README.md)を参照してください。Android のランチャー画像は `apps/mobile/android/app/src/main/res/`、iOS のアプリアイコンは `apps/mobile/ios/PrelisMobile/Images.xcassets/AppIcon.appiconset/` に生成します。Expo 側で参照する画像は app.json の設定も確認し、更新後はネイティブアプリを再ビルドします。
+
+## iOS スクリプトの排他制御と検証
+
+Ubuntu 側では `.mutagen-ios/build.lock` を使い、同期・ビルド・回収・署名準備・提出の操作を重複実行できないようにします。Mac 側では `~/.prelis-ios-build.lock` を使い、依存更新・開発起動・ビルド・ネイティブテストなどの同時実行を防ぎます。内部の子コマンドは所有権を引き継ぎ、最初に取得したプロセスが解除します。
+
+署名設定を扱う iOS 処理と macOS スクリプトは、共通の `~/.prelis-apple-signing.lock` でも排他制御します。両方の同期先へ最新スクリプトを反映してから使用します。通常終了・失敗・INT/TERM ではロックを解除します。強制終了で残った場合は、関連する処理が終了していることを確認し、`owner` ファイルの PID を確認してから `owner` と空のロックディレクトリを削除します。
+
+配布ビルドは、TypeScript・共有パッケージ・ネイティブ設定・依存定義・iOS スクリプトの入力ハッシュを開始時に保存し、各工程の前後と成果物確定前に照合します。変更があれば停止するので、編集が落ち着いてから再実行します。生成物・Android コード・Mac ローカルの `.xcode.env.local` はこのハッシュの対象外です。ビルド中の一時的な変更を元へ戻す操作まで検出する保証はありません。
+
+Ubuntu での回帰テストは `npm run test:ios:scripts` です。Mac 上でビルド後に `bash scripts/ios/test-native-on-mac.sh` を実行すると、専用 Simulator で UI のネイティブ動作確認を行います。結果とログは `apps/mobile/ios/build/native-smoke.*` に残します。

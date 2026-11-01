@@ -6,6 +6,17 @@ final class NativeSmokeTests: XCTestCase {
   override func setUpWithError() throws { continueAfterFailure = false }
 
   private func tap(_ label: String) {
+    if app.keyboards.firstMatch.exists,
+       let scroll = app.scrollViews.allElementsBoundByIndex.first(where: {
+         $0.frame.height > 300 && $0.frame.minY < 200
+       }) {
+      // Tap the page padding to dismiss the keyboard without changing the text.
+      scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.01, dy: 0.10)).tap()
+      let dismissed = XCTNSPredicateExpectation(
+        predicate: NSPredicate(format: "exists == false"), object: app.keyboards.firstMatch
+      )
+      XCTAssertEqual(XCTWaiter.wait(for: [dismissed], timeout: 5), .completed)
+    }
     for _ in 0..<6 {
       let matches = app.buttons.matching(NSPredicate(
         format: "label == %@ OR label BEGINSWITH %@", label, label + ", tab,"
@@ -46,7 +57,7 @@ final class NativeSmokeTests: XCTestCase {
     app.launch()
     XCTAssertTrue(app.staticTexts["アプリを選択"].waitForExistence(timeout: 20), app.debugDescription)
     tap("Diary")
-    let editor = app.textViews["日記の本文"]
+    let editor = app.textViews["diary-content"]
     XCTAssertTrue(editor.waitForExistence(timeout: 10), app.debugDescription)
     editor.tap()
     editor.typeText("swift-native-smoke")
@@ -91,17 +102,25 @@ final class NativeSmokeTests: XCTestCase {
     app.launch()
     XCTAssertTrue(app.staticTexts["アプリを選択"].waitForExistence(timeout: 20))
     tap("Timer")
-    XCTAssertTrue(app.staticTexts["選択中: swift-native-smoke.wav"].waitForExistence(timeout: 10))
+    XCTAssertTrue(app.staticTexts["swift-native-smoke.wav"].waitForExistence(timeout: 10))
     let minutes = app.textFields["時間（分）"]
     minutes.tap()
-    minutes.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 2) + "1\n")
+    minutes.doubleTap()
+    let selectAll = app.buttons.matching(NSPredicate(
+      format: "label IN %@", ["Select All", "すべてを選択", "すべて選択"]
+    )).firstMatch
+    if selectAll.waitForExistence(timeout: 2) { selectAll.tap() }
+    minutes.typeText("1")
+    XCTAssertEqual(minutes.value as? String, "1", app.debugDescription)
     tap("開始")
     tap("Diary")
     XCTAssertTrue(editor.waitForExistence(timeout: 10))
     tap("Timer")
     let clock = app.descendants(matching: .any).matching(identifier: "timer-clock").firstMatch
-    let completed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", "00:00"), object: clock)
-    XCTAssertEqual(XCTWaiter.wait(for: [completed], timeout: 75), .completed)
+    XCTAssertTrue(clock.exists)
+    let completed = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "完了")).firstMatch
+    XCTAssertTrue(completed.waitForExistence(timeout: 75), app.debugDescription)
+    XCTAssertFalse(app.buttons["開始"].isEnabled)
     XCTAssertFalse(app.staticTexts["終了音を再生できませんでした。"].exists)
     tap("リセット")
     tap("音声設定を開く")
@@ -110,6 +129,6 @@ final class NativeSmokeTests: XCTestCase {
     app.launch()
     XCTAssertTrue(app.staticTexts["アプリを選択"].waitForExistence(timeout: 20))
     tap("Timer")
-    XCTAssertTrue(app.staticTexts["選択中: なし"].waitForExistence(timeout: 10))
+    XCTAssertTrue(app.staticTexts["なし"].waitForExistence(timeout: 10))
   }
 }

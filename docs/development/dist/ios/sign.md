@@ -18,7 +18,7 @@ App Store Connect 提出用の署名付き IPA と、Simulator 向けの ZIP を
 ## 署名の準備
 
 [共通セットアップ](../../architecture.md#共通セットアップ)・[iOS の環境準備](../../mobile.md#ios)・[バージョンの更新](../../mobile.md#バージョンを揃える)を完了し、`npm run check` を通します。Simulator 単独ビルドでは、以下の配布用証明書・プロファイルの準備は不要です。
-配布ビルドでは Mac 上の `xcodebuild`・`codesign`・`security`・`lipo`・`ditto`・`shasum`・`python3`・`openssl`・`curl`、Ubuntu 上の `node`・`ssh`・`scp`・`sha256sum`・`unzip` を使います。依存の取得と Apple WWDR 中間証明書の取得にはネットワーク接続が必要です。
+配布ビルドでは Mac 上の `xcodebuild`・`codesign`・`security`・`lipo`・`ditto`・`shasum`・`python3`・`openssl`・`curl`、Ubuntu 上の `python3`・`ssh`・`scp`・`tar`・`unzip` を使います。依存の取得と Apple WWDR 中間証明書の取得にはネットワーク接続が必要です。
 
 ### 配布用の識別情報・証明書・プロファイル
 
@@ -30,10 +30,11 @@ App Store Connect 提出用の署名付き IPA と、Simulator 向けの ZIP を
 | 署名 ID | `Apple Distribution: KUPAC LLC (GLQCJ8YF9S)` |
 | App Store Connect 用プロファイル | Mac 上の `~/kupacprelismobileiosappstore.mobileprovision` |
 | プロファイル名 | `kupac-prelis-mobile-ios-appstore` |
-| `.p12` のパスワード | Ubuntu の `scripts/macos/.env` の `PRELIS_APPSTORE_P12_PASSWORD` |
+| `.p12` のパスワード | Ubuntu の `scripts/ios/.env` の `PRELIS_IOS_DISTRIBUTION_P12_PASSWORD` |
 
-`.env` は macOS デスクトップ版と共通です。未作成なら [.env.example](../../../../scripts/macos/.env.example)を基に用意します。パスワードは SSH の標準入力で渡し、`.env` をシェルとして実行しません。証明書・秘密鍵・パスワードをリポジトリや頒布物へ含めません。
-iOS の接続先・入力ファイル名・署名 ID・Team ID はスクリプト内の固定値です。`.env.example` の `PRELIS_MACOS_*` を変更しても iOS の設定は変わりません。
+設定は [.env.example](../../../../scripts/ios/.env.example)を `scripts/ios/.env` にコピーし、権限を `0600` にして用意します。接続先・Mac 作業パス・証明書とプロファイルのパス・Team ID・Bundle ID を iOS 用設定に集約しています。Team・Bundle ID・プロファイル名を変更する場合は、Xcode project の設定と Apple Developer 側の登録も揃えます。パスワードは SSH の標準入力で一時設定ファイルとして渡し、`.env` をシェルとして実行しません。リモートへ渡すのは実行する工程に必要な設定だけです。証明書・秘密鍵・パスワードをリポジトリや頒布物へ含めません。
+
+移行期間は、iOS 用パスワード・API 情報が未指定なら、従来の `scripts/macos/.env` または環境変数にある値を利用できます。`PRELIS_MACOS_*` の接続先・作業パスは iOS へ適用しません。
 
 プロファイルは上記の Team・App ID・配布証明書に対応し、有効期限内で、`get-task-allow=false` かつ端末 UDID の一覧を持たない App Store Connect 用を使います。実機開発用のプロファイルとは分けます。
 既存アプリを更新する場合は同じアプリ登録と Bundle ID を使用し、証明書の更新時もプロファイルとの対応を確認します。
@@ -53,17 +54,40 @@ Mac の Metro を停止してから実行します。同じ同期先で開発起
 
 | 成果物 | Ubuntu への回収先（Mac 側も同じリポジトリ相対パス） |
 | --- | --- |
-| Simulator ZIP | `apps/mobile/ios/build/simulator/PrelisMobile-simulator.app.zip` |
-| 提出用 IPA | `apps/mobile/ios/build/appstore/PrelisMobile.ipa` |
-| dSYM を含む Archive ZIP | `apps/mobile/ios/build/appstore/PrelisMobile.xcarchive.zip` |
-| Simulator の検証結果 | `apps/mobile/ios/build/simulator/verification.json` |
-| IPA の検証結果 | `apps/mobile/ios/build/appstore/verification.json` |
-| 上記5ファイルの SHA-256 一覧 | `apps/mobile/ios/build/ios-release-artifacts.sha256` |
+| Simulator ZIP | `apps/mobile/ios/build/release/all/simulator/PrelisMobile-simulator.app.zip` |
+| 提出用 IPA | `apps/mobile/ios/build/release/all/appstore/PrelisMobile.ipa` |
+| dSYM を含む Archive ZIP | `apps/mobile/ios/build/release/all/appstore/PrelisMobile.xcarchive.zip` |
+| Simulator の検証結果 | `apps/mobile/ios/build/release/all/simulator/verification.json` |
+| IPA の検証結果 | `apps/mobile/ios/build/release/all/appstore/verification.json` |
+| ビルド入力のハッシュとファイル一覧 | `apps/mobile/ios/build/release/all/build-inputs.json` |
+| 上記6ファイルの SHA-256 一覧 | `apps/mobile/ios/build/release/all/ios-release-artifacts.sha256` |
 
-検証済みの一式をステージング領域へ回収し、SHA-256 と ZIP / IPA の整合性を確認して出力先へ移します。失敗した工程で停止し、Mac の `apps/mobile/ios/build/logs/` に工程別ログを残します。
-出力名にはバージョンを含まず、再実行すると同名ファイルを置き換えます。提出・頒布に使う一式は、コミット・タグ・公開バージョン・ビルド番号・検証記録とともに版ごとに別途保管してください。アップロードまでは Mac 側の同じ IPA も保持します。
+検証済みの一式をステージング領域へ回収し、一覧の欠落・重複・想定外パス、各ファイルの SHA-256 と ZIP / IPA の整合性を確認して出力ディレクトリを置き換えます。置換に失敗した場合は以前の成果物へ戻します。一括生成と Simulator 単独ビルドは別の出力ディレクトリを使います。失敗した工程で停止し、Mac の `apps/mobile/ios/build/logs/` に工程別ログを残します。
+作業用成果物は上記の `build/release/` に残し、同時に Ubuntu / Mac の `dist/ios/v<version>/build-<build>/all/` に配布・保管用の一式を保存します。バージョンとビルド番号は生成済みアプリの検証記録から取得します。別の版・ビルドは別ディレクトリになり、同じ版・ビルドの再実行は一式を検証してから置き換えます。コミット・タグ・動作確認記録も対象ビルドに紐付けて残します。
 
-同期済みの Mac で直接一括生成する場合は、Mac の `~/prelis-ios-remote` で次を実行します。パスワードは対話入力し、成果物は Mac 側に生成します。Ubuntu への回収は行いません。
+```text
+dist/ios/v1.0.1/build-2/
+├── all/
+│   ├── appstore/
+│   │   ├── PrelisMobile.ipa
+│   │   ├── PrelisMobile.xcarchive.zip
+│   │   └── verification.json
+│   ├── simulator/
+│   │   ├── PrelisMobile-simulator.app.zip
+│   │   └── verification.json
+│   ├── build-inputs.json
+│   └── SHA256SUMS
+└── simulator/                    # Simulator 単独ビルド
+    ├── simulator/
+    │   ├── PrelisMobile-simulator.app.zip
+    │   └── verification.json
+    ├── build-inputs.json
+    └── SHA256SUMS
+```
+
+`dist/macos` と同様にバージョン別のディレクトリと `SHA256SUMS` を使います。iOS は同一公開バージョンでビルド番号を増やすため `build-<build>/` も設け、一括生成と Simulator 単独生成の入力が異なる場合に一式が混ざらないよう分離します。ログ、DerivedData、署名用の秘密情報は配布ディレクトリに含めません。生成物は Git 管理対象外です。
+
+同期済みの Mac で直接一括生成する場合は、Mac の `~/prelis-ios-remote` で次を実行します。パスワードは Mac 側の iOS 設定・環境変数または対話入力で渡し、成果物は Mac 側に生成します。Ubuntu への回収は行いません。Mac 側の `dist/ios/` への配置は行います。
 
 ```sh
 bash scripts/ios/build-on-mac.sh --all
@@ -77,18 +101,18 @@ Simulator 用だけ生成する場合は、Ubuntu 側で次を実行します。
 ./scripts/ios/build-ios-simulator.sh
 ```
 
-同期・Mac 上の依存準備・署名なしの Release / Simulator ビルドを行い、JavaScript と画像を同梱した `.app` を ZIP 化して Ubuntu へ回収します。Simulator ZIP と `simulator/verification.json` の出力先は一括生成時と共通で、SHA-256 一覧は `apps/mobile/ios/build/ios-simulator-artifacts.sha256` です。回収時に SHA-256 と ZIP の整合性を検証します。
+同期・Mac 上の依存準備・署名なしの Release / Simulator ビルドを行い、JavaScript と画像を同梱した `.app` を ZIP 化して Ubuntu へ回収します。出力先は `apps/mobile/ios/build/release/simulator/` で、`simulator/` 内に ZIP と検証結果、直下に `build-inputs.json` と `ios-simulator-artifacts.sha256` を保存します。同時に `dist/ios/v<version>/build-<build>/simulator/` に ZIP・検証結果・入力記録・`SHA256SUMS` を保存します。一括生成時の成果物は置き換えません。回収時に SHA-256 と ZIP の整合性を検証します。
 Ubuntu への回収を伴わず Mac で直接作る場合は、同期後に Mac の `~/prelis-ios-remote` で `bash scripts/ios/build-on-mac.sh` を実行します。
 
 この成果物は Simulator 専用です。インストール・起動は [起動確認](#3-インストール起動を確認する)に従い、Metro を停止した状態で確認します。
 
 ## 2. 成果物と署名を確認する
 
-一括生成した場合は、次を実行します。
+一括生成した場合は、次を実行します。パスのバージョン・ビルド番号は対象に合わせます。
 
 ```sh
-release_dir=apps/mobile/ios/build
-(cd "$release_dir" && sha256sum -c ios-release-artifacts.sha256)
+release_dir=dist/ios/v1.0.1/build-2/all
+(cd "$release_dir" && sha256sum -c SHA256SUMS)
 unzip -t "$release_dir/simulator/PrelisMobile-simulator.app.zip"
 unzip -t "$release_dir/appstore/PrelisMobile.ipa"
 unzip -t "$release_dir/appstore/PrelisMobile.xcarchive.zip"
@@ -98,8 +122,8 @@ cat "$release_dir/simulator/verification.json" "$release_dir/appstore/verificati
 Simulator 用だけ生成した場合は、そのビルドの一覧と検証結果を使用します。
 
 ```sh
-release_dir=apps/mobile/ios/build
-(cd "$release_dir" && sha256sum -c ios-simulator-artifacts.sha256)
+release_dir=dist/ios/v1.0.1/build-2/simulator
+(cd "$release_dir" && sha256sum -c SHA256SUMS)
 unzip -t "$release_dir/simulator/PrelisMobile-simulator.app.zip"
 cat "$release_dir/simulator/verification.json"
 ```
@@ -108,6 +132,7 @@ cat "$release_dir/simulator/verification.json"
 
 - Bundle ID とプラットフォーム、CPU が配布形式に一致すること。
 - `version`・`build` が提出予定の公開バージョン・ビルド番号に一致すること。スクリプトは Simulator・Archive・IPA 間の一致を検証しますが、App Store Connect の提出履歴は確認しません。
+- `sourceSHA256` が同じ入力を示し、`build-inputs.json` のハッシュと一致すること。ビルドは開始時・工程間・終了時に入力の変更を検出すると成果物確定を停止します。
 - JavaScript バンドル・共有 PNG・アプリアイコンが収録されていること。
 - 実機用アプリの `codesign --verify --deep --strict` が成功し、署名証明書が埋め込みプロファイルに含まれること。レポートの `certificateSHA1`・`profileUUID` を使用した証明書・プロファイルと照合します。
 - App ID・Team ID が一致し、開発用 Entitlement が有効になっていないこと。
@@ -143,4 +168,24 @@ IPA と Archive ZIP は提出・保管用として管理します。一般の iP
 
 - 一括ビルドは成果物の作成・ローカル検証・回収までを行います。GitHub Releases の公開、App Store Connect へのアップロード、審査提出は含みません。
 - 旧資料の 2026-10-30 の記録では、旧 CLI 版 `1.0 (1)` の一括生成・署名・回収・Simulator のホーム表示を確認しています。この記録を現行 Expo 版の配布確認として扱いません。
-- 本文書の作成ではビルドや Apple 側への送信を実行していません。現行版の配布確認と公開状況は、リリースごとの記録に残します。
+- 本文書の手順やスクリプトの回帰テストは Apple 側の受理・公開を示す記録ではありません。配布確認と公開状況はリリースごとに記録します。
+
+## スクリプト改修時の確認記録
+
+2026-11-01 に Node.js 24.19.0 / Xcode 27.1 の開発用 Mac で、Simulator 単独ビルド、一括ビルドによる署名付き Archive / IPA の生成、Ubuntu への回収と成果物一式の SHA-256 検証を確認しました。生成物の公開バージョンは `1.0.1`、ビルド番号は `2` です。Simulator・Archive・IPA の入力ハッシュとバージョンが一致し、終了後にキーチェーン設定の復元とロック解除も確認しました。
+
+二重起動の拒否、macOS / iOS 間の共通署名ロック、Xcode project 正規化の往復処理も実環境で確認しています。Apple 側への検証要求・アップロードは実行していません。
+
+同日の専用 iPhone 18 Pro / iOS 27.0 Simulator で、日記の保存・再読込、パスワード生成・コピー、音声の追加・試聴・選択の再読込、1分タイマーの完了、音声削除後の再起動を含む UI テストが成功しました。テストの古い表示参照とキーボード・数値入力の操作を更新し、失敗時にも `summary.json` を残すようにしています。Ubuntu 上の回帰テスト26件、モバイルの Lint・型チェックも成功しています。
+
+
+`dist/ios` 対応では、同じ `1.0.1 (2)` の検証済み成果物を Ubuntu / Mac の両方へ配置し、回収処理からの自動配置と全ファイルの SHA-256 を確認しました。改修後の回帰テスト31件と Shell / Python の構文確認も成功しています。この配置確認では再ビルドや Apple 側への送信は実行していません。
+
+## 既存成果物の再配置
+
+既存の検証済み成果物を再ビルドせずに `dist/ios/` へ配置し直す場合は、Ubuntu / Mac のそれぞれのリポジトリで次を実行できます。元のチェックサム、検証記録のバージョン・ビルド番号・入力ハッシュを確認してから配置します。
+
+```sh
+python3 scripts/ios/internal/artifacts.py distribute apps/mobile/ios/build/release/all all --destination dist/ios
+python3 scripts/ios/internal/artifacts.py distribute apps/mobile/ios/build/release/simulator simulator --destination dist/ios
+```

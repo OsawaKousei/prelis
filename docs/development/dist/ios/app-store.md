@@ -14,15 +14,15 @@
 
 | 内容 | 設定・保存先 |
 | --- | --- |
-| API キー ID | Ubuntu の `scripts/macos/.env` の `PRELIS_APPSTORE_API_KEY_ID` |
+| API キー ID | Ubuntu の `scripts/ios/.env` の `PRELIS_APPSTORE_API_KEY_ID` |
 | API Issuer ID | 同ファイルの `PRELIS_APPSTORE_API_ISSUER_ID` |
 | API 秘密鍵 | Mac 上の `~/.appstoreconnect/private_keys/AuthKey_<KEY_ID>.p8` |
-| 提出用 IPA | `apps/mobile/ios/build/appstore/PrelisMobile.ipa` |
-| IPA の照合に使う一覧 | `apps/mobile/ios/build/ios-release-artifacts.sha256` |
+| 提出用 IPA | `dist/ios/v1.0.1/build-2/all/appstore/PrelisMobile.ipa` |
+| IPA の照合に使う一覧 | `dist/ios/v1.0.1/build-2/all/SHA256SUMS` |
 | 掲載文・画像 | `dist/app-store-ios/text.md` と同ディレクトリの画像 |
 
 API キーは対象アプリのアップロードに使用できるものを用意します。`.p8` の内容を `.env` に書き込んだり Ubuntu へコピーしたりしません。
-認証は macOS デスクトップ版と共通の設定ファイルを使いますが、IPA の照合先は iOS 専用の Mac 同期先です。
+認証情報は iOS 用設定へ記載します。移行期間は未指定の API 情報に従来の macOS 設定を利用できます。IPA の照合先は iOS 専用の Mac 同期先です。
 
 ## 1. 提出する IPA を作成・確認する
 
@@ -30,22 +30,23 @@ API キーは対象アプリのアップロードに使用できるものを用�
 ビルド元のコミットとタグ、公開バージョン・ビルド番号、IPA の SHA-256、署名・プロファイルと動作確認の記録を残します。ビルド番号は App Store Connect の提出履歴と照合し、更新方法は [モバイル開発](../../mobile.md#バージョンを揃える)を参照してください。
 
 ```sh
-ipa=apps/mobile/ios/build/appstore/PrelisMobile.ipa
+# バージョンとビルド番号を提出対象に合わせます。
+ipa=dist/ios/v1.0.1/build-2/all/appstore/PrelisMobile.ipa
 test -f "$ipa"
 sha256sum "$ipa"
 ./scripts/ios/upload-appstore.sh --validate-only "$ipa"
 ```
 
-`--validate-only` も App Store Connect と通信します。[upload-appstore.sh](../../../../scripts/ios/upload-appstore.sh) は、指定 IPA のハッシュを一覧と照合し、Mac 上の同じパスの IPA を一時コピーして、そのハッシュとも一致することを確認します。
+`--validate-only` も App Store Connect と通信します。[upload-appstore.sh](../../../../scripts/ios/upload-appstore.sh) は、指定 IPA のハッシュを一覧と照合し、Mac 上の同じ版・ビルドの `dist/ios/` にある IPA を一時コピーして、そのハッシュとも一致することを確認します。
 そのコピーについて実機用 arm64、Bundle ID、バージョン、JavaScript・アセット、署名、プロファイルの有効期限、証明書との対応、配布用 Entitlements を確認した後、`xcrun altool --validate-app` を実行します。
 
-スクリプトはソース同期・ビルド・IPA の転送・再署名を行いません。回収時のディレクトリ構成とハッシュ一覧、対応する Mac 側の IPA を保持します。Mac で再ビルドして IPA が置き換わっている場合は停止するため、古い Ubuntu 側の IPA と混在させません。
+スクリプトはソース同期・ビルド・IPA の転送・再署名を行いません。対象の `dist/ios/v<version>/build-<build>/all/` と、対応する Mac 側の同じ版・ビルドを保持します。新しいビルドを作っても過去ビルドのディレクトリは残ります。同じ版・ビルドを作り直して IPA が変わった場合はハッシュ不一致で停止します。従来の `apps/mobile/ios/build/release/all/appstore/PrelisMobile.ipa` と対応する作業用ハッシュ一覧も引き続き指定できます。
 
 ## 2. IPA をアップロードして処理完了を確認する
 
 ```sh
 ./scripts/ios/upload-appstore.sh \
-  apps/mobile/ios/build/appstore/PrelisMobile.ipa
+  dist/ios/v1.0.1/build-2/all/appstore/PrelisMobile.ipa
 ```
 
 前節のローカル照合と Apple 側の検証を再実行し、成功した場合だけ、検証した同じ一時コピーを `xcrun altool --upload-app` で送信します。エラー時は停止し、自動再試行しません。[Apple のアップロード手順](https://developer.apple.com/help/app-store-connect/manage-builds/upload-builds/)も参照してください。

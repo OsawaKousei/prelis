@@ -155,7 +155,17 @@ if [[ "$minimum_system_version" != '12.0' ]]; then
   echo "最低対応 macOS が一致しません: $minimum_system_version" >&2
   exit 1
 fi
-codesign -d --entitlements :- "$app" 2>/dev/null | python3 -c 'import sys,plistlib; e=plistlib.loads(sys.stdin.buffer.read()); assert e["com.apple.security.app-sandbox"] is True; assert e["com.apple.application-identifier"] == sys.argv[1] + "." + sys.argv[2]; assert e["com.apple.developer.team-identifier"] == sys.argv[1]; print("Entitlements: App Sandbox, App ID, Team ID OK")' "$PRELIS_MACOS_TEAM_ID" "$expected_bundle_id"
+codesign -d --entitlements :- "$app" > "$stage/entitlements.plist" 2>/dev/null
+python3 - "$stage/entitlements.plist" "$PRELIS_MACOS_TEAM_ID" "$expected_bundle_id" <<'PY'
+import plistlib, sys
+with open(sys.argv[1], 'rb') as file:
+    values = plistlib.load(file)
+if (values.get('com.apple.security.app-sandbox') is not True
+        or values.get('com.apple.application-identifier') != sys.argv[2] + '.' + sys.argv[3]
+        or values.get('com.apple.developer.team-identifier') != sys.argv[2]):
+    raise SystemExit('App Store Entitlements mismatch')
+print('Entitlements: App Sandbox, App ID, Team ID OK')
+PY
 
 case "$(uname -m)" in
   arm64) arch=aarch64 ;;

@@ -4,16 +4,18 @@ if [[ "$(uname -s)" != Darwin || $# -ne 0 ]]; then
   echo 'Mac で prepare-pods-on-mac.sh を引数なしで実行してください。' >&2
   exit 2
 fi
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/internal/common.sh"
+ios_native_init
+ios_require_commands lsof
 ios_root="$repo_root/apps/mobile/ios"
-bundle_script="$repo_root/scripts/ios/bundle-on-mac.sh"
+bundle_script="$ios_script_dir/bundle-on-mac.sh"
 if lsof -nP -iTCP:8081 -sTCP:LISTEN >/dev/null 2>&1; then
   echo '依存準備の前に Metro を停止してください。' >&2
   exit 1
 fi
-bash "$bundle_script" exec ruby "$repo_root/scripts/ios/normalize-xcode-project.rb"
+bash "$bundle_script" exec ruby "$ios_script_dir/normalize-xcode-project.rb"
 cd "$ios_root"
-bash "$bundle_script" exec python3 "$repo_root/scripts/ios/check-native-source.py" pod install --deployment
+bash "$bundle_script" exec python3 "$ios_script_dir/check-native-source.py" pod install --deployment
 
 # npm ci can leave a stale Watchman index after macOS drops filesystem events.
 # Recreate only this mirror's watches after all dependency writes have finished.
