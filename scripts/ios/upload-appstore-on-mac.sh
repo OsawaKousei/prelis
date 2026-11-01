@@ -19,7 +19,7 @@ if [[ "$filename" != PrelisMobile.ipa || ! "$expected_hash" =~ ^[0-9a-f]{64}$ ||
 fi
 
 if [[ "$relative_ipa" != apps/mobile/ios/build/release/all/appstore/PrelisMobile.ipa &&
-      ! "$relative_ipa" =~ ^dist/ios/v[0-9]+(\.[0-9]+){0,2}/build-[0-9]+(\.[0-9]+){0,2}/all/appstore/PrelisMobile\.ipa$ ]]; then
+      ! "$relative_ipa" =~ ^dist/ios/v[0-9]+(\.[0-9]+){1,3}([-+][A-Za-z0-9.-]+)?/build-[0-9]+(\.[0-9]+){0,2}/all/appstore/PrelisMobile\.ipa$ ]]; then
   echo 'IPA の保管パスが不正です。' >&2
   exit 2
 fi

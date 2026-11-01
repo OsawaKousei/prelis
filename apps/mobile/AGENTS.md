@@ -31,6 +31,7 @@ Run lint and typecheck before declaring any task done.
 
 ## Building and signing in this repository
 
+- モバイルの公開バージョンは `package.json`・ルートの `package-lock.json`・ホーム画面表示・`app.json` の `expo.version`・Android の `versionName`・iOS の `MARKETING_VERSION`（Debug / Release）と `CFBundleShortVersionString` で必ず一致させます。バージョン変更時は一括更新し、[バージョンを揃える手順](../../docs/development/mobile.md#バージョンを揃える)と `npm run test:ios:scripts` で一致を確認します。ビルド番号は公開バージョンと別に管理し、Expo と各ネイティブ設定で揃えます。
 - Expo アカウントを登録せず、EAS Build・EAS Submit・EAS Update は使いません。ユーザーが指定した運用方針です。
 - 開発は Expo CLI、署名付き配布は `scripts/android/` の Gradle と `scripts/ios/` の Xcode ワークフローを使います。
 - `ios/`・`android/` は Git 管理し、署名設定を直接保守します。`expo prebuild --clean` は署名設定を削除するため、通常のビルドで実行しません。

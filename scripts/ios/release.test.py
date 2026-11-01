@@ -69,9 +69,9 @@ class ReleaseTests(unittest.TestCase):
                                'test', str(INTERNAL / 'common.sh')],
                               env=self.environment, capture_output=True, text=True, **kwargs)
 
-    def release_set(self, directory, mode='all', version='1.0.1', build='2'):
+    def release_set(self, directory, mode='all', version='1.0.1', build='2', release_version='0.1.3'):
         self.artifact_set(directory, mode)
-        info = dict(version=version, build=build, sourceSHA256='a' * 64)
+        info = dict(releaseVersion=release_version, version=version, build=build, sourceSHA256='a' * 64)
         for name in ['simulator/verification.json', *(['appstore/verification.json'] if mode == 'all' else [])]:
             (directory / name).write_text(json.dumps(info))
         (directory / 'build-inputs.json').write_text(json.dumps(dict(sha256='a' * 64)))
@@ -85,7 +85,7 @@ class ReleaseTests(unittest.TestCase):
         source, root = self.root / 'stage', self.root / 'dist/ios'
         self.release_set(source)
         first = artifacts.distribute(source, root, 'all')
-        self.assertEqual(first, root / 'v1.0.1/build-2/all')
+        self.assertEqual(first, root / 'v0.1.3/build-2/all')
         self.assertEqual(set(p.relative_to(first).as_posix() for p in first.rglob('*') if p.is_file()),
                          {*artifacts.ALL, 'SHA256SUMS'})
         artifacts.verify(first, 'all')
@@ -95,7 +95,7 @@ class ReleaseTests(unittest.TestCase):
         artifacts.verify(second, 'all')
         self.release_set(source, mode='simulator')
         simulator = artifacts.distribute(source, root, 'simulator')
-        self.assertEqual(simulator, root / 'v1.0.1/build-2/simulator')
+        self.assertEqual(simulator, root / 'v0.1.3/build-2/simulator')
         artifacts.verify(first, 'all')
         artifacts.verify(simulator, 'simulator')
         self.assertFalse((simulator / 'appstore').exists())
@@ -106,7 +106,7 @@ class ReleaseTests(unittest.TestCase):
         destination = artifacts.distribute(source, root, 'all')
         original = (destination / 'SHA256SUMS').read_bytes()
         for change in [dict(version='../outside'), dict(build='2/other'), dict(version='1.0.2'),
-                       dict(sourceSHA256='b' * 64)]:
+                       dict(sourceSHA256='b' * 64), dict(releaseVersion='../outside'), dict(releaseVersion='0.1.4')]:
             self.release_set(source)
             report = source / 'appstore/verification.json'
             report.write_text(json.dumps({**json.loads(report.read_text()), **change}))
@@ -136,7 +136,7 @@ class ReleaseTests(unittest.TestCase):
         destination = artifacts.distribute(source, self.root / 'dist/ios', 'all')
         (destination / 'simulator/PrelisMobile-simulator.app.zip').unlink()
         self.assertEqual(artifacts.remote_ipa(destination).as_posix(),
-                         'dist/ios/v1.0.1/build-2/all/appstore/PrelisMobile.ipa')
+                         'dist/ios/v0.1.3/build-2/all/appstore/PrelisMobile.ipa')
         self.assertEqual(artifacts.remote_ipa(source).as_posix(),
                          'apps/mobile/ios/build/release/all/appstore/PrelisMobile.ipa')
         (destination / 'appstore/verification.json').write_text('{}')
@@ -157,6 +157,41 @@ class ReleaseTests(unittest.TestCase):
             artifacts.distribute(source, root, 'all')
         self.assertEqual(artifacts.release_info(destination / 'simulator/verification.json')['version'], '1.0.1')
         artifacts.verify(destination, 'all')
+
+    def test_legacy_build_uses_captured_package_version_and_preserves_native_version(self):
+        source = self.root / 'stage'
+        self.release_set(source)
+        package = self.root / 'apps/mobile/package.json'
+        package.parent.mkdir(parents=True)
+        package.write_text(json.dumps(dict(version='0.1.3')))
+        for name in ('simulator/verification.json', 'appstore/verification.json'):
+            report = json.loads((source / name).read_text())
+            report.pop('releaseVersion')
+            (source / name).write_text(json.dumps(report))
+        (source / 'build-inputs.json').write_text(json.dumps(dict(
+            sha256='a' * 64, files={'apps/mobile/package.json': artifacts.digest(package)})))
+        self.rehash(source)
+        with patch.object(artifacts, 'ROOT', self.root):
+            destination = artifacts.distribute(source, self.root / 'dist/ios', 'all')
+        self.assertEqual(destination, self.root / 'dist/ios/v0.1.3/build-2/all')
+        info = artifacts.release_info(destination / 'appstore/verification.json')
+        self.assertEqual(info['releaseVersion'], '0.1.3')
+        self.assertEqual(info['version'], '1.0.1')
+        self.assertEqual((source / 'appstore/PrelisMobile.ipa').read_bytes(),
+                         (destination / 'appstore/PrelisMobile.ipa').read_bytes())
+        artifacts.verify(destination, 'all')
+        package.write_text(json.dumps(dict(version='0.1.4')))
+        with patch.object(artifacts, 'ROOT', self.root), self.assertRaises(ValueError):
+            artifacts.distribute(source, self.root / 'dist/ios', 'all')
+        self.assertEqual(artifacts.remote_ipa(destination).as_posix(),
+                         'dist/ios/v0.1.3/build-2/all/appstore/PrelisMobile.ipa')
+
+    def test_recorded_release_version_survives_future_package_updates(self):
+        source = self.root / 'stage'
+        self.release_set(source, release_version='0.1.3')
+        with patch.object(artifacts, 'package_release_version', side_effect=AssertionError('must use recorded version')):
+            destination = artifacts.distribute(source, self.root / 'dist/ios', 'all')
+        self.assertEqual(destination, self.root / 'dist/ios/v0.1.3/build-2/all')
 
     def test_configuration_is_data_and_exports_only_needed_secrets(self):
         self.env_file.write_text("PRELIS_IOS_DISTRIBUTION_P12_PASSWORD='$(touch forbidden)'\n"

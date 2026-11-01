@@ -14,7 +14,7 @@
 | --- | --- |
 | パッケージ名 | `jp.co.kupacllc.prelis` |
 | 頒布バージョン | `apps/mobile/package.json` の `version`：`0.1.3`。出力ディレクトリとファイル名の `<version>` に使う |
-| ストア向け表示バージョン / ビルド番号 | 現行設定は `1.0.1` / `2`。提出履歴に続く番号を使用する |
+| ストア向け表示バージョン / ビルド番号 | 現行設定は `0.1.3` / `2`。提出履歴に続く番号を使用する |
 | 提出用 AAB | `dist/android/v<version>/PrelisMobile_<version>_play.aab` |
 | アップロード鍵 | 既定は `~/keys/play-upload.jks`、別名 `play-upload` |
 | 直接頒布 APK のアプリ署名鍵 | 既定は `~/keys/app-signing.jks`、別名 `app-signing` |

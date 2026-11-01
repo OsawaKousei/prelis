@@ -197,7 +197,7 @@ PY
 import json, pathlib, sys
 p = pathlib.Path(sys.argv[1])
 reports = [json.loads((p / name).read_text()) for name in ['simulator/verification.json', 'archive-verification.json', 'appstore/verification.json']]
-if len({(r['version'], r['build'], r['sourceSHA256']) for r in reports}) != 1:
+if len({(r['releaseVersion'], r['version'], r['build'], r['sourceSHA256']) for r in reports}) != 1:
     raise SystemExit('Version/build/source mismatch')
 if reports[1]['certificateSHA1'] != reports[2]['certificateSHA1']:
     raise SystemExit('Export signing certificate changed')

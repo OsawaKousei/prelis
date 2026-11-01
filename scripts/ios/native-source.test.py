@@ -2,6 +2,7 @@ import os
 import json
 import pathlib
 import plistlib
+import re
 import shutil
 import subprocess
 import sys
@@ -33,6 +34,27 @@ class NativeSourceTests(unittest.TestCase):
 
     def test_info_plist_declares_required_new_architecture(self):
         self.assertIs(plistlib.loads(self.info.read_bytes())['RCTNewArchEnabled'], True)
+
+    def test_mobile_versions_and_build_numbers_are_aligned(self):
+        root = SOURCE.parents[1]
+        version = json.loads((root / 'apps/mobile/package.json').read_text())['version']
+        lock = json.loads((root / 'package-lock.json').read_text())
+        expo = json.loads((root / 'apps/mobile/app.json').read_text())['expo']
+        info = plistlib.loads(self.info.read_bytes())
+        project = (root / 'apps/mobile/ios/PrelisMobile.xcodeproj/project.pbxproj').read_text()
+        gradle = (root / 'apps/mobile/android/app/build.gradle').read_text()
+        self.assertEqual(lock['packages']['apps/mobile']['version'], version)
+        self.assertEqual(expo['version'], version)
+        for platform in ('ios', 'android'):
+            self.assertEqual(expo[platform].get('version', version), version)
+        self.assertEqual(info['CFBundleShortVersionString'], version)
+        self.assertEqual(re.findall(r'\bMARKETING_VERSION = ([^;]+);', project), [version, version])
+        self.assertEqual(re.search(r'\bversionName "([^"]+)"', gradle)[1], version)
+        self.assertIn(f'>v{version}</Text>', (root / 'apps/mobile/src/app/index.tsx').read_text())
+        self.assertEqual(info['CFBundleVersion'], expo['ios']['buildNumber'])
+        self.assertEqual(set(re.findall(r'\bCURRENT_PROJECT_VERSION = ([^;]+);', project)),
+                         {expo['ios']['buildNumber']})
+        self.assertEqual(int(re.search(r'\bversionCode (\d+)', gradle)[1]), expo['android']['versionCode'])
 
     def test_expo_recognizes_existing_signing_team(self):
         project = self.root / 'apps/mobile/ios/PrelisMobile.xcodeproj/project.pbxproj'

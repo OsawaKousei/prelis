@@ -63,10 +63,10 @@ Mac の Metro を停止してから実行します。同じ同期先で開発起
 | 上記6ファイルの SHA-256 一覧 | `apps/mobile/ios/build/release/all/ios-release-artifacts.sha256` |
 
 検証済みの一式をステージング領域へ回収し、一覧の欠落・重複・想定外パス、各ファイルの SHA-256 と ZIP / IPA の整合性を確認して出力ディレクトリを置き換えます。置換に失敗した場合は以前の成果物へ戻します。一括生成と Simulator 単独ビルドは別の出力ディレクトリを使います。失敗した工程で停止し、Mac の `apps/mobile/ios/build/logs/` に工程別ログを残します。
-作業用成果物は上記の `build/release/` に残し、同時に Ubuntu / Mac の `dist/ios/v<version>/build-<build>/all/` に配布・保管用の一式を保存します。バージョンとビルド番号は生成済みアプリの検証記録から取得します。別の版・ビルドは別ディレクトリになり、同じ版・ビルドの再実行は一式を検証してから置き換えます。コミット・タグ・動作確認記録も対象ビルドに紐付けて残します。
+作業用成果物は上記の `build/release/` に残し、同時に Ubuntu / Mac の `dist/ios/v<releaseVersion>/build-<build>/all/` に配布・保管用の一式を保存します。配布版 `releaseVersion` は `apps/mobile/package.json` の `version`（現行 `0.1.3`）をビルド時に記録し、保存先に使います。ネイティブの公開バージョン `version` とビルド番号 `build` は生成済みアプリから取得します。現行の `releaseVersion` と `version` はともに `0.1.3` に揃え、異なる場合はビルド時の検証で停止します。ビルド番号は `2` として別項目で管理します。別の版・ビルドは別ディレクトリになり、同じ版・ビルドの再実行は一式を検証してから置き換えます。コミット・タグ・動作確認記録も対象ビルドに紐付けて残します。
 
 ```text
-dist/ios/v1.0.1/build-2/
+dist/ios/v0.1.3/build-2/
 ├── all/
 │   ├── appstore/
 │   │   ├── PrelisMobile.ipa
@@ -85,7 +85,7 @@ dist/ios/v1.0.1/build-2/
     └── SHA256SUMS
 ```
 
-`dist/macos` と同様にバージョン別のディレクトリと `SHA256SUMS` を使います。iOS は同一公開バージョンでビルド番号を増やすため `build-<build>/` も設け、一括生成と Simulator 単独生成の入力が異なる場合に一式が混ざらないよう分離します。ログ、DerivedData、署名用の秘密情報は配布ディレクトリに含めません。生成物は Git 管理対象外です。
+`dist/macos` と同様に配布版ごとのディレクトリと `SHA256SUMS` を使います。Android と同じく、配布版はモバイルの npm パッケージ版を基準にします。iOS は同一公開バージョンでビルド番号を増やすため `build-<build>/` も設け、一括生成と Simulator 単独生成の入力が異なる場合に一式が混ざらないよう分離します。ログ、DerivedData、署名用の秘密情報は配布ディレクトリに含めません。生成物は Git 管理対象外です。
 
 同期済みの Mac で直接一括生成する場合は、Mac の `~/prelis-ios-remote` で次を実行します。パスワードは Mac 側の iOS 設定・環境変数または対話入力で渡し、成果物は Mac 側に生成します。Ubuntu への回収は行いません。Mac 側の `dist/ios/` への配置は行います。
 
@@ -101,7 +101,7 @@ Simulator 用だけ生成する場合は、Ubuntu 側で次を実行します。
 ./scripts/ios/build-ios-simulator.sh
 ```
 
-同期・Mac 上の依存準備・署名なしの Release / Simulator ビルドを行い、JavaScript と画像を同梱した `.app` を ZIP 化して Ubuntu へ回収します。出力先は `apps/mobile/ios/build/release/simulator/` で、`simulator/` 内に ZIP と検証結果、直下に `build-inputs.json` と `ios-simulator-artifacts.sha256` を保存します。同時に `dist/ios/v<version>/build-<build>/simulator/` に ZIP・検証結果・入力記録・`SHA256SUMS` を保存します。一括生成時の成果物は置き換えません。回収時に SHA-256 と ZIP の整合性を検証します。
+同期・Mac 上の依存準備・署名なしの Release / Simulator ビルドを行い、JavaScript と画像を同梱した `.app` を ZIP 化して Ubuntu へ回収します。出力先は `apps/mobile/ios/build/release/simulator/` で、`simulator/` 内に ZIP と検証結果、直下に `build-inputs.json` と `ios-simulator-artifacts.sha256` を保存します。同時に `dist/ios/v<releaseVersion>/build-<build>/simulator/` に ZIP・検証結果・入力記録・`SHA256SUMS` を保存します。一括生成時の成果物は置き換えません。回収時に SHA-256 と ZIP の整合性を検証します。
 Ubuntu への回収を伴わず Mac で直接作る場合は、同期後に Mac の `~/prelis-ios-remote` で `bash scripts/ios/build-on-mac.sh` を実行します。
 
 この成果物は Simulator 専用です。インストール・起動は [起動確認](#3-インストール起動を確認する)に従い、Metro を停止した状態で確認します。
@@ -111,7 +111,7 @@ Ubuntu への回収を伴わず Mac で直接作る場合は、同期後に Mac 
 一括生成した場合は、次を実行します。パスのバージョン・ビルド番号は対象に合わせます。
 
 ```sh
-release_dir=dist/ios/v1.0.1/build-2/all
+release_dir=dist/ios/v0.1.3/build-2/all
 (cd "$release_dir" && sha256sum -c SHA256SUMS)
 unzip -t "$release_dir/simulator/PrelisMobile-simulator.app.zip"
 unzip -t "$release_dir/appstore/PrelisMobile.ipa"
@@ -122,7 +122,7 @@ cat "$release_dir/simulator/verification.json" "$release_dir/appstore/verificati
 Simulator 用だけ生成した場合は、そのビルドの一覧と検証結果を使用します。
 
 ```sh
-release_dir=dist/ios/v1.0.1/build-2/simulator
+release_dir=dist/ios/v0.1.3/build-2/simulator
 (cd "$release_dir" && sha256sum -c SHA256SUMS)
 unzip -t "$release_dir/simulator/PrelisMobile-simulator.app.zip"
 cat "$release_dir/simulator/verification.json"
@@ -131,7 +131,7 @@ cat "$release_dir/simulator/verification.json"
 [verify-release.py](../../../../scripts/ios/verify-release.py) がビルド時に検証した内容と、提出予定の設定・証明書を照合します。
 
 - Bundle ID とプラットフォーム、CPU が配布形式に一致すること。
-- `version`・`build` が提出予定の公開バージョン・ビルド番号に一致すること。スクリプトは Simulator・Archive・IPA 間の一致を検証しますが、App Store Connect の提出履歴は確認しません。
+- `releaseVersion` と `version` が同じ公開バージョン（現行 `0.1.3`）で、`build` が Expo・Xcode・Info.plist のビルド番号に一致すること。スクリプトは Simulator・Archive・IPA 間で各項目の一致を検証しますが、App Store Connect の提出履歴は確認しません。
 - `sourceSHA256` が同じ入力を示し、`build-inputs.json` のハッシュと一致すること。ビルドは開始時・工程間・終了時に入力の変更を検出すると成果物確定を停止します。
 - JavaScript バンドル・共有 PNG・アプリアイコンが収録されていること。
 - 実機用アプリの `codesign --verify --deep --strict` が成功し、署名証明書が埋め込みプロファイルに含まれること。レポートの `certificateSHA1`・`profileUUID` を使用した証明書・プロファイルと照合します。
@@ -172,6 +172,8 @@ IPA と Archive ZIP は提出・保管用として管理します。一般の iP
 
 ## スクリプト改修時の確認記録
 
+以下は公開バージョンの設定を `0.1.3` に統一する前の確認記録です。記載された `1.0.1 (2)` の既存成果物は現行設定のビルド確認として扱わず、再ビルド後に値とチェックサムを確認してください。
+
 2026-11-01 に Node.js 24.19.0 / Xcode 27.1 の開発用 Mac で、Simulator 単独ビルド、一括ビルドによる署名付き Archive / IPA の生成、Ubuntu への回収と成果物一式の SHA-256 検証を確認しました。生成物の公開バージョンは `1.0.1`、ビルド番号は `2` です。Simulator・Archive・IPA の入力ハッシュとバージョンが一致し、終了後にキーチェーン設定の復元とロック解除も確認しました。
 
 二重起動の拒否、macOS / iOS 間の共通署名ロック、Xcode project 正規化の往復処理も実環境で確認しています。Apple 側への検証要求・アップロードは実行していません。
@@ -181,9 +183,15 @@ IPA と Archive ZIP は提出・保管用として管理します。一般の iP
 
 `dist/ios` 対応では、同じ `1.0.1 (2)` の検証済み成果物を Ubuntu / Mac の両方へ配置し、回収処理からの自動配置と全ファイルの SHA-256 を確認しました。改修後の回帰テスト31件と Shell / Python の構文確認も成功しています。この配置確認では再ビルドや Apple 側への送信は実行していません。
 
+配布版の参照元を npm パッケージ版へ修正し、既存成果物を `v0.1.3/build-2/` に移しました。誤った `v1.0.1/` 配置は元のビルド一式との一致を確認して整理しました。IPA / ZIP の内容は維持し、検証記録に `releaseVersion=0.1.3` を補記してチェックサムを更新しています。修正後の回帰テスト33件と、Mac 上での配布版付き検証記録の生成も成功しています。
+
+## 設定統一後の確認
+
+公開バージョンを npm パッケージ・Expo・Android・iOS の全設定で `0.1.3` に揃えました。ビルド番号は `2` のままです。設定一致を含む回帰テスト34件、モバイルの Lint・型チェック、Mac 上の Xcode Debug / Release の実効設定（`MARKETING_VERSION=0.1.3`・`CURRENT_PROJECT_VERSION=2`）を確認しました。この設定変更では既存 IPA / ZIP の再ビルドは行っていません。
+
 ## 既存成果物の再配置
 
-既存の検証済み成果物を再ビルドせずに `dist/ios/` へ配置し直す場合は、Ubuntu / Mac のそれぞれのリポジトリで次を実行できます。元のチェックサム、検証記録のバージョン・ビルド番号・入力ハッシュを確認してから配置します。
+既存の検証済み成果物を再ビルドせずに `dist/ios/` へ配置し直す場合は、Ubuntu / Mac のそれぞれのリポジトリで次を実行できます。元のチェックサム、検証記録の配布版・公開バージョン・ビルド番号・入力ハッシュを確認してから配置します。配布版の記録がない既存成果物は、保存済みの入力ハッシュと現在の `apps/mobile/package.json` が一致する場合だけ、そのパッケージ版を使えます。一致しない場合は停止し、現在の版で過去の成果物を付け替えません。配置先の検証記録には `releaseVersion` を補記し、`SHA256SUMS` を再生成します。
 
 ```sh
 python3 scripts/ios/internal/artifacts.py distribute apps/mobile/ios/build/release/all all --destination dist/ios

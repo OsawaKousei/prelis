@@ -26,12 +26,12 @@ JDK 17 の `java`・`jar`・`keytool`・`jarsigner`、Android SDK Build-Tools 37
 | 内容 | 設定元・現行値 |
 | --- | --- |
 | パッケージ名 | `apps/mobile/android/app/build.gradle` の `applicationId`：`jp.co.kupacllc.prelis` |
-| ストア向けバージョン | 同ファイルの `versionName`：`1.0.1`。`apps/mobile/app.json` の `expo.version` と一致させる |
+| ストア向けバージョン | 同ファイルの `versionName`：`0.1.3`。`apps/mobile/app.json` の `expo.version` と一致させる |
 | Android ビルド番号 | 同ファイルの `versionCode`：`2`。app.json の `android.versionCode` と一致させる |
 | 頒布バージョン | `apps/mobile/package.json` の `version`：`0.1.3`。ホーム画面・仕様書と揃え、出力ディレクトリ・ファイル名にも使用する |
 | SDK・対象 CPU | `apps/mobile/android/build.gradle`・`settings.gradle`・`gradle.properties`。SDK の現行値は [モバイル開発](../../mobile.md#android)を参照 |
 
-[v0.1.3 のビルド・署名仕様](../../../specs/v0.1.3.md#ビルド署名)に従い、今回の頒布版は `v0.1.3` です。出力の版は `apps/mobile/package.json` の `version` を使います。ストア向けのバージョンは旧版 `1.0` に続く `1.0.1`、`versionCode` は `2` として別に管理します。Play Console や既存 APK の履歴を確認し、それより新しい提出・公開がある場合はストア向けの番号を更新します。
+[v0.1.3 のビルド・署名仕様](../../../specs/v0.1.3.md#ビルド署名)に従い、今回の頒布版は `v0.1.3` です。出力の版は `apps/mobile/package.json` の `version` を使います。ストア向けの公開バージョンも `0.1.3` に揃えます。`versionCode` は `2` として別項目で管理します。提出履歴に合わせて公開バージョンを変更する場合も、[バージョンを揃える手順](../../mobile.md#バージョンを揃える)の全項目を同時に更新します。
 以降の更新では `versionCode` を増やします。同じ版の AAB と APK を作る間は、ソース・頒布バージョン・`versionName`・`versionCode` を変更しません。スクリプトは app.json と Gradle のストア向けバージョン・ビルド番号が一致しなければビルド前に停止します。
 
 `android/` を保守する構成のため、app.json だけ変更しても既存の Gradle 設定は更新されません。設定は両方で確認し、通常の頒布作業で `expo prebuild --clean` は実行しません。
@@ -168,7 +168,7 @@ adb -s "$serial" shell am start -W -n jp.co.kupacllc.prelis/.MainActivity
 
 Metro を停止した状態で、以下を確認します。Play 配信 APK の確認は [Google Play のテスト手順](google-play.md#3-google-play-からインストールして確認する)で別途行います。
 
-- 新規インストール・ランチャーからの起動、アイコン、端末のアプリ情報に表示される公開バージョンが正しいこと。ホームの内部管理用バージョンは `0.1.3` と区別します。
+- 新規インストール・ランチャーからの起動、アイコン、端末のアプリ情報に表示される公開バージョンが正しいこと。ホーム画面・npm パッケージ・Expo・ネイティブ設定のバージョンも `0.1.3` と一致させます。
 - 日記の保存・日付移動・再起動後の再読込、日本語・絵文字、未保存本文の扱いが正しいこと。
 - タイマーのリング表示・一時停止・再開・タブ切替中の計時・完了音・リセット、音声の追加・試聴・選択の再読込ができること。バックグラウンド中の正確な終了音は保証しない仕様を確認します。
 - パスワードの文字種・文字数・コピーが正しいこと。

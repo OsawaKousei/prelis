@@ -188,7 +188,7 @@ Debug は JavaScript を同梱せず Metro から読み込みます。Mac のネ
 
 ## バージョンを揃える
 
-リリース時は、モバイル版の npm パッケージ・画面表示と、Android・iOS のネイティブ設定を確認します。
+**モバイル版の公開バージョンは、npm パッケージ・画面表示・Expo・Android・iOS で必ず同じ値にします。** バージョンを変更するときは、以下を一括更新してください。出力ディレクトリだけの変更では完了としません。
 
 | ファイル | 更新する項目 |
 | --- | --- |
@@ -200,8 +200,11 @@ Debug は JavaScript を同梱せず Metro から読み込みます。Mac のネ
 | [apps/mobile/ios/PrelisMobile.xcodeproj/project.pbxproj](../../apps/mobile/ios/PrelisMobile.xcodeproj/project.pbxproj) | Debug / Release の `MARKETING_VERSION`・`CURRENT_PROJECT_VERSION` |
 | [apps/mobile/ios/PrelisMobile/Info.plist](../../apps/mobile/ios/PrelisMobile/Info.plist) | `CFBundleShortVersionString`・`CFBundleVersion` |
 
-現行では npm パッケージ・画面表示は `0.1.3`、ネイティブ設定は `1.0.1` / ビルド番号 `2` です。リリース時に採用する版を確認して更新します。ネイティブの表示バージョンは `expo.version` と Android の `versionName`、iOS の `MARKETING_VERSION`・`CFBundleShortVersionString` で揃えます。iOS の Info.plist はバージョンが直接記載されているため、Xcode 設定と両方を更新します。
-Android の更新時は `versionCode`、iOS の再提出時はビルド番号を増やし、app.json と各ネイティブ設定を揃えます。ビルド後は画面表示と成果物内のバージョンを確認します。
+現行は上表の公開バージョンをすべて `0.1.3` に揃えています。`dist/android`・`dist/ios` の版も同じ値です。Expo のプラットフォーム別 `ios.version`・`android.version` を追加する場合も、この版と一致させます。iOS の Info.plist はバージョンを直接記載しているため、Xcode の Debug / Release 設定と両方を更新します。
+
+ビルド番号は公開バージョンと別に管理します。現行は Android の `versionCode` と iOS のビルド番号がともに `2` です。再提出時に番号を増やす場合は、対象プラットフォームの Expo 設定とネイティブ設定を揃えます。ストア提出履歴に合わせて公開バージョンを更新する場合も、ネイティブ設定だけを変えず、パッケージ・画面表示を含む上表の全項目を同時に更新してください。
+
+ビルド前に `npm run test:ios:scripts` を実行します。このテストはパッケージ・lockfile・画面表示・Expo・Gradle・Xcode・Info.plist の公開バージョンと、各プラットフォームのビルド番号の一致を検証します。iOS の配布ビルドでも、生成済みアプリのバージョンがパッケージ版と異なる場合は検証を失敗させます。ビルド後は生成物内のバージョン・ビルド番号を確認してください。設定変更前の `1.0.1` を含む既存 IPA / ZIP は再ビルドが必要で、ファイル名や検証記録だけを変更して `0.1.3` のビルドとして扱いません。
 
 ## 設定の所在とアイコン更新
 

@@ -10,6 +10,7 @@ import subprocess
 import tempfile
 
 from internal.signing import bundle_id, require, validate_entitlements, validate_profile
+from internal.artifacts import package_release_version
 
 
 def verify(app, platform, source=None):
@@ -67,7 +68,10 @@ def main():
         source = None if args.submission else root / 'packages/icons/assets'
         report = verify(args.app, args.platform, source)
         if args.inputs:
-            report['sourceSHA256'] = json.loads(args.inputs.read_text())['sha256']
+            inputs = json.loads(args.inputs.read_text())
+            report['sourceSHA256'] = inputs['sha256']
+            report['releaseVersion'] = package_release_version(root, inputs)
+            require(report['version'] == report['releaseVersion'], 'Native version must match the package release version')
         args.report.write_text(json.dumps(report, indent=2) + '\n')
         print(json.dumps(report, ensure_ascii=False))
     except (ValueError, KeyError, OSError, subprocess.CalledProcessError) as error:
