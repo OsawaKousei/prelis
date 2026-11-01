@@ -69,6 +69,22 @@
 .sidebar-bottom {
   margin-top: auto;
   padding: 24px 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.privacy-link {
+  color: #22749e;
+  font-size: 12px;
+  text-underline-offset: 3px;
+}
+.privacy-link:focus-visible {
+  outline: 2px solid #2785af;
+  outline-offset: 4px;
+}
+.privacy-error {
+  color: #a43f3b;
+  font-size: 12px;
 }
 .version {
   font-size: 9px;

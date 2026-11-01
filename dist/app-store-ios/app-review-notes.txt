@@ -1,0 +1,35 @@
+Prelis Mobile — App Review Information
+Version: 0.1.4 / Build: [SUBMITTED_IOS_BUILD_NUMBER]
+
+1. Physical-device video and testing
+Video: [VIDEO_ATTACHMENT_FILENAME_OR_PUBLIC_URL]
+Recorded on: [PHYSICAL_DEVICE_MODEL_AND_EXACT_OS_VERSION]
+Tested devices/OS: [PHYSICAL_DEVICE_MODELS_AND_EXACT_OS_VERSIONS]
+Test date: [TEST_DATE]
+The recording begins with launching the submitted build and demonstrates all three features, timer audio import/completion, and the policy link.
+
+2. Purpose and audience
+Prelis Mobile combines a private diary, countdown timer, and password generator for general App Store users. Users can record their day, time work/study sessions, and generate passwords without an account or uploading diary entries. It is not restricted to any business, organization, or employee group.
+
+3. Access and instructions
+No registration, login, demo credentials, subscription, or in-app purchase is required. No account creation/deletion flow. Core features work offline; the policy website needs internet.
+
+Diary: Open Diary, select a date, enter sample text, and tap 保存 (Save). Move to another date and return to confirm persistence. Entries and imported audio are private local content. There is no posting, publishing, sharing, messaging, or interaction with other users.
+
+Timer: Open Timer. Set 1–180 minutes. For sound, open 音声設定を開く (Open sound settings) > 音声を追加 (Add audio) and import an MP3/WAV up to 10 MiB through the system file picker. It is selected automatically. Tap 試聴 (Preview). Set 1 minute, then 開始 (Start); the same button pauses/resumes. Switching app tabs preserves the timer. Keep the app visible until completion; リセット (Reset) stops the sound. Without a selected sound, completion is silent. There are no background completion notifications or guaranteed precisely timed background sounds. Terminating the app resets the timer.
+Original test WAV: [REVIEW_WAV_ATTACHMENT_FILENAME_OR_DOWNLOAD_URL]
+Save this file to Files before importing. Diary/Password need no sample file.
+
+Password: Open Password > 設定を開く (Open settings). Choose character types (uppercase/lowercase letters, numbers, symbols) and 4/8/12/16 characters. Tap パスワードを生成 (Generate password), then コピー (Copy). Generation uses device cryptographic randomness. Results are not persisted for future launches; copying writes to the system clipboard.
+
+Privacy policy: ホーム (Home) > プライバシーポリシー (Privacy Policy) opens https://prelis.prj.kupac.co.jp/privacy in the default browser.
+
+4. External services/tools/platforms
+React Native and Expo; Expo Router (navigation), SQLite (local entries/audio metadata), FileSystem/DocumentPicker (local audio import/storage), Audio (playback), Crypto (randomness), Clipboard (copy), Linking (policy link).
+Core features use no external data providers, backend, authentication, payment processors, AI, advertising, or analytics services. No app-managed cloud sync. The separate policy/marketing site is prelis.prj.kupac.co.jp; support uses Google Forms. Neither website is needed for core features. No Expo account is needed.
+
+5. Regions
+Features/content are consistent across distribution regions, with no regional feature gates. The UI is Japanese; dates follow the device's local date.
+
+6. Regulated services/third-party material
+No financial, medical, gambling, or VPN service is provided. There is no third-party media catalog, music download, or streaming service. Timer sounds are user-selected files for local use. The review WAV is an original developer-created test sound. Third-party software components are subject to their respective licenses.

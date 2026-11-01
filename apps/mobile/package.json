@@ -1,6 +1,6 @@
 {
   "name": "PrelisMobile",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "main": "expo-router/entry",
   "dependencies": {
     "@prelis/core": "^0.1.0",
