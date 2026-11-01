@@ -189,6 +189,10 @@ IPA と Archive ZIP は提出・保管用として管理します。一般の iP
 
 公開バージョンを npm パッケージ・Expo・Android・iOS の全設定で `0.1.3` に揃えました。ビルド番号は `2` のままです。設定一致を含む回帰テスト34件、モバイルの Lint・型チェック、Mac 上の Xcode Debug / Release の実効設定（`MARKETING_VERSION=0.1.3`・`CURRENT_PROJECT_VERSION=2`）を確認しました。この設定変更では既存 IPA / ZIP の再ビルドは行っていません。
 
+2026-11-01 に設定統一後の一括ビルドを実行し、署名付き IPA・Archive ZIP・Simulator ZIP を作り直しました。Ubuntu / Mac の `dist/ios/v0.1.3/build-2/all/` に配置し、再ビルドした同じ Simulator ZIP を単独配布用の `simulator/` 一式にも反映しました。各 IPA / ZIP 内のアプリの Info.plist を直接読み取り、`CFBundleShortVersionString=0.1.3`・`CFBundleVersion=2`・Bundle ID の一致を確認しています。署名・プロファイル・全成果物の SHA-256 検証も成功しました。入力ハッシュは `75ad23f85a3ad0b2f5d0efae546183a2577fb7904607c1e8afddc2667e933b2c` です。署名処理後のキーチェーン設定は復元済みです。GitHub Releases の公開、Apple 側の検証・アップロード・審査提出は実行していません。
+
+再ビルドした `0.1.3 (2)` を専用 iPhone 18 Pro / iOS 27.0 Simulator にインストールし、日記の保存・再読込、パスワード生成・コピー、音声の追加・試聴・選択の再読込、1分タイマー完了、音声削除後の再起動を含む UI テストも成功しました。検証後は専用 Simulator とロックを削除しています。Ubuntu 側の確認記録は `dist/ios/verification/v0.1.3-build-2-binary-verification.json` と `v0.1.3-build-2-native-smoke-summary.json`、Mac 側の詳細結果は `apps/mobile/ios/build/native-smoke.UcimSnrq/` に保存しています。モバイルの Lint・型チェックも成功しています。
+
 ## 既存成果物の再配置
 
 既存の検証済み成果物を再ビルドせずに `dist/ios/` へ配置し直す場合は、Ubuntu / Mac のそれぞれのリポジトリで次を実行できます。元のチェックサム、検証記録の配布版・公開バージョン・ビルド番号・入力ハッシュを確認してから配置します。配布版の記録がない既存成果物は、保存済みの入力ハッシュと現在の `apps/mobile/package.json` が一致する場合だけ、そのパッケージ版を使えます。一致しない場合は停止し、現在の版で過去の成果物を付け替えません。配置先の検証記録には `releaseVersion` を補記し、`SHA256SUMS` を再生成します。

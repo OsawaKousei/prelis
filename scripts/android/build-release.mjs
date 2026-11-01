@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
 import { createHash, X509Certificate } from 'node:crypto';
-import { accessSync, constants, existsSync, mkdtempSync, mkdirSync, copyFileSync, realpathSync, rmSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { accessSync, constants, existsSync, lstatSync, mkdtempSync, mkdirSync, copyFileSync, realpathSync, readdirSync, rmSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -158,6 +158,31 @@ function checkTools(names) {
   if (names.includes('github')) run(apksignerPath(), ['--version']);
 }
 
+function clearNativeBuildState() {
+  const modules = [join(androidDir, 'app')];
+  const dependencies = join(repoRoot, 'node_modules');
+  if (existsSync(dependencies)) {
+    for (const entry of readdirSync(dependencies, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const directory = join(dependencies, entry.name);
+      const packages = entry.name.startsWith('@')
+        ? readdirSync(directory, { withFileTypes: true }).filter(value => value.isDirectory()).map(value => join(directory, value.name))
+        : [directory];
+      for (const dependency of packages) {
+        const native = join(dependency, 'android');
+        if (existsSync(native) && !lstatSync(native).isSymbolicLink() && statSync(native).isDirectory()) modules.push(native);
+      }
+    }
+  }
+  // Dependency clean tasks can remove prefab headers before another module's
+  // stale Ninja state tries to configure against them. Clear generated CMake
+  // state for the app and dependencies before each Gradle clean, including APK.
+  for (const directory of modules) {
+    rmSync(join(directory, '.cxx'), { recursive: true, force: true });
+    rmSync(join(directory, 'build', 'intermediates', 'cxx'), { recursive: true, force: true });
+  }
+}
+
 function validateConfig(config, modeName, temporary) {
   config.keystore = resolve(config.keystore);
   if (!existsSync(config.keystore) || !statSync(config.keystore).isFile()) {
@@ -207,10 +232,7 @@ try {
   } else {
     for (const name of names) {
       const config = options[name];
-      // Drop app CMake state first: Gradle clean can otherwise ask Ninja to
-      // reconfigure against dependency Codegen sources already removed by clean.
-      rmSync(join(androidDir, 'app', '.cxx'), { recursive: true, force: true });
-      rmSync(join(androidDir, 'app', 'build', 'intermediates', 'cxx'), { recursive: true, force: true });
+      clearNativeBuildState();
       run('./gradlew', ['clean', config.task, '--no-daemon'], { env: signingEnv(config), inherit: true, timeout: 0 });
       const source = join(androidDir, config.source);
       if (!existsSync(source)) fail(`ビルド成果物が見つかりません: ${source}`);

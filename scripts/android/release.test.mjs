@@ -86,6 +86,12 @@ const path = require('node:path');
 const name = process.argv.includes(':app:bundleRelease') ? 'play' : 'github';
 fs.appendFileSync(process.env.PRELIS_TEST_LOG, name + '\\n');
 if (process.env.PRELIS_TEST_FAIL === name) process.exit(1);
+if (process.env.PRELIS_TEST_NATIVE_CACHES) {
+  for (const cache of JSON.parse(process.env.PRELIS_TEST_NATIVE_CACHES)) {
+    if (fs.existsSync(cache)) { console.error('stale CMake cache: ' + cache); process.exit(1); }
+    fs.mkdirSync(cache, { recursive: true });
+  }
+}
 fs.rmSync('app/build', {recursive:true, force:true});
 const out = name === 'play' ? 'app/build/outputs/bundle/release/app-release.aab' : 'app/build/outputs/apk/release/app-release.apk';
 fs.mkdirSync(path.dirname(out), {recursive:true});
@@ -161,6 +167,23 @@ test('preflight signs with both private keys and accepts their self-signed certi
   succeeded(result);
   assert.equal(fs.existsSync(value.env.PRELIS_TEST_LOG), false);
   previousIntact(value);
+});
+
+test('clears app and dependency CMake caches before both release builds while preserving sources', () => {
+  const value = fixture();
+  const native = [join(value.android, 'app'), join(value.root, 'node_modules/expo-modules-core/android'),
+    join(value.root, 'node_modules/@scope/native/android')];
+  const caches = native.flatMap(directory => [join(directory, '.cxx'), join(directory, 'build/intermediates/cxx')]);
+  for (const cache of caches) fs.mkdirSync(cache, { recursive: true });
+  for (const directory of native) fs.writeFileSync(join(directory, 'keep-source.txt'), 'source');
+  const unrelated = join(value.root, 'node_modules/ordinary/.cxx');
+  fs.mkdirSync(unrelated, { recursive: true });
+  fs.writeFileSync(join(unrelated, 'keep.txt'), 'unrelated');
+  const result = run(value, 'all', { PRELIS_TEST_NATIVE_CACHES: JSON.stringify(caches) });
+  succeeded(result);
+  assert.equal(fs.readFileSync(value.env.PRELIS_TEST_LOG, 'utf8'), 'play\ngithub\n');
+  for (const directory of native) assert.equal(fs.readFileSync(join(directory, 'keep-source.txt'), 'utf8'), 'source');
+  assert.equal(fs.readFileSync(join(unrelated, 'keep.txt'), 'utf8'), 'unrelated');
 });
 
 test('an incorrect second key password fails before either Gradle build', () => {

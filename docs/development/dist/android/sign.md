@@ -104,6 +104,7 @@ npm run build:android:github
 単独ビルドも指定した形式だけの新しい一式へ差し替えます。同じ版の既存ディレクトリに反対側の形式があっても引き継ぎません。AAB と APK の両方を残す場合は `build:android:all` を使います。
 
 各ビルドは Gradle の `clean` と `:app:bundleRelease` または `:app:assembleRelease` を実行します。前のネイティブ成果物は消えるため、以降の確認・頒布にはコピー済みの `dist/android/v<version>/` を使います。これらのビルドは同時実行しません。
+`clean` の前に、アプリとインストール済み Android ネイティブ依存の `.cxx`・`build/intermediates/cxx` を削除します。依存側で削除された Prefab ヘッダーを古い CMake キャッシュが参照して `clean` に失敗することを防ぎます。AAB と APK の各ビルドで実行し、依存のソースは保持します。
 AAB は `jarsigner -verify -strict` にキーストアと期待する別名を指定し、自己署名のアップロード証明書も明示的に信頼して検証します。さらに [verify-jar.java](../../../../scripts/android/verify-jar.java) で署名メタデータ以外の全ファイルを末尾まで読み、ダイジェスト、署名漏れ、複数の署名者、期待する証明書との不一致、有効期限を確認します。APK は `apksigner` で署名を検証し、指定キーストアの証明書 SHA-256 と照合します。署名付きビルドの成功は、ストア提出や公開の完了を意味しません。
 
 | 成果物 | Gradle の生成元 | 最終出力先 |
@@ -201,3 +202,9 @@ Metro を停止した状態で、以下を確認します。Play 配信 APK の�
 - `dist/android/` 内の生成物は Git 管理対象外です。署名鍵・`.env` とともにコミットしません。
 - 署名エラー時は `.env` の対象変数、環境変数による上書き、キーストアの絶対パス・別名・パスワードを確認します。Debug 鍵への切替で頒布ビルドを通しません。
 - `INSTALL_FAILED_UPDATE_INCOMPATIBLE` は既存アプリと署名が異なる場合に発生します。`INSTALL_FAILED_VERSION_DOWNGRADE` は既存より古いビルド番号などを確認します。公開済み APK の証明書と番号を調べ、正しい鍵と増加した `versionCode` で作り直します。
+
+## 0.1.3 再ビルドの確認記録
+
+2026-11-01 に Node.js 24.19.0 / JDK 17.0.20.1 / Android SDK Build Tools 37.0.0 で署名付き AAB・APK を再ビルドしました。AAB は bundletool 1.18.3 で構造を検証し、Manifest を読み取りました。APK は aapt2 で内部設定を読み取り、両形式とも application ID `jp.co.kupacllc.prelis`・`versionName=0.1.3`・`versionCode=2`・非デバッグであることを確認しています。両方の署名と期待する鍵の証明書、`SHA256SUMS`、APK の ZIP アラインメント検証が成功しました。ELF と16 KB 環境での実行確認は今回の検証に含みません。
+
+成果物は `dist/android/v0.1.3/`、ビルドログと検証記録は `dist/android/verification/v0.1.3-rebuild.log`・`v0.1.3-release-verification.json` に保存しています。既存の `play-store-release-notes.txt` は内容を維持しています。再ビルド時に発生した依存の古い CMake キャッシュによる `clean` の失敗を修正し、回帰テスト22件とモバイルの Lint・型チェックも成功しました。今回の作業では Android 端末へのインストール・操作確認、GitHub Releases の公開、Google Play へのアップロードは実行していません。
