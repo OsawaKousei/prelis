@@ -3,6 +3,7 @@
 コマンドは、特記がない限り開発・ビルドする OS 上のリポジトリのルートで実行します。Android は Ubuntu、iOS は Ubuntu で編集したソースを Mac の `~/prelis-ios-remote` へ同期して開発する構成です。iOS の Metro・ビルド・Simulator は Mac 上で実行します。
 現行のモバイル版は Expo SDK 58 / React Native 0.88 を使用します。デスクトップで確認した共通機能を、モバイルの UI と操作に合わせて反映します。
 Android の署名付き成果物の作成・直接頒布は [ビルド・署名手順](dist/android/sign.md)、ストアへの提出・公開は [Google Play での頒布](dist/android/google-play.md)を参照してください。
+iOS の Simulator 向けビルド・配布物の署名は [ビルド・署名手順](dist/ios/sign.md)、ストアへの提出・公開は [App Store での頒布](dist/ios/app-store.md)を参照してください。
 
 ## ウィンドウの互換性要件
 
@@ -184,31 +185,6 @@ npm run ios -w apps/mobile -- --configuration Debug --device "iPhoneの名前" -
 ```
 
 Debug は JavaScript を同梱せず Metro から読み込みます。Mac のネットワークを変更した場合は、接続先を更新するため再ビルドします。接続できない場合は、iPhone の Safari で `http://MacのIPアドレス:8081/status` を開き、`packager-status:running` が返ることと、ローカルネットワーク許可を確認してアプリを Reload または再起動します。
-
-### iOS Simulator の動作確認用ビルドを作る
-
-Mac の Metro を停止してから、Ubuntu 側で次を実行します。
-
-```sh
-./scripts/ios/build-ios-simulator.sh
-```
-
-同期・Mac 上の依存準備・署名なしの Release / Simulator ビルドを行い、JavaScript と画像を同梱した `.app` を ZIP 化して Ubuntu へ回収します。出力は `apps/mobile/ios/build/simulator/PrelisMobile-simulator.app.zip`、SHA-256 一覧は `apps/mobile/ios/build/ios-simulator-artifacts.sha256` です。回収時に SHA-256 と ZIP の整合性を検証します。Ubuntu からの回収を伴わず Mac で直接作る場合は、同期後に `bash scripts/ios/build-on-mac.sh` を実行します。
-
-ビルド後は Mac で対象 Simulator を起動し、生成されたアプリをインストール・起動します。
-
-```sh
-export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
-cd ~/prelis-ios-remote
-xcrun simctl list devices available
-SIMULATOR_UDID='対象デバイスのUDID'
-xcrun simctl boot "$SIMULATOR_UDID" # 停止中のみ
-xcrun simctl bootstatus "$SIMULATOR_UDID" -b
-xcrun simctl install "$SIMULATOR_UDID" apps/mobile/ios/DerivedData/Build/Products/Release-iphonesimulator/PrelisMobile.app
-xcrun simctl launch "$SIMULATOR_UDID" jp.co.kupac.prelis
-```
-
-この成果物は Simulator 専用です。Metro を停止した状態での確認に使用します。
 
 ## バージョンを揃える
 
