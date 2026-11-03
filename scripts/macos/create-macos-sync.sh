@@ -30,7 +30,7 @@ ignore_paths=(
   packages/icons/scripts apps/desktop/public apps/desktop/src/assets/react.svg
   apps/desktop/src-tauri/gen apps/desktop/src-tauri/signing
   '*.md' .gitignore LICENSE .DS_Store
-  node_modules Pods target dist build '*.tsbuildinfo' DerivedData __pycache__
+  node_modules Pods target dist build artifacts '*.tsbuildinfo' DerivedData __pycache__
   .cxx .gradle .terraform .next '.mutagen*'
   .env '.env.*' .xcode.env.local
   '*.p12' '*.p8' '*.mobileprovision' '*.provisionprofile'

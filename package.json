@@ -29,6 +29,8 @@
     "test:mobile:window": "node --experimental-strip-types --test apps/mobile/e2e/window-size.test.ts",
     "test:android:scripts": "node --test scripts/android/release.test.mjs",
     "test:ios:scripts": "python3 scripts/ios/internal/test-runner.py",
+    "test:e2e:scripts": "python3 scripts/e2e/runner.test.py",
+    "test:e2e:macos": "bash scripts/macos/test-e2e.sh",
     "test:core": "npm run test -w packages/core",
     "test:web": "npm test -w apps/web",
     "check": "npm run typecheck && npm run lint && npm test -- --no-watchman && npm run test:core && npm run test:web"

@@ -8,6 +8,7 @@ __pycache__/
 .mutagen-windows/
 .mutagen-macos/
 .mutagen-ios/
+artifacts/
 
 # secrets
 .env

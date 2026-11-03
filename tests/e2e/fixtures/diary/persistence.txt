@@ -1,0 +1,2 @@
+Prelis diary persistence test.
+Saved content must survive an application restart.

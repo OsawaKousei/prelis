@@ -15,6 +15,8 @@
 | `packages/icons/` | 共通アイコン・ブランド画像。`assets/` の PNG を正本として各アプリで使用 |
 | `lp/` | 製品紹介・ダウンロード案内用の Next.js 静的サイト。ウェブアプリとは別で、ルートの npm workspaces 管理外 |
 | `scripts/` | OS 別の開発・ビルド・署名・配布を支える補助スクリプト |
+| `tests/e2e/` | 機能別のネイティブ E2E シナリオとプラットフォーム別の共通処理 |
+| `artifacts/e2e/` | E2E の実行ごとのログ・画面・結果。Git 管理対象外 |
 | `infra/` | LP・ウェブアプリ・MSI の配信基盤を定義する Terraform と公開用スクリプト |
 | `dist/` | 配布物の出力先と、ストア掲載文・リリースノートなどの配布用資料 |
 | `docs/` | 現行の開発資料・環境メモ |
@@ -78,6 +80,8 @@ npm run check
 
 `npm run check` は全 workspace の型チェック、モバイルの lint・Jest（Watchman 不使用）、core の生成ロジックテスト、ウェブの仕様テストを順に実行します。
 ネイティブビルドは含まれません。コマンドの定義元はルートの [package.json](../../package.json) です。
+
+E2E 実行基盤は `npm run test:e2e:scripts`、Mac のネイティブ UI テストは `npm run test:e2e:macos -- --app /absolute/path/to/PrelisDesktop.app` で別途実行します。環境準備と結果の確認方法は [テスト運用](testing.md)を参照してください。
 
 ### 依存の追加・更新
 
