@@ -27,7 +27,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--app', required=True, help='Absolute path to the existing .app on the Mac')
     parser.add_argument('--record', action='store_true', help='Record and collect only the app window and its audio')
-    parser.add_argument('--domain', choices=['all', 'diary', 'timer'], default='all')
+    parser.add_argument('--domain', choices=['all', 'diary', 'password', 'timer'], default='all')
     args = parser.parse_args()
     if not args.app.startswith('/') or any(character in args.app for character in '\r\n\0'):
         parser.error('--app must be an absolute path on the Mac')

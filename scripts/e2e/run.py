@@ -24,6 +24,7 @@ from capture import CapturePermissionError, CaptureSession
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TESTS = {
     'diary': 'MacUITests/DiaryPersistenceTests/testSavedEntrySurvivesRestart',
+    'password': 'MacUITests/PasswordGenerationTests/testConditionsGenerationAndCopy',
     'timer': 'MacUITests/TimerSoundTests/testPreviewCompletionAndResetAudio',
 }
 

@@ -48,7 +48,10 @@ final class DiaryPersistenceTests: XCTestCase {
             XCTAssertEqual(try diary.content(), "")
             XCTContext.runActivity(named: "Test date: \(testDate!)") { _ in }
             mayContainTestInput = true
+            let inputStarted = ProcessInfo.processInfo.systemUptime
             try diary.replaceContent(text)
+            let inputDuration = ProcessInfo.processInfo.systemUptime - inputStarted
+            XCTContext.runActivity(named: String(format: "Diary input: %d characters in %.2f seconds (paste)", text.count, inputDuration)) { _ in }
             try diary.save()
             driver.attachScreenshot("diary-saved")
 

@@ -81,6 +81,7 @@ final class MacAppDriver {
     }
 
     func wait(_ description: String, timeout: TimeInterval = 15, until condition: @escaping () -> Bool) throws {
+        if condition() { return }
         let expectation = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in condition() }, object: nil)
         guard XCTWaiter.wait(for: [expectation], timeout: timeout) == .completed else {
             throw E2EError.condition(description)

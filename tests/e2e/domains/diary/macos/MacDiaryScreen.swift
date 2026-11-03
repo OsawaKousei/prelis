@@ -67,7 +67,18 @@ final class MacDiaryScreen {
         editor.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
         editor.typeKey("a", modifierFlags: .command)
         editor.typeKey(XCUIKeyboardKey.delete.rawValue, modifierFlags: [])
-        if !text.isEmpty { editor.typeText(text) }
+        if !text.isEmpty {
+            let clipboard = try MacClipboard()
+            do {
+                try clipboard.writeText(text)
+                editor.typeKey("v", modifierFlags: .command)
+                try driver.wait("the pasted input must match exactly") { (try? self.content()) == text }
+            } catch {
+                try clipboard.restore()
+                throw error
+            }
+            try clipboard.restore()
+        }
         try driver.wait("the editor must contain the exact input") { (try? self.content()) == text }
     }
 
