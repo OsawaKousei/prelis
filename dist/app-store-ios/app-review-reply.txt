@@ -2,13 +2,11 @@ Hello App Review Team,
 
 Thank you for your request under Guideline 2.1 — Information Needed — New App Submission.
 
-Please review Prelis Mobile version 0.1.4, build [SUBMITTED_IOS_BUILD_NUMBER]. We have added the six requested sections to App Review Information > Notes, including the app's purpose and audience, setup and feature instructions, external tools and services, regional behavior, and information about regulated services and third-party material.
+Please review Prelis Mobile version 0.1.4, build 3. We have added the six requested sections to App Review Information > Notes, including the app's purpose and audience, setup and feature instructions, external tools and services, regional behavior, and information about regulated services and third-party material.
 
-Physical-device demonstration: [VIDEO_ATTACHMENT_FILENAME_OR_PUBLICLY_ACCESSIBLE_URL]
-Recording device and OS: [PHYSICAL_DEVICE_MODEL], [EXACT_IOS_OR_IPADOS_VERSION]
-Devices/OS versions tested before submission: [PHYSICAL_DEVICE_MODELS_AND_EXACT_OS_VERSIONS]
-Test date: [TEST_DATE]
-Optional original audio sample for testing: [ORIGINAL_REVIEW_WAV_ATTACHMENT_FILENAME_OR_DOWNLOAD_URL]
+Physical-device demonstration: https://drive.google.com/file/d/1UgxVCQz-OC0I47rjXzJkNkzzjTnU4fAI/view?usp=sharing
+Recording device and OS: iPhone SE (2nd generation), 27.2
+Test date: 2026/11/03
 
 The recording begins by launching the submitted build and demonstrates the typical diary, timer, and password-generation workflows, as well as the privacy-policy link.
 

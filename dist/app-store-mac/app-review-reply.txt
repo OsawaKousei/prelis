@@ -1,0 +1,21 @@
+Hello App Review Team,
+
+Thank you for your request under Guideline 2.1 — Information Needed.
+
+Please review Prelis Desktop for macOS, version 0.1.4, build [SUBMITTED_MACOS_BUILD_NUMBER]. We have updated App Review Information > Notes with all six requested sections: a physical-Mac demonstration, purpose and audience, setup and access instructions, external services/tools, regional behavior, and regulated services/third-party material.
+
+Mac demonstration video: [MAC_VIDEO_ATTACHMENT_FILENAME_OR_PUBLIC_URL]
+Recording Mac and OS: [MAC_MODEL_CHIP_AND_EXACT_MACOS_VERSION]
+Tested Macs/OS versions: [TESTED_MAC_MODELS_CHIPS_AND_OS_VERSIONS]
+Test date: [MAC_TEST_DATE]
+Original test audio: [REVIEW_TONE_ATTACHMENT_OR_DOWNLOAD_URL]
+
+The recording begins by launching the submitted Mac build from Finder or the Dock. It shows saving/reopening a diary entry, importing/previewing a timer sound, timer start/pause/resume and completion, switching features while timing continues, generating/copying a password, and opening the privacy policy.
+
+No account or sign-in is required, and there is no account creation, subscription, or in-app purchase flow. Diary entries and timer sounds are private local content; the app has no posting, sharing, messaging, or user-interaction platform. The core features work offline without an external backend. Features are consistent across distribution regions; the UI is Japanese with English feature names.
+
+The privacy policy is available from プライバシーポリシー (Privacy Policy) at the bottom of the sidebar on every feature screen. It opens https://prelis.prj.kupac.co.jp/privacy in the default browser.
+
+To test completion audio, save review-tone.wav to the Mac, open Timer > 終了音 (Completion sound) > 音声を追加 (Add audio), and select it in the macOS file chooser. Preview the sound, run a one-minute timer with Prelis running and the Mac awake, then use リセット (Reset) to stop the completion sound.
+
+Thank you for reviewing our submission.

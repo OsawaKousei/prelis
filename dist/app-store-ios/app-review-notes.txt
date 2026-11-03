@@ -1,11 +1,10 @@
 Prelis Mobile — App Review Information
-Version: 0.1.4 / Build: [SUBMITTED_IOS_BUILD_NUMBER]
+Version: 0.1.4 / Build: 3
 
 1. Physical-device video and testing
-Video: [VIDEO_ATTACHMENT_FILENAME_OR_PUBLIC_URL]
-Recorded on: [PHYSICAL_DEVICE_MODEL_AND_EXACT_OS_VERSION]
-Tested devices/OS: [PHYSICAL_DEVICE_MODELS_AND_EXACT_OS_VERSIONS]
-Test date: [TEST_DATE]
+Video: https://drive.google.com/file/d/1UgxVCQz-OC0I47rjXzJkNkzzjTnU4fAI/view?usp=sharing
+Recorded on: iPhone SE (2nd generation), 27.2
+Test date: 2026/11/03
 The recording begins with launching the submitted build and demonstrates all three features, timer audio import/completion, and the policy link.
 
 2. Purpose and audience
