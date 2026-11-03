@@ -60,7 +60,7 @@ final class DiaryPersistenceTests: XCTestCase {
             XCTAssertEqual(try diary.content(), text, "Saved input must survive a full app restart.")
             driver.attachScreenshot("diary-after-restart")
         } catch {
-            let hierarchy = XCTAttachment(string: driver.app.debugDescription)
+            let hierarchy = XCTAttachment(string: driver.app.windows.firstMatch.debugDescription)
             hierarchy.name = "ui-hierarchy"
             hierarchy.lifetime = .keepAlways
             add(hierarchy)

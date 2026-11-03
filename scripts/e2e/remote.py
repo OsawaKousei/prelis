@@ -26,7 +26,8 @@ def config_value(key):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--app', required=True, help='Absolute path to the existing .app on the Mac')
-    parser.add_argument('--record', action='store_true', help='Keep and collect the Xcode UI test recording')
+    parser.add_argument('--record', action='store_true', help='Record and collect only the app window and its audio')
+    parser.add_argument('--domain', choices=['all', 'diary', 'timer'], default='all')
     args = parser.parse_args()
     if not args.app.startswith('/') or any(character in args.app for character in '\r\n\0'):
         parser.error('--app must be an absolute path on the Mac')
@@ -55,7 +56,7 @@ def main():
                     if '__pycache__' in Path(entry.name).parts or entry.name.endswith('.pyc'):
                         return None
                     return entry
-                for path in ('tests/e2e', 'scripts/e2e/run.py', 'scripts/macos/test-e2e.sh'):
+                for path in ('tests/e2e', 'scripts/e2e', 'scripts/macos/test-e2e.sh'):
                     handle.add(REPO_ROOT / path, arcname=path, filter=include)
             prepare = shlex.join(['mkdir', '-p', source]) + ' && ' + shlex.join(['tar', '-xf', '-', '-C', source])
             with archive.open('rb') as handle:
@@ -63,7 +64,7 @@ def main():
             status['status'] = 'running'
             status_path.write_text(json.dumps(status, indent=2) + '\n')
             command = ['bash', source + '/scripts/macos/test-e2e.sh', '--app', args.app,
-                       '--output', remote_run + '/macos', '--run-id', run_id]
+                       '--output', remote_run + '/macos', '--run-id', run_id, '--domain', args.domain]
             if args.record:
                 command.append('--record')
             print(f'Mac test source: {source}', flush=True)

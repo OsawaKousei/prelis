@@ -4,6 +4,7 @@
 import argparse
 from datetime import datetime, timezone
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -14,10 +15,17 @@ import shutil
 import signal
 import subprocess
 import sys
+import tempfile
 import uuid
+
+from capture import CapturePermissionError, CaptureSession
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+TESTS = {
+    'diary': 'MacUITests/DiaryPersistenceTests/testSavedEntrySurvivesRestart',
+    'timer': 'MacUITests/TimerSoundTests/testPreviewCompletionAndResetAudio',
+}
 
 
 def bundle_metadata(app):
@@ -64,9 +72,9 @@ def configure_test_run(source, destination, environment, record=False):
     if len(targets) != 1 or targets[0].get('BlueprintName') != 'MacUITests':
         raise ValueError('Expected exactly one MacUITests target in the generated .xctestrun')
     targets[0].setdefault('EnvironmentVariables', {}).update(environment)
-    if record:
-        # Xcode already records UI tests. Retain that recording on success too.
-        targets[0]['SystemAttachmentLifetime'] = 'keepAlways'
+    # Xcode's automatic recordings capture the desktop. Never create those.
+    targets[0]['PreferredScreenCaptureFormat'] = 'screenshots'
+    targets[0]['SystemAttachmentLifetime'] = 'keepNever'
     # __TESTROOT__ paths are relative to this file; keep it beside the original.
     with destination.open('wb') as handle:
         plistlib.dump(spec, handle)
@@ -93,8 +101,8 @@ def write_json(path, value):
     temporary.replace(path)
 
 
-def result_status(code, report):
-    if (code == 0 and report.get('passedTests') == 1 and report.get('failedTests') == 0
+def result_status(code, report, expected_count=1):
+    if (code == 0 and report.get('passedTests') == expected_count and report.get('failedTests') == 0
             and report.get('skippedTests') == 0 and report.get('result') == 'Passed'):
         return 'passed'
     failures = '\n'.join(item.get('failureText', '') for item in report.get('testFailures', []))
@@ -104,28 +112,23 @@ def result_status(code, report):
 
 
 def collect_recordings(output):
-    directory = output / 'attachments'
-    with (directory / 'manifest.json').open() as handle:
-        manifest = json.load(handle)
-    videos = []
-    for group in manifest:
-        for attachment in group.get('attachments', []):
-            name = attachment['exportedFileName']
-            if Path(name).name != name:
-                raise ValueError('Unexpected exported attachment path')
-            path = directory / name
-            if path.suffix.lower() in ('.mp4', '.mov') and path.is_file() and path.stat().st_size > 0:
-                videos.append(path)
-    if not videos:
-        raise RuntimeError('Recording was requested but no video was exported')
-    result = []
-    for index, source in enumerate(videos):
-        name = 'recording' if len(videos) == 1 else f'recording-{index + 1}'
-        destination = output / (name + source.suffix.lower())
-        shutil.copy2(source, destination)
-        result.append({'path': destination.name, 'size': destination.stat().st_size,
-                       'sha256': hashlib.sha256(destination.read_bytes()).hexdigest()})
-    return result
+    report = json.loads((output / 'capture/report.json').read_text())
+    if report.get('scope') != 'selected-app-window' or not report.get('segments'):
+        raise RuntimeError('Recording is not backed by a window-only capture report')
+    if any(segment.get('filter') != 'desktop-independent-window' for segment in report['segments']):
+        raise RuntimeError('A recording segment does not use the single-window filter')
+    path = output / 'recording.mp4'
+    if not path.is_file() or not path.stat().st_size:
+        raise RuntimeError('Recording was requested but no window video was exported')
+    return [{'path': path.name, 'size': path.stat().st_size, 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()}]
+
+
+def verify_audio(output, report):
+    path = REPO_ROOT / 'tests/e2e/domains/timer/audio-analysis.py'
+    spec = importlib.util.spec_from_file_location('timer_audio_analysis', path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.verify_capture(output / 'capture', report)
 
 
 def run(args):
@@ -144,8 +147,20 @@ def run(args):
         environment['DEVELOPER_DIR'] = '/Applications/Xcode.app/Contents/Developer'
     fixture = REPO_ROOT / 'tests/e2e/fixtures/diary/persistence.txt'
     text = fixture.read_text().rstrip('\n')
+    selected_tests = TESTS if args.domain == 'all' else {args.domain: TESTS[args.domain]}
+    sound_fixture = REPO_ROOT / 'tests/e2e/fixtures/timer/alert.wav'
+    sound_path = output / 'fixtures' / f'prelis-e2e-alert-{run_id}.wav'
+    if 'timer' in selected_tests:
+        sound_path.parent.mkdir()
+        shutil.copy2(sound_fixture, sound_path)
+    sound_temporary = None
+    if 'timer' in selected_tests:
+        # Keep the native file panel's typed path short without using the clipboard.
+        with tempfile.NamedTemporaryFile(prefix='prelis-e2e-', suffix='.wav', dir='/tmp', delete=False) as handle:
+            handle.write(sound_fixture.read_bytes())
+            sound_temporary = Path(handle.name)
     sources = sorted(path for path in (REPO_ROOT / 'tests/e2e').rglob('*') if path.is_file())
-    sources += [Path(__file__), REPO_ROOT / 'scripts/macos/test-e2e.sh']
+    sources += sorted((REPO_ROOT / 'scripts/e2e').glob('*.py')) + [REPO_ROOT / 'scripts/macos/test-e2e.sh']
     manifest = {
         'run_id': run_id,
         'started_at': datetime.now(timezone.utc).isoformat(),
@@ -156,14 +171,18 @@ def run(args):
         'app': app,
         'fixture': {'path': str(fixture.relative_to(REPO_ROOT)), 'sha256': hashlib.sha256(fixture.read_bytes()).hexdigest()},
         'sources': {str(path.relative_to(REPO_ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in sources},
-        'test': 'MacUITests/DiaryPersistenceTests/testSavedEntrySurvivesRestart',
-        'recording': {'requested': args.record, 'status': 'pending' if args.record else 'not-requested', 'files': []},
+        'tests': list(selected_tests.values()),
+        'sound_fixture_sha256': hashlib.sha256(sound_fixture.read_bytes()).hexdigest(),
+        'audio_test': {'status': 'pending' if 'timer' in selected_tests else 'not-requested'},
+        'recording': {'requested': args.record, 'scope': 'selected-app-window', 'microphone': False,
+                      'status': 'pending' if args.record else 'not-requested', 'files': []},
     }
     manifest_path = output / 'manifest.json'
     write_json(manifest_path, manifest)
     print(f'E2E results: {output}', flush=True)
     derived = output / 'derived-data'
     result = output / 'result.xcresult'
+    capture = None
     try:
         manifest['xcode'] = subprocess.check_output(['xcodebuild', '-version'], env=environment, text=True).strip()
         project = REPO_ROOT / 'tests/e2e/platforms/apple/ui-tests.xcodeproj'
@@ -179,18 +198,28 @@ def run(args):
         if len(specs) != 1:
             raise RuntimeError('Expected one generated .xctestrun file')
         configured = specs[0].with_name('configured.xctestrun')
-        configure_test_run(specs[0], configured, {
+        inputs = {
             'PRELIS_E2E_APP_PATH': app['path'],
             'PRELIS_E2E_BUNDLE_ID': app['bundle_id'],
             'PRELIS_E2E_DIARY_TEXT': text,
-        }, record=args.record)
+            'PRELIS_E2E_SOUND_PATH': str(sound_temporary or sound_path),
+            'PRELIS_E2E_RECORD_WINDOWS': '1' if args.record else '0',
+        }
+        if args.record or 'timer' in selected_tests:
+            manifest['status'] = 'preparing-capture'
+            write_json(manifest_path, manifest)
+            capture = CaptureSession(REPO_ROOT, output, app, args.record, environment)
+            capture.start()
+            inputs['PRELIS_E2E_CAPTURE_URL'] = capture.url
+            inputs['PRELIS_E2E_CAPTURE_TOKEN'] = capture.token
+        configure_test_run(specs[0], configured, inputs, record=args.record)
         manifest['status'] = 'running-tests'
         write_json(manifest_path, manifest)
         test_command = ['xcodebuild', 'test-without-building', '-xctestrun', str(configured),
                         '-destination', 'platform=macOS', '-parallel-testing-enabled', 'NO',
-                        '-resultBundlePath', str(result),
-                        '-only-testing:' + manifest['test']]
-        code = run_logged(test_command, output / 'run.log', environment, 240)
+                        '-resultBundlePath', str(result)]
+        test_command += ['-only-testing:' + test for test in selected_tests.values()]
+        code = run_logged(test_command, output / 'run.log', environment, 420)
         manifest['test_exit_code'] = code
         summary = subprocess.run(['xcrun', 'xcresulttool', 'get', 'test-results', 'summary', '--path', str(result)],
                                  env=environment, capture_output=True, text=True, timeout=30)
@@ -203,11 +232,24 @@ def run(args):
                                 env=environment, capture_output=True, text=True, timeout=30)
         (output / 'export.log').write_text(export.stdout + export.stderr)
         manifest['attachments_exported'] = export.returncode == 0
+        if export.returncode == 0 and any(path.suffix.lower() in ('.mp4', '.mov') for path in (output / 'attachments').iterdir()):
+            raise RuntimeError('Unexpected Xcode desktop recording: window-only recording is required')
         after = bundle_metadata(Path(app['path']))
         if after != app:
             raise RuntimeError('The tested app bundle changed during the run')
-        manifest['status'] = result_status(code, report)
+        manifest['status'] = result_status(code, report, expected_count=len(selected_tests))
+        manifest['ui_test_status'] = manifest['status']
         manifest['test_status'] = manifest['status']
+        capture_report = capture.finish() if capture else None
+        if 'timer' in selected_tests and manifest['test_status'] == 'passed':
+            try:
+                manifest['audio_test'] = verify_audio(output, capture_report)
+                write_json(output / 'audio-summary.json', manifest['audio_test'])
+            except (OSError, ValueError, RuntimeError) as error:
+                manifest['audio_test'] = {'status': 'failed', 'error': str(error)}
+                write_json(output / 'audio-summary.json', manifest['audio_test'])
+                manifest['test_status'] = 'failed'
+                manifest['status'] = 'failed'
         if args.record:
             try:
                 if export.returncode:
@@ -218,18 +260,31 @@ def run(args):
                 manifest['recording']['status'] = 'failed'
                 manifest['recording']['error'] = str(error)
                 raise
+        if manifest['audio_test']['status'] == 'failed':
+            raise RuntimeError('Captured app audio did not pass: ' + manifest['audio_test']['error'])
         if manifest['status'] == 'environment-failed':
             raise RuntimeError('UI automation could not initialize. Complete the XCTest authorization on the Mac; see summary.json.')
         if manifest['status'] != 'passed':
             raise RuntimeError(f'UI test did not pass ({code}); see run.log and result.xcresult')
         return 0
     except (OSError, ValueError, RuntimeError, subprocess.SubprocessError, KeyboardInterrupt) as error:
+        if isinstance(error, CapturePermissionError):
+            manifest['status'] = 'environment-failed'
         if manifest['status'] not in ('failed', 'build-failed', 'environment-failed'):
             manifest['status'] = 'execution-failed'
         manifest['error'] = str(error)
         print(str(error), file=sys.stderr)
         return 1
     finally:
+        if sound_temporary:
+            sound_temporary.unlink(missing_ok=True)
+        if capture and capture.started:
+            try:
+                capture.finish()
+            except (OSError, ValueError, RuntimeError) as error:
+                manifest['capture_finalization_error'] = str(error)
+        if manifest['audio_test']['status'] == 'pending':
+            manifest['audio_test']['status'] = 'not-completed'
         if manifest['recording']['status'] == 'pending':
             manifest['recording']['status'] = 'not-produced'
         manifest['finished_at'] = datetime.now(timezone.utc).isoformat()
@@ -242,7 +297,8 @@ def main():
     parser.add_argument('--app', type=Path, required=True, help='Exact path to the already-built .app to test')
     parser.add_argument('--output', type=Path, help='New output directory; existing directories are never reused')
     parser.add_argument('--run-id', help=argparse.SUPPRESS)
-    parser.add_argument('--record', action='store_true', help='Keep and export the Xcode UI test recording, including successful runs')
+    parser.add_argument('--record', action='store_true', help='Record only the app window and its audio using ScreenCaptureKit')
+    parser.add_argument('--domain', choices=['all', *TESTS], default='all', help='Feature tests to run (default: all)')
     args = parser.parse_args()
     if platform.system() != 'Darwin':
         parser.error('Run this command on the Mac hosting Xcode and the app.')

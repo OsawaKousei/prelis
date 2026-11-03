@@ -2,117 +2,112 @@
 
 ## macOS ネイティブ E2E
 
-日記を UI から保存し、アプリの終了・再起動を経ても内容が保持されることを XCTest / XCUIAutomation で確認します。テストの配置と責務は [E2E の README](../../tests/e2e/README.md)、検証内容は [日記の期待結果](../../tests/e2e/domains/diary/README.md)を参照してください。
+XCTest / XCUIAutomation で既存のアプリを操作し、日記の保存と再起動後の保持、タイマーの試聴・実時間1分後の終了音・リセット後の停止を検証します。音声は実際の録音を解析します。配置は [E2E の README](../../tests/e2e/README.md)、期待結果は [日記](../../tests/e2e/domains/diary/README.md)・[タイマー](../../tests/e2e/domains/timer/README.md)を参照してください。
 
 ### Mac の初回準備
 
-- Xcode 本体を導入し、初回起動のセットアップを完了する。Python 3 も必要。XCTest・Swift は Xcode に含まれる。独立した Xcode プロジェクトを使うため、テストランナーの生成に Ruby・CocoaPods・追加 npm パッケージは不要。
-- GUI にログインしているユーザーで実行する。SSH から実行する場合も同じユーザーを使い、画面のロック・スリープを避ける。
-- 初回に XCTest の `Enable UI Automation` の認証が出たら、Mac の画面で Touch ID またはパスワードにより承認する。Xcode Helper の操作権限の確認が出た場合も承認する。
-- テスト対象アプリを閉じる。起動済みなら、テストは終了させずに失敗とする。
-- 既存の個人データとの干渉を避けるため、専用の macOS ユーザーを推奨する。既存ユーザーで実行する場合は、翌日から14日以内の空の日付を1つ使用し、テスト後に入力だけを消す。
+- Xcode 本体を導入し、初回起動のセットアップを完了する。Python 3 も必要。Swift・XCTest は Xcode に含まれ、Ruby・CocoaPods・追加 npm パッケージは不要。
+- 録画・音声テストには macOS 15 以降が必要。ScreenCaptureKit の `SCRecordingOutput` を使用する。
+- GUI にログインしているユーザーで実行する。SSH でも同じユーザーを使い、画面のロック・スリープを避ける。
+- 初回の XCTest の `Enable UI Automation` を、Mac 上で認証する。
+- 初回の録画・音声テストでは「システム設定 → プライバシーとセキュリティ → 画面収録とシステムオーディオ録音」で **Prelis E2E Capture** を許可し、再実行する。XCTest の認証とは別の権限。
+- テスト対象アプリを閉じる。起動済みの場合、既存の操作を中断せず失敗とする。
+- 専用の macOS ユーザーを推奨する。既存ユーザーでは空の日記1日分と一意なテスト音声だけを使用し、終了時に入力・音声を削除する。元の音声選択も復元する。
 
-`DEVELOPER_DIR` が未指定で標準位置に Xcode がある場合、ランナーが `/Applications/Xcode.app/Contents/Developer` を指定します。別の Xcode を使う場合は実行環境で指定します。
+`DEVELOPER_DIR` が未指定なら標準位置の `/Applications/Xcode.app/Contents/Developer` を使用します。別の Xcode は環境変数で指定してください。
 
-```sh
-export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
-xcodebuild -version
-```
+撮影アプリは `~/Library/Caches/jp.co.kupac.prelis.e2e/capture/PrelisE2ECapture.app` に生成し、ソースに変更がなければ再利用します。テストランナーと撮影アプリだけをビルド・ad-hoc 署名し、対象アプリのビルド・署名変更・インストールは行いません。Sandbox 内の XCTest からは認証付きのローカル HTTP で撮影を指示します。
 
-### Mac 上で実行する
+### 実行
 
-リポジトリのルートで実行します。アプリ本体のビルド・署名・インストールは行いません。テストランナーだけを ad-hoc 署名でビルドします。
-
-以下は、公証済みの GitHub 配布向けアプリを使う例です。App Store 提出用とは Bundle ID・署名・Sandbox 条件が異なるため、このテストの成功を提出用ビルドの検証結果には流用しません。
-
-```sh
-bash scripts/macos/test-e2e.sh \
-  --app /Users/kousei/prelis-remote/apps/desktop/src-tauri/target/universal-apple-darwin/release/bundle/macos/PrelisDesktop.app
-```
-
-任意の新しい出力先を使う場合は `--output /absolute/path/to/new-directory` を付けます。既存ディレクトリは再利用しません。
-
-成功時の動画も保存する場合は、同じコマンドに `--record` を付けます。Xcode 標準の UI テスト画面記録を使用し、成功時にも自動添付物を保持して `recording.mp4` などへ取り出します。独自の撮影アプリは不要です。
-
-Mac の記録はデスクトップ全体を含み、アプリ起動前・再起動中には他のウィンドウも映ります。今回の確認でも起動前に別アプリが映ったため、外部共有や審査用の撮影は専用ユーザーの整理したデスクトップで実施してください。
+リポジトリのルートで、Mac 上にある `.app` の絶対パスを指定します。既定は日記・タイマーの2件です。
 
 ```sh
 npm run test:e2e:macos -- \
-  --app /Users/kousei/prelis-remote/apps/desktop/src-tauri/target/universal-apple-darwin/release/bundle/macos/PrelisDesktop.app \
+  --app /absolute/path/to/PrelisDesktop.app \
   --record
 ```
 
-### Ubuntu から実行する
+Mac ではローカル実行します。Ubuntu では `scripts/macos/.env` の既存 SSH 設定を使い、`artifacts/e2e/<run-id>/source/` にテストコードだけを転送して実行し、結果を回収します。Mutagen の同期・対象アプリのビルドは行いません。通常の Mac 同期では `artifacts` を除外します。
 
-`scripts/macos/.env` の既存の接続設定と SSH 鍵認証を使用します。`--app` は **Mac 上の絶対パス**です。
+`--domain diary` または `--domain timer` で対象を限定できます。日記だけなら `--record` を省略でき、撮影権限も不要です。タイマーは音声の実測が必須のため、`--record` の有無にかかわらず解析用の映像・音声を取得します。`--record` は各区間を結合した `recording.mp4` も作成する指定です。
 
-```sh
-bash scripts/macos/test-e2e.sh \
-  --app /Users/kousei/prelis-remote/apps/desktop/src-tauri/target/universal-apple-darwin/release/bundle/macos/PrelisDesktop.app
-```
+Mac 上だけで出力先を指定する場合は `--output /absolute/path/to/new-directory` を追加します。既存ディレクトリは再利用しません。Ubuntu 経由では出力先を自動採番します。
 
-新しい `artifacts/e2e/<run-id>/source/` にテストコードのみを転送します。既存ソースの同期や上書き、アプリの再ビルドは行いません。終了後、ログと `.xcresult`・添付物を Ubuntu に回収します。大きな `derived-data/` は Mac に残します。Ubuntu 経由では出力先を自動採番し、`--output` は指定しません。
+### 映像・音声の範囲
 
-Ubuntu 経由でも `--record` を指定できます。動画も同じ実行 ID のフォルダへ回収します。
+対象のパス・Bundle ID・プロセスが一致するメインウィンドウ1個を、`SCContentFilter(desktopIndependentWindow:)` で収録します。デスクトップ全体を撮影する方式への切り替えは行いません。Xcode の自動動画は無効化し、テストが添付する画像も対象ウィンドウだけを撮影します。
 
-Mac の通常の Mutagen 同期では `artifacts` を除外します。この除外を追加した初回は既存の同期スクリプトの仕様によりセッションを再作成します。同期先のファイルは保持されるため、競合時は [Mac の同期手順](desktop.md#macos-で開発起動する)に従います。E2E の実行自体は Mutagen を使用しません。
+音声は選択したウィンドウを持つアプリの出力を収録します。マイクは使用しません。映像はメインウィンドウのみで、OS のファイル選択パネルや他アプリを含めません。対象ウィンドウの生成後に録画を開始し、アプリの終了前に止めるため、プロセス起動前・終了中は映りません。日記の再起動も含め、複数区間の結合動画であることは撮影レポートに記録します。審査で連続した起動操作の提示を求められる場合、このテスト動画だけで要件を満たすとは扱いません。
+
+タイマーはリポジトリ内の合成 WAV（660 Hz → 880 Hz）を UI で追加します。収録音声を PCM に復号して、試聴時と開始約1分後にその2音が存在し、リセット後に無音になることを確認します。音声トラックの存在や UI の完了表示だけでは成功にしません。OS のスピーカーから実際に聞こえることまでは、この収録テストでは保証しません。
 
 ### 生成物と判定
 
 ```text
 artifacts/e2e/<run-id>/
-├── remote.json                 # Ubuntu からの実行時のみ
+├── remote.json                 # Ubuntu 経由のみ
 └── macos/
-    ├── manifest.json           # 対象アプリ、入力、テストソースの SHA-256
+    ├── manifest.json           # 対象・入力・ソースのハッシュ、UI/音声/録画の結果
     ├── build.log
     ├── run.log
     ├── result.xcresult
     ├── summary.json
-    ├── export.log
-    ├── attachments/            # 保存後・再起動後の画面、失敗時の UI 階層
-    ├── recording.mp4           # --record 指定時。形式や画面数により名前は異なる
-    └── derived-data/           # Mac にのみ保持するビルド中間物
+    ├── audio-summary.json      # 周波数・タイミング・リセット後の無音の判定
+    ├── attachments/            # ウィンドウの画像、失敗時の UI 階層
+    ├── capture/
+    │   ├── report.json         # ウィンドウID、区間、操作時刻、メディア情報
+    │   ├── *.mp4               # ウィンドウだけの区間動画
+    │   └── *.wav               # 区間動画から復号した実測音声
+    ├── recording.mp4           # --record 指定時の結合動画
+    └── derived-data/           # Mac のみ。ビルド中間物
 ```
 
-準備・ビルド・テストの失敗箇所により、後続の生成物は存在しない場合があります。結果は終了コードと `manifest.json` の `status` で確認します。
+途中で失敗した場合、後続の生成物は存在しないことがあります。終了コードと `manifest.json` の `status` を確認してください。
 
-- `passed`: 指定した1件のテストが成功し、失敗・スキップがなく、対象の `.app` のハッシュも実行前後で一致。
-- `failed`: テストの期待結果を満たさない、または対象テストが実行されていない。
-- `environment-failed`: UI 自動操作の初期化・認証に失敗。アプリ機能の失敗とは区別する。
-- `build-failed`: UI テストランナーのビルドに失敗。
-- `execution-failed`: タイムアウト・結果収集・対象アプリの変更など、実行基盤で失敗。
+- `passed`: 選択した全件が成功し、失敗・スキップがなく、対象アプリのハッシュも実行前後で一致。タイマーを含む場合は音声の解析も成功。
+- `failed`: UI または音声の期待結果を満たさない、あるいは対象テストが実行されていない。
+- `environment-failed`: UI 自動操作の認証・初期化、または画面収録の許可が必要。
+- `build-failed`: テストランナーのビルド失敗。
+- `execution-failed`: タイムアウト・収集失敗・対象アプリの変更など、実行基盤の失敗。
 
-GUI テストはユーザーごとのロックで直列実行します。自動リトライによって失敗を隠さず、再実行は別の実行 ID で保存します。タイムアウト後は対象アプリとテストランナーの状態、日記の後片付けを確認してください。
+`ui_test_status`・`audio_test`・`test_status`・`recording.status` を分けて記録します。音声の解析が失敗した場合、UI が成功していても `test_status` と実行全体は失敗です。録画指定時に結合動画を保存できない場合も実行全体は失敗です。
 
-`test_status` と `recording.status` は独立して記録します。`--record` 指定時に動画を取得できなければ実行全体は失敗とし、UI テスト自体の結果は `test_status` に保持します。動画ができたことだけでテスト成功とは判定しません。
+GUI テストはユーザーごとのロックで直列実行します。自動リトライは行わず、再実行も別の実行 ID で保存します。タイムアウトやクラッシュ後は、対象アプリの状態と日記・テスト音声の後片付けを確認してください。画像・UI 階層には表示中の日記などが含まれる可能性があり、成果物は Git 管理対象外です。
 
-`.xcresult` は Xcode で開けます。画面・UI 階層には表示中の日記が含まれる可能性があるため、成果物は Git 管理対象外とし、外部共有時は内容を確認します。
+### TestFlight でインストールした Mac アプリ
+
+App Store Connect にアップロードしたビルドの処理完了後、テスターへの割り当てと TestFlight からのインストールを行い、その `.app` の実際のパスを `--app` に指定します。テストは既存のアプリを外部から操作するため、対象をビルドし直す必要はありません。外部テストではベータ版の審査が必要になる場合があります。
+
+```sh
+npm run test:e2e:macos -- --app /Applications/PrelisDesktop.app --record
+```
+
+パスはインストール結果に合わせてください。TestFlight のビルド番号と記録したバージョン・ビルド番号を照合します。配布時の再署名等があるため、ローカルの提出前 `.app` とのハッシュ一致だけで判定しません。実行時には、実際にインストールされた対象のハッシュを記録します。
+
+参考: [Apple の TestFlight 概要](https://developer.apple.com/help/app-store-connect/test-a-beta-version/testflight-overview/)。TestFlight 版そのものの実行は未検証であり、アプリの起動・UI 公開状況・Sandbox の制約はインストールしたビルドで確認する必要があります。iOS 実機用ターゲットは未実装です。
 
 ### 実行基盤の回帰テスト
 
-Mac へ接続せず、アプリの識別・実行設定の形式・結果判定を検証します。
-
 ```sh
-python3 scripts/e2e/runner.test.py
+npm run test:e2e:scripts
 ```
 
-### 現時点の範囲
+Mac 接続なしで、アプリの識別・Xcode の全画面動画の無効化・結果判定・ウィンドウ録画の確認・音声解析の正常系と無音や異なる音などの異常系を検証します。
 
-macOS の日記保存・再起動テストと、任意の動画保存から導入します。審査に必要な他の機能の操作、iOS 実機のテストターゲットは今後追加します。今回の動画は日記のテスト記録です。審査提出用には、実際の提出対象・必要な全機能・映像と音声の内容を確認する必要があります。
+### 対象ビルドと確認範囲
 
-提出物の検証では、`--app` が実際の提出対象と一致することを別途確認してください。バージョン番号とハッシュの記録だけで App Store Connect のビルドとの一致は保証しません。
+2026-11-03 の確認環境は MacBook Air / macOS 27.2 / Xcode 27.1 です。公証済み GitHub 配布版 v0.1.4（`jp.co.kupacllc.prelis`）を使用しました。既存の App Store 提出用 `.app`（`jp.co.kupac.prelis`）は署名の整合性検証を通る一方、直接のローカル起動は OS が provisioning profile 不一致で拒否しました。対象ファイルは変更していません。GitHub 配布版での成功を提出対象の検証結果には流用せず、TestFlight 等で導入した対象に再実行します。
 
-### 初回の確認記録（2026-11-03）
+以前の Xcode 標準録画は全画面・音声なしでした。過去の成果物は保持しますが、現在のウィンドウ録画・音声テストの証拠としては使用しません。現在のシナリオは日記とタイマーであり、審査が要求する全機能の網羅は別途確認します。
 
-- MacBook Air / macOS 27.2 / Xcode 27.1 で、日記の保存・アプリ終了・再起動後の完全一致・テスト入力の消去・アプリ終了まで成功。テスト1件、失敗0件、スキップ0件。
-- 成功した対象は、公証済みの GitHub 配布向け v0.1.4（Bundle ID `jp.co.kupacllc.prelis`）。アプリ本体の追加ビルド・署名変更・インストールは実施していない。
-- 既存の App Store 提出用 `.app`（Bundle ID `jp.co.kupac.prelis`）は、署名の整合性検証は通るが、ローカル起動時に OS が `No matching profile found` / `no eligible provisioning profiles found` で拒否。提出用ファイルは変更していない。実行可能な配布経路で導入した提出対象のビルドに対し、別途検証する必要がある。
-- 初回の `Enable UI Automation` の認証待ちは、Mac 画面での本人認証後に解消。
-- WebKit のカレンダーは `CheckBox` として取得。本文欄は名前と実際の枠を確認し、枠の中心をクリックする。入力済みの本文欄では XCTest の既定のヒット位置が取得できない事象があるため、絶対座標を固定しない。
-- 実行基盤の回帰テスト9件は成功。iOS のビルド・実機テストは未実施。
+### ウィンドウ録画・音声の確認記録（2026-11-03）
 
-通常実行の成功結果は、Mac と Ubuntu の `artifacts/e2e/20261103T113503Z-5902b8e1/macos/` に保存する。認証・起動・UI 操作の初期失敗も別の実行 ID で保持し、成功結果で上書きしない。
+最終結果は Mac・Ubuntu の `artifacts/e2e/20261103T120722Z-ba8dbd27/macos/` に保存しました。
 
-録画付きの成功結果は `artifacts/e2e/20261103T113655Z-d9b7bf82/macos/` に保存する。`recording.mp4` は約75.47秒・2940×1912・映像1トラック・音声0トラック。AVFoundation で読み取りとフレーム抽出を確認した。今回は日記の検証であり、タイマーの音声を含む検証には別途音声の収録・確認が必要。
-
-録画付き実行後に、使用した `2026-11-04` の日記が0バイトに戻り、対象アプリのプロセスが終了していることを確認した。
+- 日記の保存・再起動後の完全一致・入力消去、タイマーの音声追加・試聴・1分後の完了・リセット・テスト音声削除が成功。UI テスト2件、失敗0件、スキップ0件。
+- 収録した音声から試聴と終了時の660 Hz → 880 Hzを検出し、リセット後の無音も確認。`audio-summary.json` の判定は `passed`。
+- 結合した `recording.mp4` は約161.16秒、2560×1666、映像1・音声1トラック。区間はすべて単一ウィンドウのフィルターで、Xcode の動画添付はなし。
+- 結合後の動画も別途 PCM に復号し、約89.3秒の試聴音と154.8秒以降の終了音を確認。抽出画像でもウィンドウだけであることを目視確認。Ubuntu の `media-check/verification.json` にこの追加確認を記録。
+- 対象アプリのハッシュは実行前後で一致。使用した `2026-11-04` の日記は0バイト、テスト音声と音声ファイルは残存0、元の「音声なし」へ復元され、対象アプリも終了していることを読み取りで確認。
+- 実行基盤の回帰テスト12件は成功。アプリ本体のビルド・署名変更・アップロード、TestFlight 版の実行、iOS 実機テストは実施していない。

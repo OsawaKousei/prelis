@@ -5,19 +5,25 @@
 	objectVersion = 56;
 	objects = {
 		000000000000000000000001 = {isa = PBXProject; attributes = {LastUpgradeCheck = 1600; }; buildConfigurationList = 000000000000000000000010; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, Base); mainGroup = 000000000000000000000002; productRefGroup = 000000000000000000000003; projectDirPath = ""; projectRoot = ""; targets = (000000000000000000000004); };
-		000000000000000000000002 = {isa = PBXGroup; children = (000000000000000000000005, 000000000000000000000006, 000000000000000000000007, 000000000000000000000003); sourceTree = "<group>"; };
+		000000000000000000000002 = {isa = PBXGroup; children = (000000000000000000000005, 000000000000000000000006, 000000000000000000000007, 000000000000000000000014, 000000000000000000000015, 000000000000000000000016, 000000000000000000000003); sourceTree = "<group>"; };
 		000000000000000000000003 = {isa = PBXGroup; children = (000000000000000000000008); name = Products; sourceTree = "<group>"; };
 		000000000000000000000004 = {isa = PBXNativeTarget; buildConfigurationList = 000000000000000000000011; buildPhases = (000000000000000000000009, 00000000000000000000000A, 00000000000000000000000B); buildRules = (); dependencies = (); name = MacUITests; productName = MacUITests; productReference = 000000000000000000000008; productType = "com.apple.product-type.bundle.ui-testing"; };
 		000000000000000000000005 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ../macos/MacAppDriver.swift; sourceTree = "<group>"; };
 		000000000000000000000006 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ../../domains/diary/macos/MacDiaryScreen.swift; sourceTree = "<group>"; };
 		000000000000000000000007 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ../../domains/diary/macos/DiaryPersistenceTests.swift; sourceTree = "<group>"; };
 		000000000000000000000008 = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MacUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		000000000000000000000009 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (00000000000000000000000C, 00000000000000000000000D, 00000000000000000000000E); runOnlyForDeploymentPostprocessing = 0; };
+		000000000000000000000009 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (00000000000000000000000C, 00000000000000000000000D, 00000000000000000000000E, 000000000000000000000017, 000000000000000000000018, 000000000000000000000019); runOnlyForDeploymentPostprocessing = 0; };
 		00000000000000000000000A = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 		00000000000000000000000B = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 		00000000000000000000000C = {isa = PBXBuildFile; fileRef = 000000000000000000000005; };
 		00000000000000000000000D = {isa = PBXBuildFile; fileRef = 000000000000000000000006; };
 		00000000000000000000000E = {isa = PBXBuildFile; fileRef = 000000000000000000000007; };
+		000000000000000000000014 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ../macos/MacCaptureClient.swift; sourceTree = "<group>"; };
+		000000000000000000000015 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ../../domains/timer/macos/MacTimerScreen.swift; sourceTree = "<group>"; };
+		000000000000000000000016 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ../../domains/timer/macos/TimerSoundTests.swift; sourceTree = "<group>"; };
+		000000000000000000000017 = {isa = PBXBuildFile; fileRef = 000000000000000000000014; };
+		000000000000000000000018 = {isa = PBXBuildFile; fileRef = 000000000000000000000015; };
+		000000000000000000000019 = {isa = PBXBuildFile; fileRef = 000000000000000000000016; };
 		000000000000000000000010 = {isa = XCConfigurationList; buildConfigurations = (000000000000000000000012); defaultConfigurationIsVisible = 0; defaultConfigurationName = Debug; };
 		000000000000000000000011 = {isa = XCConfigurationList; buildConfigurations = (000000000000000000000013); defaultConfigurationIsVisible = 0; defaultConfigurationName = Debug; };
 		000000000000000000000012 = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; MACOSX_DEPLOYMENT_TARGET = 12.0; ONLY_ACTIVE_ARCH = YES; SDKROOT = macosx; SWIFT_VERSION = 5.0; }; name = Debug; };
