@@ -1,10 +1,15 @@
-__pycache__/
+# libralies
 node_modules/
+
+# caches
+__pycache__/
 .expo/
-ref/
+.mutagen/
 .mutagen-windows/
 .mutagen-macos/
 .mutagen-ios/
+
+# secrets
 .env
 .env.*
 !.env.example
@@ -13,7 +18,6 @@ ref/
 *.p8
 *.keystore
 
-docs-old/
+# documents
 docs/environment
 docs/plan
-mobile-old/
