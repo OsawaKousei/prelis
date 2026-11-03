@@ -63,11 +63,11 @@ App Store Connect が © を自動で付けるため、入力値には含めま�
 
 ### メモ
 
-[app-review-notes.txt](app-review-notes.txt) を使用します。Mac の実機動画・機種とチップ・正確なOS・テスト日・音声提供先・提出ビルドの角括弧を実際の値へ置換してから貼り付けます。レビューへの返信案は [app-review-reply.txt](app-review-reply.txt) です。
+[app-review-notes.txt](app-review-notes.txt) を使用します。今回の実機動画の収録範囲・環境・日付は記入済みです。動画URL・音声提供先・提出Macビルド番号を差し替えて貼り付けます。録画対象の GitHub 配布版と提出ビルドを混同しません。レビューへの返信案は [app-review-reply.txt](app-review-reply.txt) です。
 
 ### 添付ファイル
 
-Mac実機で提出対象ビルドを操作した動画と、[review-tone.wav](review-tone.wav) を提供します。動画の準備と提出前確認は [review-video.md](review-video.md) を参照してください。
+今回の Mac 実機動画と [review-tone.wav](review-tone.wav) を提供します。録画対象・収録範囲は審査メモに記載しています。提出ビルドでの追加撮影が必要な場合の手順も [review-video.md](review-video.md) に記載しています。
 
 ## プライバシーポリシーURL
 

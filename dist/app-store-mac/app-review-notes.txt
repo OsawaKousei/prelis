@@ -1,35 +1,35 @@
 Prelis Desktop — Mac App Store Review Information
-Version: 0.1.4 / Build: [SUBMITTED_MACOS_BUILD_NUMBER]
+Submitted version: 0.1.4
 
-1. Physical-Mac video and testing
-Video: [MAC_VIDEO_ATTACHMENT_FILENAME_OR_PUBLIC_URL]
-Recorded on: [MAC_MODEL_CHIP_AND_EXACT_MACOS_VERSION]
-Tested Macs/OS versions: [TESTED_MAC_MODELS_CHIPS_AND_OS_VERSIONS]
-Test date: [MAC_TEST_DATE]
-The recording starts by launching the submitted Mac build and demonstrates all three features, timer audio import/completion, and the policy link.
+1. Physical-Mac video
+Video: https://drive.google.com/file/d/1UXEAS0PZdQHwsaTuCJzzj6qZ4Oxu1c7i/view?usp=sharing
+Recorded/tested November 3, 2026: MacBook Air (Apple silicon), macOS 27.2 (26B123). Duration: 1:43, with app audio.
+The video demonstrates the three main features of Prelis Desktop v0.1.4 on a physical Mac, including application audio.
+00:00–00:11 Diary: save sample text, reopen it after a full restart, then clear it.
+00:11–00:25 Password: generate/copy, exclude ambiguous characters, change types/lengths, and disable generation with no types selected.
+00:25–01:43 Timer: add/select audio, preview around 00:33, run a real one-minute countdown, hear completion around 01:38, then reset.
+Testing confirmed diary persistence after restarting the app, password generation and clipboard copying, and timer preview/completion audio with playback stopping after reset.
 
 2. Purpose and audience
-Prelis Desktop combines a private diary, countdown timer, and password generator for general Mac App Store users. Users can record their day, time work/study sessions, and generate passwords without an account. It is not restricted to any business, organization, or employee group.
+Prelis offers a private diary, work/study countdown timer, and password generator for general Mac users. It is not restricted to specific businesses, organizations, or employees.
 
-3. Access, setup, and instructions
-No registration, login, demo credentials, subscription, or in-app purchase is required. There is no account creation/deletion flow. Core features work offline; the policy website requires internet access.
+3. Access and setup
+No account, registration, login credentials, subscription, or in-app purchase is required. No account creation/deletion flow. Core features work offline. Entries/audio are private local data, with no publishing, messaging, or interaction with other users.
 
-Diary: Select Diary in the left sidebar. Select a date, enter sample text, and click 保存 (Save). Move to another date and return to confirm persistence. Entries and imported audio are private local content. There is no posting, publication, sharing, messaging, or interaction with other users.
+Diary: Select Diary in the sidebar, choose a date, enter text, and click 保存 (Save). Reopen the date to read it. No sample file is needed.
 
-Timer: Select Timer. Expand 終了音 (Completion sound) > 音声を追加 (Add audio) and select review-tone.wav in the macOS file chooser. MP3/WAV up to 10 MiB are supported. The imported sound is selected automatically; click 試聴 (Preview). Set 1 minute and click 開始 (Start); the same button pauses/resumes. Switching sidebar features preserves timing. Keep Prelis running and the Mac awake until completion, then click リセット (Reset) to stop the sound. Without a selected sound, completion is silent. Quitting resets the timer; it does not provide an alarm while the Mac is asleep or Prelis is not running.
-Original test WAV: [REVIEW_TONE_ATTACHMENT_OR_DOWNLOAD_URL]
-Save review-tone.wav to the Mac before importing it. Diary/Password need no sample file.
+Password: Select Password. Choose uppercase/lowercase letters, numbers, symbols, and 4/8/12/16 characters. 間違えやすい文字を除く excludes I, O, l, 0, and 1. Click パスワードを生成 (Generate), then コピー (Copy). Results are not saved for future launches.
 
-Password: Select Password. Choose uppercase/lowercase letters, numbers and/or symbols, and 4/8/12/16 characters. 間違えやすい文字を除く excludes ambiguous characters. Click パスワードを生成 (Generate password), then コピー (Copy). Generation uses device Web Crypto randomness. Copying writes to the system clipboard; results are not persisted for future launches.
+Timer: Save the supplied WAV to the Mac. Open Timer > 終了音 > 音声を追加 (Add audio), select it in the file chooser, then click 試聴 (Preview). MP3/WAV up to 10 MiB are supported. Set 1 minute and click 開始 (Start). Keep Prelis running and the Mac awake. リセット (Reset) stops completion audio. No selected sound means silent completion; quitting resets the timer.
+Sample WAV: [REVIEW_TONE_ATTACHMENT_OR_DOWNLOAD_URL]
 
-Privacy policy: Click プライバシーポリシー (Privacy Policy) at the bottom of the sidebar, accessible from all feature screens. It opens https://prelis.prj.kupac.co.jp/privacy in the default external browser.
+Privacy policy: プライバシーポリシー at the bottom of the sidebar opens https://prelis.prj.kupac.co.jp/privacy in the default browser; internet is required.
 
 4. External services/tools/platforms
-Tauri (Rust/macOS WKWebView), React, Tauri File System (local diary/audio storage), Tauri Opener (external browser), HTMLAudioElement (local playback), and Web Crypto/Clipboard APIs.
-Core features use no external backend, authentication, payment, AI, data-provider, advertising, or analytics services. No app-managed cloud sync. The separate policy/marketing site is prelis.prj.kupac.co.jp; support uses Google Forms. These websites are not needed for core features. No Expo/mobile SDKs are used.
+Tauri (Rust/WKWebView), React, Tauri File System/Opener plugins, HTMLAudioElement, Web Crypto, and Clipboard APIs. No external backend, data provider, authentication, payment, AI, ads, analytics, or app-managed cloud sync. The separate policy/marketing site is prelis.prj.kupac.co.jp; support uses Google Forms. Neither is needed for core features.
 
-5. Regional behavior
-Features/content are consistent across distribution regions, with no regional feature gates. The current UI is Japanese with English feature names. Diary dates follow the Mac's local date.
+5. Regions
+Features/content are consistent across distribution regions, with no regional gates. The UI is Japanese with English feature names. Diary dates use the Mac's local date.
 
-6. Regulated services/third-party material
-No financial, medical, gambling, or VPN service is provided. There is no third-party media catalog, music download, or streaming service. Timer sounds are user-selected files for local use. The supplied review-tone.wav was synthesized specifically for review and contains no third-party recording. Third-party software components are subject to their respective licenses.
+6. Regulated services/protected material
+No financial, medical, gambling, or VPN service, third-party media catalog, or streaming. Timer sounds are user-selected local files. The supplied WAV is an original synthesized test sound with no third-party recording. Software components use their respective licenses.

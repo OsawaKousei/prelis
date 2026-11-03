@@ -12,9 +12,21 @@
 | [review-tone.wav](review-tone.wav) | 音声取込み・試聴・タイマー完了を確認するために合成した音声。16 kHz / 16-bit / mono / 0.8秒、25,644 bytes。第三者の録音は含みません |
 | [text.md](text.md) | 現行版の日本語掲載文・審査情報の入力先 |
 
-英文は未提出のテンプレートです。Mac で提出対象の Sandbox ビルドを検証・撮影し、角括弧のビルド番号・動画・機種とチップ・OS・テスト日・音声提供先を埋めてから使用してください。macOS のビルド番号には実際の `CFBundleVersion` を使用し、iOS の番号 `3` を流用しません。
+英文は、2026-11-03 に収録した約1分43秒の動画を提供する前提で更新した未提出の文面です。記録された MacBook Air / macOS 27.2 (26B123)、日付、収録範囲を記入済みです。次の3か所を差し替えて使用してください。
 
-今回の準備ではアプリコード・バージョン・署名権限は変更していません。Macのビルド・実機テスト・撮影・App Store Connectの編集・返信・審査提出も行っていません。先の Linux 検証を Mac 実機での検証として報告しません。
+| プレースホルダー | 入れる値 |
+| --- | --- |
+| `[MAC_REVIEW_VIDEO_URL]` | 今回の動画を公開した提出用 URL |
+| `[REVIEW_TONE_ATTACHMENT_OR_DOWNLOAD_URL]` | `review-tone.wav` の提供先、または添付済みなら `review-tone.wav (attached)` |
+| `[SUBMITTED_MACOS_BUILD_NUMBER]` | App Store Connect で選択する Mac ビルドの実際の `CFBundleVersion`。iOS の番号 `3` を流用しない |
+
+対象の録画は [recording.mp4](../../artifacts/e2e/20261103T122119Z-6816cf9c/macos/recording.mp4) です。日記→パスワード→タイマーの順で、アプリのウィンドウと音声だけを収録したテスト区間の結合動画です。対応する実行結果は同じディレクトリの `manifest.json`・`summary.json`・`audio-summary.json` にあります。動画・結果は Git 管理対象外です。
+
+録画対象は公証済み GitHub 配布版 v0.1.4 / build 0.1.4（`jp.co.kupacllc.prelis`）です。提出ビルドの QA は別途必要です。起動アイコンの操作・OS のファイル選択画面・外部ブラウザーは収録に含まれません。これらの検証管理上の情報はこの内部資料で保持し、提出用の英文は動画の機能紹介と審査に必要な情報へ絞っています。
+
+日記の再起動後の完全一致、パスワードの条件・実際のコピー、タイマーの試聴・1分後の終了音・リセット後の無音の検証は Mac 実機で成功しています。`review-tone.wav` と動画中の一時ファイル `prelis-e2e-*.wav` は SHA-256 が一致します。アプリコード・バージョン・署名は変更せず、今回の文面修正でもアップロード・App Store Connect の編集・返信・提出は行っていません。
+
+Notes は [Apple の入力仕様](https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information/#app-review-information)で上限4,000バイトとされているため、URL 等の差し替え後に UTF-8 のバイト数を確認してください。
 
 ## 既存の画像（旧 v0.1.1 の記録）
 
