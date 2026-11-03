@@ -21,3 +21,7 @@ __pycache__/
 # documents
 docs/environment
 docs/plan
+
+# sub directory
+ref/
+tmp/
